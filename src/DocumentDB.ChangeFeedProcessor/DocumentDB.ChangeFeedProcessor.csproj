@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net451</TargetFrameworks>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ShippingScope>External</ShippingScope>
+    <SigningType>Product</SigningType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!--
+      Enable auto assembly info generation, but disable specific attributes which are already defined in source.
+    -->
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+
+    <RootNamespace>Microsoft.Azure.Documents.ChangeFeedProcessor</RootNamespace>
+    <AssemblyName>Microsoft.Azure.Documents.ChangeFeedProcessor</AssemblyName>
+
+    <PackageId>Microsoft.Azure.DocumentDB.ChangeFeedProcessor</PackageId>
+    <PackageVersion>1.2.0</PackageVersion>
+    <Title>Microsoft Azure Cosmos DB Change Feed Processor library</Title>
+    <Authors>Microsoft</Authors>
+    <PackageLicenseUrl>http://go.microsoft.com/fwlink/?LinkID=509837</PackageLicenseUrl>
+    <PackageProjectUrl>http://go.microsoft.com/fwlink/?LinkID=509927</PackageProjectUrl>
+    <PackageIconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</PackageIconUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageDescription>This library provides a host for distributing change feed events in partitioned collection across multiple observers. Instances of the host can scale up (by adding) or down (by removing) dynamically, and the load will be automatically distributed among active instances in about-equal way.</PackageDescription>
+    <Description>This library provides a host for distributing change feed events in partitioned collection across multiple observers. Instances of the host can scale up (by adding) or down (by removing) dynamically, and the load will be automatically distributed among active instances in about-equal way.</Description>
+    <Copyright>Copyright © Microsoft Corporation</Copyright>
+    <PackageTags>microsoft azure cosmosdb documentdb docdb nosql azureofficial</PackageTags>
+  </PropertyGroup> 
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+  </ItemGroup>
+  
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.5.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net451'">
+    <PackageReference Include="Microsoft.Azure.DocumentDB" Version="1.17.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+</Project>
