@@ -56,7 +56,7 @@ namespace DocumentDB.ChangeFeedProcessor
         /// Asynchronously registers the observer factory implementation with the host.
         /// This method also starts the host and enables it to start participating in the partition distribution process.
         /// </summary>
-        /// <param name="factory">Implementation of your application-specific event observer factory.</typeparam>
+        /// <param name="factory">Implementation of your application-specific event observer factory.</param>
         /// <returns>A task indicating that the <see cref="DocumentDB.ChangeFeedProcessor.ChangeFeedEventHost" /> instance has started.</returns>
         public async Task RegisterObserverFactoryAsync(IChangeFeedObserverFactory factory)
         {
@@ -72,5 +72,5 @@ namespace DocumentDB.ChangeFeedProcessor
         {
             await host.StopAsync().ConfigureAwait(false);
         }
-   }
+    }
 }
