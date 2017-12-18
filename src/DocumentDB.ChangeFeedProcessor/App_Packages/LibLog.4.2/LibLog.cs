@@ -46,17 +46,17 @@ using System.Diagnostics.CodeAnalysis;
 // If you copied this file manually, you need to change all "YourRootNameSpace" so not to clash with other libraries
 // that use LibLog
 #if LIBLOG_PROVIDERS_ONLY
-namespace DocumentDB.ChangeFeedProcessor.LibLog
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LibLog
 #else
-namespace DocumentDB.ChangeFeedProcessor.Logging
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging
 #endif
 {
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
 #if LIBLOG_PROVIDERS_ONLY
-    using DocumentDB.ChangeFeedProcessor.LibLog.LogProviders;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LibLog.LogProviders;
 #else
-    using DocumentDB.ChangeFeedProcessor.Logging.LogProviders;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging.LogProviders;
 #endif
     using System;
 #if !LIBLOG_PROVIDERS_ONLY
@@ -715,9 +715,9 @@ namespace DocumentDB.ChangeFeedProcessor.Logging
 }
 
 #if LIBLOG_PROVIDERS_ONLY
-namespace DocumentDB.ChangeFeedProcessor.LibLog.LogProviders
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LibLog.LogProviders
 #else
-namespace DocumentDB.ChangeFeedProcessor.Logging.LogProviders
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging.LogProviders
 #endif
 {
     using System;

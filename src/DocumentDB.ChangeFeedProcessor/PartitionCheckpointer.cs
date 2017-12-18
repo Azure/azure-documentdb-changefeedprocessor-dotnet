@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.PartitionManagement;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
-namespace DocumentDB.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     public class PartitionCheckpointer : IPartitionCheckpointer
     {

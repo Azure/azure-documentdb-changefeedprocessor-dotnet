@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace DocumentDB.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     public interface IPartitionCheckpointer
     {

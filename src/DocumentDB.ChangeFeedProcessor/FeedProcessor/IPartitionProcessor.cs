@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace DocumentDB.ChangeFeedProcessor.FeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
     public interface IPartitionProcessor
     {

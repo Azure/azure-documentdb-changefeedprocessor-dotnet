@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Adapters;
-using DocumentDB.ChangeFeedProcessor.Bootstrapping;
-using DocumentDB.ChangeFeedProcessor.FeedProcessor;
-using DocumentDB.ChangeFeedProcessor.Utils;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 using Microsoft.Azure.Documents;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     public class PartitionManagerBuilder : IPartitionManagerBuilder
     {

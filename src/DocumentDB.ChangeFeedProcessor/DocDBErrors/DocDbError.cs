@@ -1,4 +1,4 @@
-﻿namespace DocumentDB.ChangeFeedProcessor.DocDBErrors
+﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors
 {
     internal enum DocDbError
     {

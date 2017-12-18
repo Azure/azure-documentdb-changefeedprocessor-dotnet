@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Exceptions;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     public interface ILeaseManager
     {

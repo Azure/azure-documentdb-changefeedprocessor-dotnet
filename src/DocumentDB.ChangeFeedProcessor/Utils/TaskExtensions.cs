@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Logging;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 
-namespace DocumentDB.ChangeFeedProcessor.Utils
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
     internal static class TaskExtensions
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DocumentDB.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     /// <summary>
     /// Specifies the frequency of lease event. The event will trigger when either of conditions is satisfied.

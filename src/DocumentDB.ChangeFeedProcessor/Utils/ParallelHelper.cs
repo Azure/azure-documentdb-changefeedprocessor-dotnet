@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DocumentDB.ChangeFeedProcessor.Utils
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
     internal static class ParallelHelper
     {

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     internal interface ILoadBalancingStrategy
     {

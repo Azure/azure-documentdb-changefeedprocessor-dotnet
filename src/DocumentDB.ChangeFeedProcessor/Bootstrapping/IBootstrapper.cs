@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace DocumentDB.ChangeFeedProcessor.Bootstrapping
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 {
     public interface IBootstrapper
     {

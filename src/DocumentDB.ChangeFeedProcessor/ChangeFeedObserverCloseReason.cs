@@ -1,4 +1,4 @@
-﻿namespace DocumentDB.ChangeFeedProcessor
+﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     public enum ChangeFeedObserverCloseReason
     {

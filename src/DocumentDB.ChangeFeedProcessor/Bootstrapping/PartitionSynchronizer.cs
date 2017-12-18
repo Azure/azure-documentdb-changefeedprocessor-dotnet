@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Adapters;
-using DocumentDB.ChangeFeedProcessor.Logging;
-using DocumentDB.ChangeFeedProcessor.PartitionManagement;
-using DocumentDB.ChangeFeedProcessor.Utils;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 
-namespace DocumentDB.ChangeFeedProcessor.Bootstrapping
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 {
     internal class PartitionSynchronizer : IPartitionSynchronizer
     {

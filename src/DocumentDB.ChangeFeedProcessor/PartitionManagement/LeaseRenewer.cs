@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Exceptions;
-using DocumentDB.ChangeFeedProcessor.Logging;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     internal class LeaseRenewer : ILeaseRenewer
     {

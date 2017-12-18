@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Exceptions;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 
-namespace DocumentDB.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     public interface IChangeFeedObserverContext
     {

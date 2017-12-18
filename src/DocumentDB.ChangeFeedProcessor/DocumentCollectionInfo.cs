@@ -1,8 +1,8 @@
 ﻿using System;
-using DocumentDB.ChangeFeedProcessor.Adapters;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
 using Microsoft.Azure.Documents.Client;
 
-namespace DocumentDB.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     /// <summary>
     /// Holds information specifying how to get Document collection.

@@ -1,8 +1,8 @@
 ﻿using System;
-using DocumentDB.ChangeFeedProcessor.Adapters;
-using DocumentDB.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     internal class PartitionSupervisorFactory : IPartitionSupervisorFactory
     {

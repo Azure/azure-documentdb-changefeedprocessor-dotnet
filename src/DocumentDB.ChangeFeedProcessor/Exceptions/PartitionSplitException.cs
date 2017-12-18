@@ -1,4 +1,4 @@
-﻿namespace DocumentDB.ChangeFeedProcessor.Exceptions
+﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
 {
     public class PartitionSplitException : PartitionException
     {

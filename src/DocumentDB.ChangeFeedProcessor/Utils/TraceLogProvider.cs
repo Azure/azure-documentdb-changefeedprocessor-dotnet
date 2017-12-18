@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
-using DocumentDB.ChangeFeedProcessor.Logging;
-using DocumentDB.ChangeFeedProcessor.Logging.LogProviders;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging.LogProviders;
 
-namespace DocumentDB.ChangeFeedProcessor.Utils
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
     internal class TraceLogProvider : LogProviderBase
     {

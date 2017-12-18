@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
 
-namespace DocumentDB.ChangeFeedProcessor.FeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
     /// <summary>
     /// This interface is used to deliver change events to document feed observers.

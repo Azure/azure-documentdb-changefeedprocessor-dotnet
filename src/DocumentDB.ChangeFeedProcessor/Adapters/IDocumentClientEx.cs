@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 
-namespace DocumentDB.ChangeFeedProcessor.Adapters
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters
 {
     public interface IDocumentClientEx
     {

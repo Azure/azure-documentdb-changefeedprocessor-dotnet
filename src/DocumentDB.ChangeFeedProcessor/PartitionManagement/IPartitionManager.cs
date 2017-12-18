@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     public interface IPartitionManager
     {

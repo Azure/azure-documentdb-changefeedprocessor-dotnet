@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Exceptions;
-using DocumentDB.ChangeFeedProcessor.Logging;
-using DocumentDB.ChangeFeedProcessor.Utils;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     internal class PartitionController : IPartitionController
     {

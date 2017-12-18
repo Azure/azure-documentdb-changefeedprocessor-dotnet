@@ -5,7 +5,7 @@ using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.Documents.Linq;
 
-namespace DocumentDB.ChangeFeedProcessor.Adapters
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters
 {
     internal class DocumentClientEx : IDocumentClientEx
     {

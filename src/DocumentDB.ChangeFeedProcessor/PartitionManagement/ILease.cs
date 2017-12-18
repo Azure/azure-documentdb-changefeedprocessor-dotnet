@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     public interface ILease
     {

@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using Microsoft.Azure.Documents;
 
-namespace DocumentDB.ChangeFeedProcessor.DocDBErrors
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors
 {
     internal static class ExceptionClassifier
     {

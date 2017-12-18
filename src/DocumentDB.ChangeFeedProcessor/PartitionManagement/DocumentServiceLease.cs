@@ -3,7 +3,7 @@ using System.Globalization;
 using Microsoft.Azure.Documents;
 using Newtonsoft.Json;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     internal class DocumentServiceLease : ILease
     {

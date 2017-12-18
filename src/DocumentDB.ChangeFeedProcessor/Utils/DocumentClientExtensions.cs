@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Adapters;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 
-namespace DocumentDB.ChangeFeedProcessor.Utils
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
     internal static class DocumentClientExtensions
     {

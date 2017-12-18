@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Bootstrapping;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     internal class PartitionManager : IPartitionManager
     {

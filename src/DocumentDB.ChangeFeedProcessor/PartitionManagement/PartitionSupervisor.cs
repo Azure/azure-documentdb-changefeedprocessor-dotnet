@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Exceptions;
-using DocumentDB.ChangeFeedProcessor.FeedProcessor;
-using DocumentDB.ChangeFeedProcessor.Utils;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     internal class PartitionSupervisor : IPartitionSupervisor
     {

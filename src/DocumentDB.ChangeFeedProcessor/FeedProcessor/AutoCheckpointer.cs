@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
 
-namespace DocumentDB.ChangeFeedProcessor.FeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
     internal class AutoCheckpointer : IChangeFeedObserver
     {

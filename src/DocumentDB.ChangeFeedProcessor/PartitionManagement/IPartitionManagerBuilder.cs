@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.FeedProcessor;
-using DocumentDB.ChangeFeedProcessor.Adapters;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
 
-namespace DocumentDB.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     public interface IPartitionManagerBuilder
     {

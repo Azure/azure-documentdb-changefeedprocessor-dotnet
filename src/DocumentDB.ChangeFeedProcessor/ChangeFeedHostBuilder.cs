@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Globalization;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Adapters;
-using DocumentDB.ChangeFeedProcessor.FeedProcessor;
-using DocumentDB.ChangeFeedProcessor.Logging;
-using DocumentDB.ChangeFeedProcessor.PartitionManagement;
-using DocumentDB.ChangeFeedProcessor.Utils;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 
-namespace DocumentDB.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     public class ChangeFeedHostBuilder
     {

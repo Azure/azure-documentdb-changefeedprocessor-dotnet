@@ -1,7 +1,7 @@
 ﻿using System;
-using DocumentDB.ChangeFeedProcessor.PartitionManagement;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
-namespace DocumentDB.ChangeFeedProcessor.Exceptions
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
 {
 #if NETFX
     [Serializable]

@@ -1,4 +1,4 @@
-﻿namespace DocumentDB.ChangeFeedProcessor.FeedProcessor
+﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
     internal class ChangeFeedObserverFactory<T> : IChangeFeedObserverFactory where T : IChangeFeedObserver, new()
     {

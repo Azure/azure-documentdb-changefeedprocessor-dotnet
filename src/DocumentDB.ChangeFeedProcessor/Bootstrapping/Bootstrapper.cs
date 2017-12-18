@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Logging;
-using DocumentDB.ChangeFeedProcessor.PartitionManagement;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
-namespace DocumentDB.ChangeFeedProcessor.Bootstrapping
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 {
     internal class Bootstrapper : IBootstrapper
     {

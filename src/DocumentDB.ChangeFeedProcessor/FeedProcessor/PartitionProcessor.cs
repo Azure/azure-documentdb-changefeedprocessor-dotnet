@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.Adapters;
-using DocumentDB.ChangeFeedProcessor.DocDBErrors;
-using DocumentDB.ChangeFeedProcessor.Exceptions;
-using DocumentDB.ChangeFeedProcessor.Logging;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 
-namespace DocumentDB.ChangeFeedProcessor.FeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
     internal class PartitionProcessor : IPartitionProcessor
     {

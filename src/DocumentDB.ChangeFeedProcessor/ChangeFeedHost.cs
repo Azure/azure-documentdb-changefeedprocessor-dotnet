@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DocumentDB.ChangeFeedProcessor.PartitionManagement;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
-namespace DocumentDB.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     internal class ChangeFeedHost : IChangeFeedHost
     {

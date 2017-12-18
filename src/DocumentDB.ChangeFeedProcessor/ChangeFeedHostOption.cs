@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DocumentDB.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     /// <summary>
     /// Options to control various aspects of partition distribution happening within <see cref="ChangeFeedEventHost"/> instance.
