@@ -10,5 +10,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     {
         Task StartAsync();
         Task StopAsync();
+        Task<long> GetEstimatedRemainingWork();
     }
 }

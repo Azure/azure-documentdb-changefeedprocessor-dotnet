@@ -68,9 +68,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, lockTime, sleepTime);
             var partitionObserverFactory = new PartitionSupervisorFactory(factory, feedDocumentClient, collectionSelfLink, leaseManager, options, feedOptions);
             var partitionController = new PartitionController(hostName, leaseManager, partitionObserverFactory, synchronizer);
+            var partitionEstimator = new RemainingWorkEstimator(leaseManager, feedDocumentClient, collectionSelfLink);
             var loadBalancingStrategy = new EqualPartitionsBalancingStrategy(hostName, options.MinPartitionCount, options.MaxPartitionCount, options.LeaseExpirationInterval);
             var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, loadBalancingStrategy, options.LeaseAcquireInterval);
-            return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
+            return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer, partitionEstimator);
         }
 
         private DocumentServiceLeaseManager CreateLeaseManager(string leasePrefix, string leaseStoreCollectionLink)

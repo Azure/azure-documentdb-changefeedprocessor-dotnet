@@ -27,5 +27,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             await partitionManager.StopAsync().ConfigureAwait(false);
         }
+
+        public async Task<long> GetEstimatedRemainingWork()
+        {
+            return await partitionManager.GetEstimatedRemainingWork().ConfigureAwait(false);
+        }
     }
 }

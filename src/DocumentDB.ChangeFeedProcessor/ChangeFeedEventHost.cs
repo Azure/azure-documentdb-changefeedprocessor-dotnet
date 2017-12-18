@@ -140,7 +140,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             if (changeFeedHostOptions == null)
                 throw new ArgumentNullException(nameof(changeFeedHostOptions));
 
-            builder
+            this.builder
                 .WithHostName(hostName)
                 .WithFeedCollection(feedCollectionLocation)
                 .WithChangeFeedHostOptions(changeFeedHostOptions)
@@ -156,9 +156,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
         public async Task RegisterObserverAsync<T>() where T : IChangeFeedObserver, new()
         {
-            builder.WithObserver<T>();
-            host = await builder.BuildAsync().ConfigureAwait(false);
-            await host.StartAsync().ConfigureAwait(false);
+            this.builder.WithObserver<T>();
+            await this.CreateHost().ConfigureAwait(false);
+            await this.host.StartAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -169,9 +169,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
         public async Task RegisterObserverFactoryAsync(IChangeFeedObserverFactory factory)
         {
-            builder.WithObserverFactory(factory);
-            host = await builder.BuildAsync().ConfigureAwait(false);
-            await host.StartAsync().ConfigureAwait(false);
+            this.builder.WithObserverFactory(factory);
+            await this.CreateHost().ConfigureAwait(false);
+            await this.host.StartAsync().ConfigureAwait(false);
         }
 
         /// <summary>Asynchronously shuts down the host instance. This method maintains the leases on all partitions currently held, and enables each 
@@ -179,7 +179,32 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>A task that indicates the host instance has stopped.</returns>
         public async Task UnregisterObserversAsync()
         {
-            await host.StopAsync().ConfigureAwait(false);
+            if(this.host == null)
+            {
+                throw new Exception("No observers were registered");
+            }
+
+            await this.host.StopAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Asynchronously checks the current existing leases and calculates an estimate of remaining work per leased partitions.
+        /// </summary>
+        /// <returns>An estimate amount of remaining documents to be processed</returns>
+        public async Task<long> GetEstimatedRemainingWork()
+        {
+            await this.CreateHost().ConfigureAwait(false);
+            return await this.host.GetEstimatedRemainingWork().ConfigureAwait(false);
+        }
+
+        private async Task CreateHost()
+        {
+            if(this.host != null)
+            {
+                throw new Exception("Host was already initialized.");
+            }
+
+            this.host = await builder.BuildAsync().ConfigureAwait(false);
         }
     }
 }

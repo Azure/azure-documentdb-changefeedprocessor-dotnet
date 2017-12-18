@@ -100,8 +100,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             if (hostName == null) throw new InvalidOperationException("Host name was not specified");
             if (feedCollectionLocation == null) throw new InvalidOperationException(nameof(feedCollectionLocation) + " was not specified");
-            if (observerFactory == null) throw new InvalidOperationException("Observer was not specified");
-
+            
             feedDocumentClient = feedDocumentClient ?? feedCollectionLocation.CreateDocumentClient();
             changeFeedHostOptions = changeFeedHostOptions ?? new ChangeFeedHostOptions();
             changeFeedOptions = changeFeedOptions ?? new ChangeFeedOptions();
