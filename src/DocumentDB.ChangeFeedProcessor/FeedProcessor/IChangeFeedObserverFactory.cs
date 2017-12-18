@@ -1,4 +1,8 @@
-﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
     /// <summary>
     /// Factory class used to create instance(s) of <see cref="IChangeFeedObserver"/>.

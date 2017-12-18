@@ -1,4 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor

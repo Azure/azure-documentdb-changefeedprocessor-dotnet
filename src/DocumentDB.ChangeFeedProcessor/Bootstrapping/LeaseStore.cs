@@ -1,4 +1,8 @@
-﻿using System;
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;

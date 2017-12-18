@@ -1,11 +1,15 @@
-﻿using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
 using Microsoft.Azure.Documents.Client;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
     internal static class DocumentCollectionHelper
     {
-        private const string DefaultUserAgentSuffix = "changefeed-0.3.3"; // TODO: replace with assemblyVersion?
+        private const string DefaultUserAgentSuffix = "changefeed-1.2.0";
 
         public static DocumentCollectionInfo Canonicalize(this DocumentCollectionInfo collectionInfo)
         {
