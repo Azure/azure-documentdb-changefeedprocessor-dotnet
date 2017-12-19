@@ -1,4 +1,8 @@
-﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
 {
     public class PartitionSplitException : PartitionException
     {

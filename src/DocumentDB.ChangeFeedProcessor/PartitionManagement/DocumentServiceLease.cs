@@ -1,4 +1,8 @@
-﻿using System;
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+using System;
 using System.Globalization;
 using Microsoft.Azure.Documents;
 using Newtonsoft.Json;

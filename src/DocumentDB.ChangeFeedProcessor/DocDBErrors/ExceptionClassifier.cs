@@ -1,4 +1,8 @@
-﻿using System.Net;
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+using System.Net;
 using Microsoft.Azure.Documents;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors

@@ -1,4 +1,8 @@
-﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     public interface IPartitionSupervisorFactory
     {

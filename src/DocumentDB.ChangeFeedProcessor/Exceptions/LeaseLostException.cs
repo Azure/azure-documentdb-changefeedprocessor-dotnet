@@ -1,11 +1,14 @@
-﻿using System;
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+using System;
+using System.Runtime.Serialization;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
 {
-#if NETFX
     [Serializable]
-#endif
     public class LeaseLostException : Exception
     {
         /// <summary>Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.</summary>
@@ -35,19 +38,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         {
         }
 
-#if NETFX
         protected LeaseLostException(SerializationInfo info, StreamingContext context) :
             base(info, context)
         {
-            this.Lease = (Lease)info.GetValue("Lease", typeof(Lease));
+            this.Lease = (ILease)info.GetValue("Lease", typeof(ILease));
         }
-#endif
 
         public ILease Lease { get; }
 
         public bool IsGone { get; }
 
-#if NETFX
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
@@ -57,6 +57,5 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
                 info.AddValue("Lease", this.Lease);
             }
         }
-#endif
     }
 }
