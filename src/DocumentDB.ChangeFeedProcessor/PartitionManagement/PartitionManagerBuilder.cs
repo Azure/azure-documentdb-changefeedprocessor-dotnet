@@ -9,6 +9,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents.Client;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
@@ -43,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public async Task<IPartitionManager> BuildPartitionManagerAsync(string hostName, string leasePrefix, IChangeFeedObserverFactory observerFactory,
                                                                         IDocumentClientEx feedDocumentClient, DocumentCollectionInfo feedCollectionInfo,
-                                                                        ChangeFeedHostOptions options)
+                                                                        ChangeFeedOptions options, ChangeFeedHostOptions hostOptions)
         {
             DocumentCollection documentCollection = await leaseDocumentClient.GetDocumentCollectionAsync(leaseCollectionLocation).ConfigureAwait(false);
             string leaseStoreCollectionLink = documentCollection.SelfLink;
@@ -56,14 +57,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             }
 
             string collectionSelfLink = feedCollectionInfo.GetCollectionSelfLink();
-            IChangeFeedObserverFactory factory = new CheckpointerObserverFactory(observerFactory, options.CheckpointFrequency);
-            var synchronizer = new PartitionSynchronizer(feedDocumentClient, collectionSelfLink, leaseManager, options.DegreeOfParallelism, options.QueryPartitionsMaxBatchSize);
+            IChangeFeedObserverFactory factory = new CheckpointerObserverFactory(observerFactory, hostOptions.CheckpointFrequency);
+            var synchronizer = new PartitionSynchronizer(feedDocumentClient, collectionSelfLink, leaseManager, hostOptions.DegreeOfParallelism, hostOptions.QueryPartitionsMaxBatchSize);
             var leaseStore = new LeaseStore(leaseDocumentClient, leaseCollectionLocation, leasePrefix, leaseStoreCollectionLink);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, lockTime, sleepTime);
-            var partitionObserverFactory = new PartitionSupervisorFactory(factory, feedDocumentClient, collectionSelfLink, leaseManager, options);
+            var partitionObserverFactory = new PartitionSupervisorFactory(factory, feedDocumentClient, collectionSelfLink, leaseManager, options, hostOptions);
             var partitionController = new PartitionController(hostName, leaseManager, partitionObserverFactory, synchronizer);
-            var loadBalancingStrategy = new EqualPartitionsBalancingStrategy(hostName, options.MinPartitionCount, options.MaxPartitionCount, options.LeaseExpirationInterval);
-            var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, loadBalancingStrategy, options.LeaseAcquireInterval);
+            var loadBalancingStrategy = new EqualPartitionsBalancingStrategy(hostName, hostOptions.MinPartitionCount, hostOptions.MaxPartitionCount, hostOptions.LeaseExpirationInterval);
+            var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, loadBalancingStrategy, hostOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }
 
