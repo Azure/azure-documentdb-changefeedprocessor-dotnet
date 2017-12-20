@@ -19,35 +19,28 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
     {
         private readonly ILog logger = LogProvider.GetCurrentClassLogger();
         private readonly IDocumentQueryEx<Document> query;
-        private readonly ProcessorSettings settings;
         private readonly IPartitionCheckpointer checkpointer;
         private readonly IChangeFeedObserver observer;
+        private readonly ChangeFeedHostOptions hostOptions;
+        private readonly ChangeFeedOptions options;
 
-        public PartitionProcessor(IChangeFeedObserver observer, IDocumentClientEx documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
+        public PartitionProcessor(IChangeFeedObserver observer, IDocumentClientEx documentClient, string collectionSelfLink, ChangeFeedOptions options, ChangeFeedHostOptions hostOptions, IPartitionCheckpointer checkpointer)
         {
             this.observer = observer;
-            this.settings = settings;
+            this.hostOptions = hostOptions;
+            this.options = options;
             this.checkpointer = checkpointer;
 
-            var options = new ChangeFeedOptions
-            {
-                MaxItemCount = settings.MaxItemCount,
-                PartitionKeyRangeId = settings.PartitionKeyRangeId,
-                //SessionToken = this.changeFeedOptions.SessionToken, // TODO: handle the rest of the parameters
-                //StartFromBeginning = this.changeFeedOptions.StartFromBeginning,
-                RequestContinuation = settings.RequestContinuation
-            };
-
-            query = documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
+            query = documentClient.CreateDocumentChangeFeedQuery(collectionSelfLink, options);
         }
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
-            string requestContinuation = settings.RequestContinuation;
+            string requestContinuation = options.RequestContinuation;
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                TimeSpan retryDelay = settings.FeedPollDelay;
+                TimeSpan retryDelay = hostOptions.FeedPollDelay;
 
                 try
                 {
@@ -55,7 +48,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                 }
                 catch (DocumentClientException clientException)
                 {
-                    logger.WarnException("exception: partition '{0}'", clientException, settings.PartitionKeyRangeId);
+                    logger.WarnException("exception: partition '{0}'", clientException, options.PartitionKeyRangeId);
                     DocDbError docDbError = ExceptionClassifier.ClassifyClientException(clientException);
                     switch (docDbError)
                     {
@@ -75,7 +68,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                     if (cancellationToken.IsCancellationRequested)
                         throw;
 
-                    logger.WarnException("exception: partition '{0}'", canceledException, settings.PartitionKeyRangeId);
+                    logger.WarnException("exception: partition '{0}'", canceledException, options.PartitionKeyRangeId);
                     // ignore as it is caused by DocumentDB client
                 }
 
@@ -99,7 +92,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 
         private Task DispatchChanges(IFeedResponse<Document> response)
         {
-            var context = new ChangeFeedObserverContext(settings.PartitionKeyRangeId, response, checkpointer);
+            var context = new ChangeFeedObserverContext(options.PartitionKeyRangeId, response, checkpointer);
             var docs = new List<Document>(response.Count);
             using (IEnumerator<Document> e = response.GetEnumerator())
             {
