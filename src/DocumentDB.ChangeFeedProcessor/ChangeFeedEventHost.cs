@@ -48,7 +48,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <summary>Asynchronously registers the observer interface implementation with the host.
         /// This method also starts the host and enables it to start participating in the partition distribution process.</summary>
         /// <typeparam name="T">Implementation of your application-specific event observer.</typeparam>
-        /// <returns>A task indicating that the <see cref="DocumentDB.ChangeFeedProcessor.ChangeFeedEventHost" /> instance has started.</returns>
+        /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
         public async Task RegisterObserverAsync<T>() where T : IChangeFeedObserver, new()
         {
             builder.WithObserver<T>();
@@ -61,7 +61,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// This method also starts the host and enables it to start participating in the partition distribution process.
         /// </summary>
         /// <param name="factory">Implementation of your application-specific event observer factory.</param>
-        /// <returns>A task indicating that the <see cref="DocumentDB.ChangeFeedProcessor.ChangeFeedEventHost" /> instance has started.</returns>
+        /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
         public async Task RegisterObserverFactoryAsync(IChangeFeedObserverFactory factory)
         {
             builder.WithObserverFactory(factory);

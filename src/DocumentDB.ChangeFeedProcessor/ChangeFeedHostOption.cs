@@ -17,7 +17,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private static readonly TimeSpan DefaultFeedPollDelay = TimeSpan.FromSeconds(5);
         private const int DefaultQueryPartitionsMaxBatchSize = 100;
 
-        /// <summary>Initializes a new instance of the <see cref="DocumentDB.ChangeFeedProcessor.ChangeFeedHostOptions" /> class.</summary>
+        /// <summary>Initializes a new instance of the <see cref="ChangeFeedHostOptions" /> class.</summary>
         public ChangeFeedHostOptions()
         {
             LeaseRenewInterval = DefaultRenewInterval;
