@@ -193,8 +193,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>An estimate amount of remaining documents to be processed</returns>
         public async Task<long> GetEstimatedRemainingWork()
         {
-            await this.CreateHost().ConfigureAwait(false);
-            return await this.host.GetEstimatedRemainingWork().ConfigureAwait(false);
+            IChangeFeedHost hostForEstimate = await builder.BuildAsync().ConfigureAwait(false);
+            return await hostForEstimate.GetEstimatedRemainingWork().ConfigureAwait(false);
         }
 
         private async Task CreateHost()
