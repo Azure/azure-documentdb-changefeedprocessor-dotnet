@@ -13,5 +13,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         public int? MaxItemCount;
         public string RequestContinuation;
         public TimeSpan FeedPollDelay;
+        public bool StartFromBeginning;
+        public DateTime? StartTime;
+        public string SessionToken;
     }
 }
