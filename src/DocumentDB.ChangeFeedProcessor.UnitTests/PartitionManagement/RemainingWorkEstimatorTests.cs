@@ -69,7 +69,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(collectionSelfLink, It.IsAny<ChangeFeedOptions>()))
                 .Returns(documentQuery);
 
-
             remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, docClient, collectionSelfLink);
         }
 

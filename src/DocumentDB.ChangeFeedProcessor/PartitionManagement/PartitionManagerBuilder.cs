@@ -42,7 +42,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return this;
         }
 
-        public async Task<IPartitionManager> BuildPartitionManagerAsync(string hostName, 
+        public async Task<IChangeFeedProcessor> BuildPartitionManagerAsync(string hostName, 
                                                                         string leasePrefix, 
                                                                         IChangeFeedObserverFactory observerFactory,
                                                                         IDocumentClientEx feedDocumentClient, 

@@ -11,7 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     public interface IPartitionManagerBuilder
     {
-        Task<IPartitionManager> BuildPartitionManagerAsync(string hostName, string leasePrefix, IChangeFeedObserverFactory observerFactory,
-            IDocumentClientEx feedDocumentClient, DocumentCollectionInfo feedCollectionInfo, ChangeFeedOptions changeFeedOptions, ChangeFeedHostOptions options);
+        Task<IChangeFeedProcessor> BuildPartitionManagerAsync(string hostName, string leasePrefix, IChangeFeedObserverFactory observerFactory,
+            IDocumentClientEx feedDocumentClient, DocumentCollectionInfo feedCollectionInfo, ChangeFeedOptions feedOptions, ChangeFeedHostOptions options);
     }
 }

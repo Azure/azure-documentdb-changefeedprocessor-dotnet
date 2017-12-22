@@ -4,6 +4,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
@@ -80,7 +81,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     public class ChangeFeedEventHost
     {
         private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
-        private IChangeFeedHost host;
+        private IChangeFeedProcessor host;
 
         static ChangeFeedEventHost()
         {
@@ -193,8 +194,51 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>An estimate amount of remaining documents to be processed</returns>
         public async Task<long> GetEstimatedRemainingWork()
         {
-            IChangeFeedHost hostForEstimate = await builder.BuildAsync().ConfigureAwait(false);
+            IChangeFeedProcessor hostForEstimate = this.host;
+            if(hostForEstimate == null)
+            {
+                hostForEstimate = await builder.BuildAsync().ConfigureAwait(false);
+            }
+
             return await hostForEstimate.GetEstimatedRemainingWork().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Used for unit testing the <see cref="ChangeFeedEventHost"/>
+        /// </summary>
+        internal ChangeFeedEventHost(string hostName,
+                                   DocumentCollectionInfo feedCollectionLocation,
+                                   DocumentCollectionInfo leaseCollectionLocation,
+                                   IDocumentClientEx feedCollectionClient,
+                                   IDocumentClientEx leaseCollectionClient,
+                                   ILeaseManager leaseManager,
+                                   ChangeFeedHostOptions changeFeedHostOptions)
+        {
+            if (string.IsNullOrEmpty(hostName))
+                throw new ArgumentNullException(nameof(hostName));
+            if (feedCollectionClient == null)
+                throw new ArgumentNullException(nameof(feedCollectionClient));
+            if (leaseCollectionClient == null)
+                throw new ArgumentNullException(nameof(leaseCollectionClient));
+            if (changeFeedHostOptions == null)
+                throw new ArgumentNullException(nameof(changeFeedHostOptions));
+            if (feedCollectionLocation == null)
+                throw new ArgumentNullException(nameof(feedCollectionLocation));
+            if (leaseCollectionLocation == null)
+                throw new ArgumentNullException(nameof(leaseCollectionLocation));
+            if (leaseManager == null)
+                throw new ArgumentNullException(nameof(leaseManager));
+
+            this.builder
+                .WithHostName(hostName)
+                .WithFeedDocumentClient(feedCollectionClient)
+                .WithFeedCollection(feedCollectionLocation)
+                .WithChangeFeedHostOptions(changeFeedHostOptions)
+                .WithPartitionManagerBuilder(
+                    new PartitionManagerBuilder()
+                        .WithLeaseManager(leaseManager)
+                        .WithLeaseCollection(leaseCollectionLocation)
+                        .WithLeaseDocumentClient(leaseCollectionClient));
         }
 
         private async Task CreateHost()
@@ -204,7 +248,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new Exception("Host was already initialized.");
             }
 
-            this.host = await builder.BuildAsync().ConfigureAwait(false);
+            this.host = await builder.BuildForObserverAsync().ConfigureAwait(false);
         }
     }
 }

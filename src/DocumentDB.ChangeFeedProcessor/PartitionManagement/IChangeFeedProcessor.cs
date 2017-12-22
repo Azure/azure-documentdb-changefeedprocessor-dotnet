@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-    public interface IPartitionManager
+    public interface IChangeFeedProcessor
     {
         Task StartAsync();
         Task StopAsync();

@@ -96,7 +96,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public async Task<IChangeFeedHost> BuildAsync()
+        public async Task<IChangeFeedProcessor> BuildForObserverAsync()
+        {
+            if (observerFactory == null) throw new InvalidOperationException("Observer was not specified");
+            return await BuildAsync().ConfigureAwait(false);
+        }
+
+        public async Task<IChangeFeedProcessor> BuildAsync()
         {
             if (hostName == null) throw new InvalidOperationException("Host name was not specified");
             if (feedCollectionLocation == null) throw new InvalidOperationException(nameof(feedCollectionLocation) + " was not specified");
@@ -111,7 +117,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             string optionsPrefix = changeFeedHostOptions.LeasePrefix ?? string.Empty;
             string leasePrefix = string.Format(CultureInfo.InvariantCulture, "{0}{1}_{2}_{3}", optionsPrefix, feedCollectionLocation.Uri.Host, databaseResourceId, collectionResourceId);
 
-            IPartitionManager partitionManager = await partitionManagerBuilder.BuildPartitionManagerAsync(hostName, leasePrefix, observerFactory,
+            IChangeFeedProcessor partitionManager = await partitionManagerBuilder.BuildPartitionManagerAsync(hostName, leasePrefix, observerFactory,
                 feedDocumentClient, feedCollectionLocation, changeFeedOptions, changeFeedHostOptions).ConfigureAwait(false);
             return new ChangeFeedHost(partitionManager);
         }
