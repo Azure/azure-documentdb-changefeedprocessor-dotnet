@@ -52,6 +52,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 
         private bool IsCheckpointNeeded()
         {
+            if(!checkpointFrequency.ProcessedDocumentCount.HasValue && !checkpointFrequency.TimeInterval.HasValue)
+            {
+                return true;
+            }
+
             if (processedDocCount >= checkpointFrequency.ProcessedDocumentCount)
                 return true;
 

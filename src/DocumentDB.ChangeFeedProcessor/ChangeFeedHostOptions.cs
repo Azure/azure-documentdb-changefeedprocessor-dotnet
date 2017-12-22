@@ -25,6 +25,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             LeaseExpirationInterval = DefaultExpirationInterval;
             FeedPollDelay = DefaultFeedPollDelay;
             QueryPartitionsMaxBatchSize = DefaultQueryPartitionsMaxBatchSize;
+            CheckpointFrequency = new CheckpointFrequency();
         }
 
         /// <summary>

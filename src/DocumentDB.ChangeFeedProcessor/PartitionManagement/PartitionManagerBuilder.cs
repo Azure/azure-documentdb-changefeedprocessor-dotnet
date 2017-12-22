@@ -45,13 +45,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                                                                         IDocumentClientEx feedDocumentClient, DocumentCollectionInfo feedCollectionInfo,
                                                                         ChangeFeedHostOptions options)
         {
+            if (leaseCollectionLocation == null) throw new InvalidOperationException(nameof(leaseCollectionLocation) + " was not specified");
+            leaseDocumentClient = leaseDocumentClient ?? leaseCollectionLocation.CreateDocumentClient();
+
             DocumentCollection documentCollection = await leaseDocumentClient.GetDocumentCollectionAsync(leaseCollectionLocation).ConfigureAwait(false);
             string leaseStoreCollectionLink = documentCollection.SelfLink;
 
-            if (this.leaseManager != null)
+            if (this.leaseManager == null)
             {
-                if (leaseCollectionLocation == null) throw new InvalidOperationException(nameof(leaseCollectionLocation) + " was not specified");
-                leaseDocumentClient = leaseDocumentClient ?? leaseCollectionLocation.CreateDocumentClient();
                 this.leaseManager = CreateLeaseManager(leasePrefix, leaseStoreCollectionLink);
             }
 
