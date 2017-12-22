@@ -21,6 +21,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private string hostName;
         private DocumentCollectionInfo feedCollectionLocation;
         private ChangeFeedHostOptions changeFeedHostOptions;
+        private ChangeFeedOptions changeFeedOptions;
         private IDocumentClientEx feedDocumentClient;
         private IChangeFeedObserverFactory observerFactory;
         private string databaseResourceId;
@@ -51,6 +52,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             if (changeFeedHostOptions == null) throw new ArgumentNullException(nameof(changeFeedHostOptions));
             this.changeFeedHostOptions = changeFeedHostOptions;
+            return this;
+        }
+
+        public ChangeFeedHostBuilder WithChangeFeedOptions(ChangeFeedOptions changeFeedOptions)
+        {
+            if (changeFeedOptions == null) throw new ArgumentNullException(nameof(changeFeedOptions));
+            this.changeFeedOptions = changeFeedOptions;
             return this;
         }
 
@@ -96,6 +104,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             feedDocumentClient = feedDocumentClient ?? feedCollectionLocation.CreateDocumentClient();
             changeFeedHostOptions = changeFeedHostOptions ?? new ChangeFeedHostOptions();
+            changeFeedOptions = changeFeedOptions ?? new ChangeFeedOptions();
             databaseResourceId = databaseResourceId ?? await GetDatabaseResourceIdAsync(feedDocumentClient, feedCollectionLocation).ConfigureAwait(false);
             collectionResourceId = collectionResourceId ?? await GetCollectionResourceIdAsync(feedDocumentClient, feedCollectionLocation).ConfigureAwait(false);
             partitionManagerBuilder = partitionManagerBuilder ?? new PartitionManagerBuilder();
@@ -104,7 +113,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             string leasePrefix = string.Format(CultureInfo.InvariantCulture, "{0}{1}_{2}_{3}", optionsPrefix, feedCollectionLocation.Uri.Host, databaseResourceId, collectionResourceId);
 
             IPartitionManager partitionManager = await partitionManagerBuilder.BuildPartitionManagerAsync(hostName, leasePrefix, observerFactory,
-                feedDocumentClient, feedCollectionLocation, changeFeedHostOptions).ConfigureAwait(false);
+                feedDocumentClient, feedCollectionLocation, changeFeedOptions, changeFeedHostOptions).ConfigureAwait(false);
             return new ChangeFeedHost(partitionManager);
         }
 

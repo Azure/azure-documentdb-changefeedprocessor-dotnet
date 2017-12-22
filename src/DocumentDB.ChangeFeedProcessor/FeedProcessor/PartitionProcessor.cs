@@ -33,9 +33,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
             {
                 MaxItemCount = settings.MaxItemCount,
                 PartitionKeyRangeId = settings.PartitionKeyRangeId,
-                //SessionToken = this.changeFeedOptions.SessionToken, // TODO: handle the rest of the parameters
-                //StartFromBeginning = this.changeFeedOptions.StartFromBeginning,
-                RequestContinuation = settings.RequestContinuation
+                SessionToken = settings.SessionToken,
+                StartFromBeginning = settings.StartFromBeginning,
+                RequestContinuation = settings.RequestContinuation,
+                StartTime = settings.StartTime
             };
 
             query = documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
