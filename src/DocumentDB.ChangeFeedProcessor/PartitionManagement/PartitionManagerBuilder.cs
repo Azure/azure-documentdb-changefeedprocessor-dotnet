@@ -42,9 +42,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return this;
         }
 
-        public async Task<IPartitionManager> BuildPartitionManagerAsync(string hostName, string leasePrefix, IChangeFeedObserverFactory observerFactory,
-                                                                        IDocumentClientEx feedDocumentClient, DocumentCollectionInfo feedCollectionInfo,
-                                                                        ChangeFeedOptions changeFeedOptions, ChangeFeedHostOptions options)
+        public async Task<IPartitionManager> BuildPartitionManagerAsync(string hostName, 
+                                                                        string leasePrefix, 
+                                                                        IChangeFeedObserverFactory observerFactory,
+                                                                        IDocumentClientEx feedDocumentClient, 
+                                                                        DocumentCollectionInfo feedCollectionInfo,
+                                                                        ChangeFeedOptions feedOptions, 
+                                                                        ChangeFeedHostOptions options)
         {
             if (leaseCollectionLocation == null) throw new InvalidOperationException(nameof(leaseCollectionLocation) + " was not specified");
             leaseDocumentClient = leaseDocumentClient ?? leaseCollectionLocation.CreateDocumentClient();
@@ -62,7 +66,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             var synchronizer = new PartitionSynchronizer(feedDocumentClient, collectionSelfLink, leaseManager, options.DegreeOfParallelism, options.QueryPartitionsMaxBatchSize);
             var leaseStore = new LeaseStore(leaseDocumentClient, leaseCollectionLocation, leasePrefix, leaseStoreCollectionLink);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, lockTime, sleepTime);
-            var partitionObserverFactory = new PartitionSupervisorFactory(factory, feedDocumentClient, collectionSelfLink, leaseManager, options, changeFeedOptions);
+            var partitionObserverFactory = new PartitionSupervisorFactory(factory, feedDocumentClient, collectionSelfLink, leaseManager, options, feedOptions);
             var partitionController = new PartitionController(hostName, leaseManager, partitionObserverFactory, synchronizer);
             var loadBalancingStrategy = new EqualPartitionsBalancingStrategy(hostName, options.MinPartitionCount, options.MaxPartitionCount, options.LeaseExpirationInterval);
             var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, loadBalancingStrategy, options.LeaseAcquireInterval);

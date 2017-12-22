@@ -93,9 +93,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// </summary>
         /// <param name="hostName">Unique name for this host.</param>
         /// <param name="documentCollectionLocation">Specifies location of the DocumentDB collection to monitor changes for.</param>
-        /// <param name="auxCollectionLocation">Specifies location of auxiliary data for load-balancing instances of <see cref="Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedEventHost" />.</param>
-        public ChangeFeedEventHost(string hostName, DocumentCollectionInfo documentCollectionLocation, DocumentCollectionInfo auxCollectionLocation)
-            : this(hostName, documentCollectionLocation, auxCollectionLocation, new ChangeFeedOptions(), new ChangeFeedHostOptions())
+        /// <param name="leaseCollectionLocation ">Specifies location of auxiliary data for load-balancing instances of <see cref="Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedEventHost" />.</param>
+        public ChangeFeedEventHost(string hostName, DocumentCollectionInfo documentCollectionLocation, DocumentCollectionInfo leaseCollectionLocation)
+            : this(hostName, documentCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), new ChangeFeedHostOptions())
         {
         }
 
