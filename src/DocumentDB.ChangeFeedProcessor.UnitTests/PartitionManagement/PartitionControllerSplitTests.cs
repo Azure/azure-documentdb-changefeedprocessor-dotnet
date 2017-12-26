@@ -225,7 +225,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         private static IChangeFeedObserver MockObserver()
         {
             var mock = new Mock<IChangeFeedObserver>();
-            mock.Setup(observer => observer.OpenAsync(It.IsAny<IChangeFeedObserverContext>()))
+            mock.Setup(observer => observer.OpenAsync(It.IsAny<ChangeFeedObserverContext>()))
                 .Returns(Task.FromResult(false));
             return mock.Object;
         }
