@@ -100,7 +100,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 
         private Task DispatchChanges(IFeedResponse<Document> response)
         {
-            var context = new ChangeFeedObserverContext(settings.PartitionKeyRangeId, response, checkpointer);
+            var context = new ChangeFeedObserverInternalContext(settings.PartitionKeyRangeId, response, checkpointer);
             var docs = new List<Document>(response.Count);
             using (IEnumerator<Document> e = response.GetEnumerator())
             {
