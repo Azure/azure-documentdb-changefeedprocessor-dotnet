@@ -106,9 +106,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(manager => manager.ReleaseAsync(lease))
                 .Returns(Task.FromResult(false));
 
-            changeFeedEventHost = new ChangeFeedEventHost("someHost", collectionInfo, collectionInfo, documentClient, leaseDocumentClient, leaseManager, new ChangeFeedHostOptions());
+            this.changeFeedEventHost = new ChangeFeedEventHost("someHost", collectionInfo, collectionInfo, documentClient, leaseDocumentClient, leaseManager, new ChangeFeedHostOptions());
 
-            observer = Mock.Of<IChangeFeedObserver>();
+            this.observer = Mock.Of<IChangeFeedObserver>();
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
                     .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>()))
@@ -118,7 +118,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(observer => observer.OpenAsync(It.IsAny<IChangeFeedObserverContext>()))
                 .Returns(Task.FromResult(false));
 
-            observerFactory = Mock.Of<IChangeFeedObserverFactory>();
+            this.observerFactory = Mock.Of<IChangeFeedObserverFactory>();
             Mock.Get(observerFactory)
                 .Setup(observer => observer.CreateObserver())
                 .Returns(observer);
@@ -127,15 +127,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         [Fact]
         public async Task RegisterObserver_Then_Estimate()
         {
-            await changeFeedEventHost.RegisterObserverFactoryAsync(observerFactory);
-            await changeFeedEventHost.GetEstimatedRemainingWork();
+            await this.changeFeedEventHost.RegisterObserverFactoryAsync(this.observerFactory);
+            await this.changeFeedEventHost.GetEstimatedRemainingWork();
         }
 
         [Fact]
         public async Task Estimate_Then_RegisterObserver()
         {
-            await changeFeedEventHost.GetEstimatedRemainingWork();
-            await changeFeedEventHost.RegisterObserverFactoryAsync(observerFactory);
+            await this.changeFeedEventHost.GetEstimatedRemainingWork();
+            await this.changeFeedEventHost.RegisterObserverFactoryAsync(this.observerFactory);
         }
     }
 }

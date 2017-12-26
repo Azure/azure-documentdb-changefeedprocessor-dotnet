@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-    interface IRemainingWorkEstimator
+    public interface IRemainingWorkEstimator
     {
         Task<long> GetEstimatedRemainingWork();
     }

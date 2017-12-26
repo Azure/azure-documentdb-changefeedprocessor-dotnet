@@ -11,7 +11,7 @@ using Microsoft.Azure.Documents.Client;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-    internal class RemainingWorkEstimator : IRemainingWorkEstimator
+    public class RemainingWorkEstimator : IRemainingWorkEstimator
     {
         private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
         private readonly IDocumentClientEx feedDocumentClient;
@@ -77,11 +77,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         private static long TryConvertToNumber(string number)
         {
-            if (string.IsNullOrEmpty(number))
-            {
-                return 0;
-            }
-
             long parsed = 0;
             if (!long.TryParse(number, NumberStyles.Any, CultureInfo.InvariantCulture, out parsed))
             {

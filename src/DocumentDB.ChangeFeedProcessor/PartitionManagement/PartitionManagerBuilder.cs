@@ -68,10 +68,33 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, lockTime, sleepTime);
             var partitionObserverFactory = new PartitionSupervisorFactory(factory, feedDocumentClient, collectionSelfLink, leaseManager, options, feedOptions);
             var partitionController = new PartitionController(hostName, leaseManager, partitionObserverFactory, synchronizer);
-            var partitionEstimator = new RemainingWorkEstimator(leaseManager, feedDocumentClient, collectionSelfLink);
+            var partitionEstimator = await this.BuildRemainingWorkEstimatorAsync(leasePrefix, feedDocumentClient, feedCollectionInfo).ConfigureAwait(false);
             var loadBalancingStrategy = new EqualPartitionsBalancingStrategy(hostName, options.MinPartitionCount, options.MaxPartitionCount, options.LeaseExpirationInterval);
             var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, loadBalancingStrategy, options.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer, partitionEstimator);
+        }
+
+        public async Task<IRemainingWorkEstimator> BuildRemainingWorkEstimatorAsync(string leasePrefix,
+                                                                        IDocumentClientEx feedDocumentClient,
+                                                                        DocumentCollectionInfo feedCollectionInfo)
+        {
+            if (this.leaseManager == null)
+            {
+                if (this.leaseCollectionLocation == null)
+                {
+                    throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
+                }
+
+                this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
+
+                DocumentCollection documentCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
+                string leaseStoreCollectionLink = documentCollection.SelfLink;
+
+                this.leaseManager = this.CreateLeaseManager(leasePrefix, leaseStoreCollectionLink);
+            }
+
+            string collectionSelfLink = feedCollectionInfo.GetCollectionSelfLink();
+            return new RemainingWorkEstimator(this.leaseManager, feedDocumentClient, collectionSelfLink);
         }
 
         private DocumentServiceLeaseManager CreateLeaseManager(string leasePrefix, string leaseStoreCollectionLink)

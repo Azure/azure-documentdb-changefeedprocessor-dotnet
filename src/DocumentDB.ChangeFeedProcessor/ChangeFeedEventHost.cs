@@ -197,7 +197,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             IChangeFeedProcessor hostForEstimate = this.host;
             if(hostForEstimate == null)
             {
-                hostForEstimate = await builder.BuildAsync().ConfigureAwait(false);
+                hostForEstimate = await builder.BuildForRemainingWorkEstimateAsync().ConfigureAwait(false);
             }
 
             return await hostForEstimate.GetEstimatedRemainingWork().ConfigureAwait(false);
@@ -248,7 +248,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new Exception("Host was already initialized.");
             }
 
-            this.host = await builder.BuildForObserverAsync().ConfigureAwait(false);
+            this.host = await builder.BuildAsync().ConfigureAwait(false);
         }
     }
 }
