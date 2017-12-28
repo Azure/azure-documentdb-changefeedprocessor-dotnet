@@ -11,16 +11,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// <summary>
     /// The context passed to <see cref="IChangeFeedObserver"/> events.
     /// </summary>
-    internal class ChangeFeedObserverInternalContext : ChangeFeedObserverContext
+    internal class ChangeFeedObserverContextInternal : ChangeFeedObserverContext
     {
         private readonly IPartitionCheckpointer checkpointer;
 
-        internal ChangeFeedObserverInternalContext(string partitionId)
+        internal ChangeFeedObserverContextInternal(string partitionId)
         {
             PartitionKeyRangeId = partitionId;
         }
 
-        internal ChangeFeedObserverInternalContext(string partitionId, IFeedResponse<Document> feedResponse, IPartitionCheckpointer checkpointer)
+        internal ChangeFeedObserverContextInternal(string partitionId, IFeedResponse<Document> feedResponse, IPartitionCheckpointer checkpointer)
         {
             PartitionKeyRangeId = partitionId;
             FeedResponse = feedResponse;

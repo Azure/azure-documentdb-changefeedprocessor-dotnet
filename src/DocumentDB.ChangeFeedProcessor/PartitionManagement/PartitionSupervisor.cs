@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public async Task RunAsync(CancellationToken shutdownToken)
         {
-            var context = new ChangeFeedObserverInternalContext(lease.PartitionId);
+            var context = new ChangeFeedObserverContextInternal(lease.PartitionId);
             await observer.OpenAsync(context).ConfigureAwait(false);
 
             processorCancellation = CancellationTokenSource.CreateLinkedTokenSource(shutdownToken);
