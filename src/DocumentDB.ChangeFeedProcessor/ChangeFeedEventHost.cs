@@ -146,9 +146,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 .WithFeedCollection(feedCollectionLocation)
                 .WithChangeFeedHostOptions(changeFeedHostOptions)
                 .WithChangeFeedOptions(changeFeedOptions)
-                .WithPartitionManagerBuilder(
-                    new PartitionManagerBuilder()
-                        .WithLeaseCollection(leaseCollectionLocation));
+                .WithLeaseCollection(leaseCollectionLocation);
         }
 
         /// <summary>Asynchronously registers the observer interface implementation with the host.
@@ -197,7 +195,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             IChangeFeedProcessor hostForEstimate = this.host;
             if(hostForEstimate == null)
             {
-                hostForEstimate = await builder.BuildForRemainingWorkEstimateAsync().ConfigureAwait(false);
+                hostForEstimate = await builder.BuildEstimatorAsync().ConfigureAwait(false);
             }
 
             return await hostForEstimate.GetEstimatedRemainingWork().ConfigureAwait(false);
@@ -234,11 +232,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 .WithFeedDocumentClient(feedCollectionClient)
                 .WithFeedCollection(feedCollectionLocation)
                 .WithChangeFeedHostOptions(changeFeedHostOptions)
-                .WithPartitionManagerBuilder(
-                    new PartitionManagerBuilder()
-                        .WithLeaseManager(leaseManager)
-                        .WithLeaseCollection(leaseCollectionLocation)
-                        .WithLeaseDocumentClient(leaseCollectionClient));
+                .WithLeaseManager(leaseManager)
+                .WithLeaseCollection(leaseCollectionLocation)
+                .WithLeaseDocumentClient(leaseCollectionClient);
         }
 
         private async Task CreateHost()

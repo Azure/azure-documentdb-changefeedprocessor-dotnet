@@ -7,19 +7,17 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-    internal class PartitionManager : IChangeFeedProcessor
+    internal class PartitionManager : IPartitionManager
     {
         private readonly IBootstrapper bootstrapper;
         private readonly IPartitionController partitionController;
         private readonly IPartitionLoadBalancer partitionLoadBalancer;
-        private readonly IRemainingWorkEstimator remainingWorkEstimator;
 
-        public PartitionManager(IBootstrapper bootstrapper, IPartitionController partitionController, IPartitionLoadBalancer partitionLoadBalancer, IRemainingWorkEstimator remainingWorkEstimator)
+        public PartitionManager(IBootstrapper bootstrapper, IPartitionController partitionController, IPartitionLoadBalancer partitionLoadBalancer)
         {
             this.bootstrapper = bootstrapper;
             this.partitionController = partitionController;
             this.partitionLoadBalancer = partitionLoadBalancer;
-            this.remainingWorkEstimator = remainingWorkEstimator;
         }
 
         public async Task StartAsync()
@@ -33,11 +31,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             await this.partitionLoadBalancer.StopAsync().ConfigureAwait(false);
             await this.partitionController.ShutdownAsync().ConfigureAwait(false);
-        }
-
-        public async Task<long> GetEstimatedRemainingWork()
-        {
-            return await this.remainingWorkEstimator.GetEstimatedRemainingWork().ConfigureAwait(false);
         }
     }
 }

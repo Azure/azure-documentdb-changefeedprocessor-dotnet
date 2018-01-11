@@ -10,12 +10,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     internal class ChangeFeedHost : IChangeFeedProcessor
     {
-        private readonly IChangeFeedProcessor partitionManager;
+        private readonly IPartitionManager partitionManager;
+        private readonly IRemainingWorkEstimator remainingWorkEstimator;
 
-        public ChangeFeedHost(IChangeFeedProcessor partitionManager)
+        public ChangeFeedHost(IPartitionManager partitionManager, IRemainingWorkEstimator remainingWorkEstimator)
         {
-            if (partitionManager == null) throw new ArgumentNullException(nameof(partitionManager));
+            if (partitionManager == null)
+            {
+                throw new ArgumentNullException(nameof(partitionManager));
+            }
+
+            if (remainingWorkEstimator == null)
+            {
+                throw new ArgumentNullException(nameof(remainingWorkEstimator));
+            }
+
             this.partitionManager = partitionManager;
+            this.remainingWorkEstimator = remainingWorkEstimator;
         }
 
         public async Task StartAsync()
@@ -30,7 +41,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         public async Task<long> GetEstimatedRemainingWork()
         {
-            return await this.partitionManager.GetEstimatedRemainingWork().ConfigureAwait(false);
+            return await this.remainingWorkEstimator.GetEstimatedRemainingWork().ConfigureAwait(false);
         }
     }
 }
