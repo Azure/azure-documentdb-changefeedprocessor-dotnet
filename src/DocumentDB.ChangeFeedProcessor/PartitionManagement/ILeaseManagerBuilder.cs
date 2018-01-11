@@ -7,7 +7,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-    public interface ILeaseManagerBuilder
+    internal interface ILeaseManagerBuilder
     {
         Task<ILeaseManager> BuildAsync();
         LeaseManagerBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation);

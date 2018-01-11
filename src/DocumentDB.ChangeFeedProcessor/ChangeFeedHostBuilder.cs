@@ -166,6 +166,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return new ChangeFeedEstimateHost(remainingWorkEstimator);
         }
 
+        private static async Task<string> GetDatabaseResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
+        {
+            logger.InfoFormat("Reading database: '{0}'", collectionLocation.DatabaseName);
+            Uri databaseUri = UriFactory.CreateDatabaseUri(collectionLocation.DatabaseName);
+            Database database = await documentClient.ReadDatabaseAsync(databaseUri, null).ConfigureAwait(false);
+            return database.ResourceId;
+        }
+
+        private static async Task<string> GetCollectionResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
+        {
+            logger.InfoFormat("Reading collection: '{0}'", collectionLocation.CollectionName);
+            DocumentCollection documentCollection = await documentClient.GetDocumentCollectionAsync(collectionLocation).ConfigureAwait(false);
+            return documentCollection.ResourceId;
+        }
+
         private async Task<IPartitionManager> BuildPartitionManagerAsync(ILeaseManager leaseManager)
         {
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
@@ -206,20 +221,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return string.Format(CultureInfo.InvariantCulture, "{0}{1}_{2}_{3}", optionsPrefix, this.feedCollectionLocation.Uri.Host, this.databaseResourceId, this.collectionResourceId);
         }
 
-        private static async Task<string> GetDatabaseResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
-        {
-            logger.InfoFormat("Reading database: '{0}'", collectionLocation.DatabaseName);
-            Uri databaseUri = UriFactory.CreateDatabaseUri(collectionLocation.DatabaseName);
-            Database database = await documentClient.ReadDatabaseAsync(databaseUri, null).ConfigureAwait(false);
-            return database.ResourceId;
-        }
 
-        private static async Task<string> GetCollectionResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
-        {
-            logger.InfoFormat("Reading collection: '{0}'", collectionLocation.CollectionName);
-            DocumentCollection documentCollection = await documentClient.GetDocumentCollectionAsync(collectionLocation).ConfigureAwait(false);
-            return documentCollection.ResourceId;
-        }
 
         private async Task InitializeCollectionPropertiesForBuildAsync()
         {

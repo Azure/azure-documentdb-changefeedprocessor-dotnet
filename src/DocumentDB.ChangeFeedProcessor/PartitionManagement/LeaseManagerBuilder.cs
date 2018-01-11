@@ -9,7 +9,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-    public class LeaseManagerBuilder : ILeaseManagerBuilder
+    internal class LeaseManagerBuilder : ILeaseManagerBuilder
     {
         private DocumentCollectionInfo leaseCollectionLocation;
         private IDocumentClientEx leaseDocumentClient;
