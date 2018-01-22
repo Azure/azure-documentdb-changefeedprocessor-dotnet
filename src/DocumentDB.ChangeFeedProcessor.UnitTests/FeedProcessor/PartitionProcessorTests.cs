@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Moq;
 using Xunit;
@@ -168,6 +169,51 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                             It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
                             It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents))),
                     Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_ShouldDecreaseMaxItemCountWhenNeeded()
+        {
+            var documents2 = new List<Document> { new Document(), new Document() };
+
+            var feedResponse2 = Mock.Of<IFeedResponse<Document>>();
+            Mock.Get(feedResponse2)
+                .Setup(response => response.Count)
+                .Returns(documents2.Count);
+            Mock.Get(feedResponse2)
+                .Setup(response => response.ResponseContinuation)
+                .Returns("token");
+            Mock.Get(feedResponse2)
+                .Setup(response => response.GetEnumerator())
+                .Returns(documents2.GetEnumerator());
+
+            Mock.Get(documentQuery)
+                .Reset();
+            Mock.Get(documentQuery)
+                .SetupSequence(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.BadRequestException", 1, "Reduce page size and try again."))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.BadRequestException", 1, "Reduce page size and try again."))
+                .ReturnsAsync(feedResponse)     // Call with maxItemCount = 1.
+                .ReturnsAsync(feedResponse2);   // After restoring query to take default item count.
+
+            int observerCallCount = 0;
+            Mock.Get(observer)
+                .Setup(feedObserver => feedObserver
+                    .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>()))
+                .Returns(Task.FromResult(false))
+                .Callback(() => { if (observerCallCount++ != 0) cancellationTokenSource.Cancel(); });
+
+            await Assert.ThrowsAsync<TaskCanceledException>(() => sut.RunAsync(cancellationTokenSource.Token));
+
+            Mock.Get(documentQuery)
+                .Verify(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)), Times.Exactly(4));
+
+            Mock.Get(observer)
+                .Verify(feedObserver => feedObserver
+                        .ProcessChangesAsync(
+                            It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<IReadOnlyList<Document>>(list => list.Count == 1 ? list.SequenceEqual(documents) : list.SequenceEqual(documents2))),
+                    Times.Exactly(2));
         }
     }
 }

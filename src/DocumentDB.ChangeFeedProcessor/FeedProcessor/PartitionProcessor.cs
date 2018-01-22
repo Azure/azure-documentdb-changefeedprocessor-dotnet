@@ -17,29 +17,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
     internal class PartitionProcessor : IPartitionProcessor
     {
+        private static readonly int DefaiultMaxItemCount = 100;
         private readonly ILog logger = LogProvider.GetCurrentClassLogger();
-        private readonly IDocumentQueryEx<Document> query;
+        private readonly IDocumentClientEx documentClient;
         private readonly ProcessorSettings settings;
         private readonly IPartitionCheckpointer checkpointer;
         private readonly IChangeFeedObserver observer;
+        private IDocumentQueryEx<Document> query;
+        private int? maxItemCount;
 
         public PartitionProcessor(IChangeFeedObserver observer, IDocumentClientEx documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
         {
+            this.documentClient = documentClient;
             this.observer = observer;
             this.settings = settings;
             this.checkpointer = checkpointer;
-
-            var options = new ChangeFeedOptions
-            {
-                MaxItemCount = settings.MaxItemCount,
-                PartitionKeyRangeId = settings.PartitionKeyRangeId,
-                SessionToken = settings.SessionToken,
-                StartFromBeginning = settings.StartFromBeginning,
-                RequestContinuation = settings.RequestContinuation,
-                StartTime = settings.StartTime
-            };
-
-            query = documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
+            this.maxItemCount = settings.MaxItemCount;
+            this.query = CreateChangeFeedQuery();
         }
 
         public async Task RunAsync(CancellationToken cancellationToken)
@@ -66,6 +60,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                             throw new PartitionSplitException(requestContinuation);
                         case DocDbError.Undefined:
                             throw;
+                        case DocDbError.MaxItemCountTooLarge:
+                            if (!maxItemCount.HasValue) maxItemCount = DefaiultMaxItemCount;
+                            else if (maxItemCount <= 1)
+                            {
+                                logger.ErrorFormat("Cannot reduce maxItemCount further as it's already at {0}.", maxItemCount);
+                                throw;
+                            }
+
+                            maxItemCount /= 2;
+                            logger.WarnFormat("Reducing maxItemCount, new value: {0}.", maxItemCount);
+
+                            query = CreateChangeFeedQuery();
+                            break;
                     }
 
                     if (clientException.RetryAfter != TimeSpan.Zero)
@@ -80,9 +87,31 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                     // ignore as it is caused by DocumentDB client
                 }
 
+                if (maxItemCount != settings.MaxItemCount)
+                {
+                    maxItemCount = settings.MaxItemCount;
+                    query = CreateChangeFeedQuery();   // Reset query to default after reducing max item count.
+                }
+
                 await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
             }
         }
+
+        private IDocumentQueryEx<Document> CreateChangeFeedQuery()
+        {
+            var options = new ChangeFeedOptions
+            {
+                MaxItemCount = this.maxItemCount,
+                PartitionKeyRangeId = settings.PartitionKeyRangeId,
+                SessionToken = settings.SessionToken,
+                StartFromBeginning = settings.StartFromBeginning,
+                RequestContinuation = settings.RequestContinuation,
+                StartTime = settings.StartTime
+            };
+
+            return this.documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
+        }
+
 
         private async Task<string> ProcessBatch(CancellationToken cancellation)
         {

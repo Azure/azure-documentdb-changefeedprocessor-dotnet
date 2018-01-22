@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
             return CreateException("Microsoft.Azure.Documents.RequestRateTooLargeException", 1);
         }
 
-        public static Exception CreateException(string exceptionType, int subStatusCode)
+        public static Exception CreateException(string exceptionType, int subStatusCode, string message = "")
         {
             Type t = typeof(DocumentClientException)
                 .Assembly.GetType(exceptionType);
@@ -40,7 +40,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
 
             object ex = t.GetConstructor(
                 BindingFlags.Public | BindingFlags.Instance,
-                null, new[] { typeof(string), typeof(HttpResponseHeaders), typeof(Uri) }, null).Invoke(new object[] { "", httpResponseHeaders, null });
+                null, new[] { typeof(string), typeof(HttpResponseHeaders), typeof(Uri) }, null)
+                .Invoke(new object[] { message, httpResponseHeaders, null });
             return ex as Exception;
         }
 
