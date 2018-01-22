@@ -138,7 +138,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                 StartTime = settings.StartTime
             };
 
-            return this.documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
+            return documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
         }
     }
 }
