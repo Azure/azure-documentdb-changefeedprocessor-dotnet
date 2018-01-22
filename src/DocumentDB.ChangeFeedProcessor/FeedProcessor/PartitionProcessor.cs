@@ -17,7 +17,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
     internal class PartitionProcessor : IPartitionProcessor
     {
-        private static readonly int DefaiultMaxItemCount = 100;
+        private static readonly int DefaultMaxItemCount = 100;
         private readonly ILog logger = LogProvider.GetCurrentClassLogger();
         private readonly IDocumentClientEx documentClient;
         private readonly ProcessorSettings settings;
@@ -61,7 +61,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                         case DocDbError.Undefined:
                             throw;
                         case DocDbError.MaxItemCountTooLarge:
-                            if (!maxItemCount.HasValue) maxItemCount = DefaiultMaxItemCount;
+                            if (!maxItemCount.HasValue) maxItemCount = DefaultMaxItemCount;
                             else if (maxItemCount <= 1)
                             {
                                 logger.ErrorFormat("Cannot reduce maxItemCount further as it's already at {0}.", maxItemCount);
