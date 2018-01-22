@@ -97,22 +97,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
             }
         }
 
-        private IDocumentQueryEx<Document> CreateChangeFeedQuery()
-        {
-            var options = new ChangeFeedOptions
-            {
-                MaxItemCount = this.maxItemCount,
-                PartitionKeyRangeId = settings.PartitionKeyRangeId,
-                SessionToken = settings.SessionToken,
-                StartFromBeginning = settings.StartFromBeginning,
-                RequestContinuation = settings.RequestContinuation,
-                StartTime = settings.StartTime
-            };
-
-            return this.documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
-        }
-
-
         private async Task<string> ProcessBatch(CancellationToken cancellation)
         {
             string lastContinuation;
@@ -140,6 +124,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
             }
 
             return observer.ProcessChangesAsync(context, docs);
+        }
+
+        private IDocumentQueryEx<Document> CreateChangeFeedQuery()
+        {
+            var options = new ChangeFeedOptions
+            {
+                MaxItemCount = maxItemCount,
+                PartitionKeyRangeId = settings.PartitionKeyRangeId,
+                SessionToken = settings.SessionToken,
+                StartFromBeginning = settings.StartFromBeginning,
+                RequestContinuation = settings.RequestContinuation,
+                StartTime = settings.StartTime
+            };
+
+            return this.documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
         }
     }
 }
