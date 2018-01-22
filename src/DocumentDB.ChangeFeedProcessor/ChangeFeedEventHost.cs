@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     ///   - New instance takes leases from existing instances to make distribution equal.
     ///   - If an instance dies, the leases are distributed across remaining instances.
     /// It's useful for scenario when partition count is high so that one host/VM is not capable of processing that many change feed events.
-    /// Client application needs to implement <see cref="Microsoft.Azure.Documents.ChangeFeedProcessor.IChangeFeedObserver"/> and register processor implementation with ChangeFeedEventHost.
+    /// Client application needs to implement <see cref="IChangeFeedObserver"/> and register processor implementation with ChangeFeedEventHost.
     /// </summary>
     /// <remarks>
     /// It uses auxiliary document collection for managing leases for a partition.
@@ -80,8 +80,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// </example>
     public class ChangeFeedEventHost
     {
-        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
-        private IChangeFeedProcessor host;
+        internal readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+        private IChangeFeedHost host;
 
         static ChangeFeedEventHost()
         {
@@ -178,7 +178,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>A task that indicates the host instance has stopped.</returns>
         public async Task UnregisterObserversAsync()
         {
-            if(this.host == null)
+            if (this.host == null)
             {
                 throw new Exception("No observers were registered");
             }
@@ -192,59 +192,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>An estimate amount of remaining documents to be processed</returns>
         public async Task<long> GetEstimatedRemainingWork()
         {
-            IChangeFeedProcessor hostForEstimate = this.host;
-            if(hostForEstimate == null)
+            IChangeFeedHost hostForEstimate = this.host;
+            if (hostForEstimate == null)
             {
-                hostForEstimate = await builder.BuildEstimatorAsync().ConfigureAwait(false);
+                hostForEstimate = await this.builder.BuildEstimatorAsync().ConfigureAwait(false);
             }
 
             return await hostForEstimate.GetEstimatedRemainingWork().ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Used for unit testing the <see cref="ChangeFeedEventHost"/>
-        /// </summary>
-        internal ChangeFeedEventHost(string hostName,
-                                   DocumentCollectionInfo feedCollectionLocation,
-                                   DocumentCollectionInfo leaseCollectionLocation,
-                                   IDocumentClientEx feedCollectionClient,
-                                   IDocumentClientEx leaseCollectionClient,
-                                   ILeaseManager leaseManager,
-                                   ChangeFeedHostOptions changeFeedHostOptions)
-        {
-            if (string.IsNullOrEmpty(hostName))
-                throw new ArgumentNullException(nameof(hostName));
-            if (feedCollectionClient == null)
-                throw new ArgumentNullException(nameof(feedCollectionClient));
-            if (leaseCollectionClient == null)
-                throw new ArgumentNullException(nameof(leaseCollectionClient));
-            if (changeFeedHostOptions == null)
-                throw new ArgumentNullException(nameof(changeFeedHostOptions));
-            if (feedCollectionLocation == null)
-                throw new ArgumentNullException(nameof(feedCollectionLocation));
-            if (leaseCollectionLocation == null)
-                throw new ArgumentNullException(nameof(leaseCollectionLocation));
-            if (leaseManager == null)
-                throw new ArgumentNullException(nameof(leaseManager));
-
-            this.builder
-                .WithHostName(hostName)
-                .WithFeedDocumentClient(feedCollectionClient)
-                .WithFeedCollection(feedCollectionLocation)
-                .WithChangeFeedHostOptions(changeFeedHostOptions)
-                .WithLeaseManager(leaseManager)
-                .WithLeaseCollection(leaseCollectionLocation)
-                .WithLeaseDocumentClient(leaseCollectionClient);
-        }
-
         private async Task CreateHost()
         {
-            if(this.host != null)
+            if (this.host != null)
             {
                 throw new Exception("Host was already initialized.");
             }
 
-            this.host = await builder.BuildAsync().ConfigureAwait(false);
+            this.host = await this.builder.BuildAsync().ConfigureAwait(false);
         }
     }
 }

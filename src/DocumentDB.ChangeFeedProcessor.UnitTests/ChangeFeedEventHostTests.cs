@@ -17,6 +17,27 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 {
+    public class ChangeFeedEventHostInternal: ChangeFeedEventHost
+    {
+        public ChangeFeedEventHostInternal(string hostName,
+                                   DocumentCollectionInfo feedCollectionLocation,
+                                   DocumentCollectionInfo leaseCollectionLocation,
+                                   IDocumentClientEx feedCollectionClient,
+                                   IDocumentClientEx leaseCollectionClient,
+                                   ILeaseManager leaseManager,
+                                   ChangeFeedHostOptions changeFeedHostOptions): base(hostName, feedCollectionLocation, leaseCollectionLocation)
+        {
+            this.builder
+                .WithHostName(hostName)
+                .WithFeedDocumentClient(feedCollectionClient)
+                .WithFeedCollection(feedCollectionLocation)
+                .WithChangeFeedHostOptions(changeFeedHostOptions)
+                .WithLeaseManager(leaseManager)
+                .WithLeaseCollection(leaseCollectionLocation)
+                .WithLeaseDocumentClient(leaseCollectionClient);
+        }
+    }
+
     public class ChangeFeedEventHostTests
     {
         private const string collectionLink = "Collection link";
@@ -106,7 +127,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(manager => manager.ReleaseAsync(lease))
                 .Returns(Task.FromResult(false));
 
-            this.changeFeedEventHost = new ChangeFeedEventHost("someHost", collectionInfo, collectionInfo, documentClient, leaseDocumentClient, leaseManager, new ChangeFeedHostOptions());
+            this.changeFeedEventHost = new ChangeFeedEventHostInternal("someHost", collectionInfo, collectionInfo, documentClient, leaseDocumentClient, leaseManager, new ChangeFeedHostOptions());
 
             this.observer = Mock.Of<IChangeFeedObserver>();
             Mock.Get(observer)

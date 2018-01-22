@@ -72,7 +72,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             if (this.leaseStoreCollectionLink == null)
             {
                 DocumentCollection documentCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
-                string leaseStoreCollectionLink = documentCollection.SelfLink;
+                this.leaseStoreCollectionLink = documentCollection.SelfLink;
             }
 
             var updater = new DocumentServiceLeaseUpdater(this.leaseDocumentClient);

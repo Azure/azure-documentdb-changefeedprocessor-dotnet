@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-    public interface IChangeFeedProcessor: IRemainingWorkEstimator
+    internal interface IChangeFeedProcessor
     {
         Task StartAsync();
+
         Task StopAsync();
     }
 }

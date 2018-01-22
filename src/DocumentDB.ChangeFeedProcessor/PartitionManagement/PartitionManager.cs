@@ -7,7 +7,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-    internal class PartitionManager : IPartitionManager
+    internal class PartitionManager : IChangeFeedProcessor
     {
         private readonly IBootstrapper bootstrapper;
         private readonly IPartitionController partitionController;

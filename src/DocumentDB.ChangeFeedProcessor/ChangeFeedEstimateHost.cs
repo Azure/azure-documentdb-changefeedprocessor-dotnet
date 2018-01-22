@@ -8,13 +8,17 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal class ChangeFeedEstimateHost : IChangeFeedProcessor
+    internal class ChangeFeedEstimateHost : IChangeFeedHost
     {
         private readonly IRemainingWorkEstimator remainingWorkEstimator;
 
         public ChangeFeedEstimateHost(IRemainingWorkEstimator remainingWorkEstimator)
         {
-            if (remainingWorkEstimator == null) throw new ArgumentNullException(nameof(remainingWorkEstimator));
+            if (remainingWorkEstimator == null)
+            {
+                throw new ArgumentNullException(nameof(remainingWorkEstimator));
+            }
+
             this.remainingWorkEstimator = remainingWorkEstimator;
         }
 

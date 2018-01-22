@@ -2,6 +2,7 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ using Microsoft.Azure.Documents.Client;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-    public class RemainingWorkEstimator : IRemainingWorkEstimator
+    internal class RemainingWorkEstimator : IRemainingWorkEstimator
     {
         private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
         private readonly IDocumentClientEx feedDocumentClient;
@@ -21,6 +22,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public RemainingWorkEstimator(ILeaseManager leaseManager, IDocumentClientEx feedDocumentClient, string collectionSelfLink)
         {
+            if (leaseManager == null)
+            {
+                throw new ArgumentNullException(nameof(leaseManager));
+            }
+
+            if (string.IsNullOrEmpty(collectionSelfLink))
+            {
+                throw new ArgumentNullException(nameof(collectionSelfLink));
+            }
+
+            if (feedDocumentClient == null)
+            {
+                throw new ArgumentNullException(nameof(feedDocumentClient));
+            }
+
             this.leaseManager = leaseManager;
             this.collectionSelfLink = collectionSelfLink;
             this.feedDocumentClient = feedDocumentClient;

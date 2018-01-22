@@ -16,7 +16,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    public class ChangeFeedHostBuilder
+    internal class ChangeFeedHostBuilder
     {
         private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
         private string hostName;
@@ -115,7 +115,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public async Task<IChangeFeedProcessor> BuildAsync()
+        public async Task<IChangeFeedHost> BuildAsync()
         {
             if (this.hostName == null)
             {
@@ -141,12 +141,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             ILeaseManager leaseManager = await this.GetLeaseManagerAsync().ConfigureAwait(false);
 
-            IPartitionManager partitionManager = await this.BuildPartitionManagerAsync(leaseManager).ConfigureAwait(false);
+            IChangeFeedProcessor partitionManager = await this.BuildPartitionManagerAsync(leaseManager).ConfigureAwait(false);
             IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink());
             return new ChangeFeedHost(partitionManager, remainingWorkEstimator);
         }
 
-        internal async Task<IChangeFeedProcessor> BuildEstimatorAsync()
+        internal async Task<IChangeFeedHost> BuildEstimatorAsync()
         {
             if (this.feedCollectionLocation == null)
             {
@@ -181,7 +181,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return documentCollection.ResourceId;
         }
 
-        private async Task<IPartitionManager> BuildPartitionManagerAsync(ILeaseManager leaseManager)
+        private async Task<IChangeFeedProcessor> BuildPartitionManagerAsync(ILeaseManager leaseManager)
         {
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
 
@@ -202,7 +202,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         private async Task<ILeaseManager> GetLeaseManagerAsync()
         {
-
             if (this.leaseManager == null)
             {
                 string leasePrefix = this.GetLeasePrefix();
@@ -220,8 +219,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             string optionsPrefix = this.changeFeedHostOptions.LeasePrefix ?? string.Empty;
             return string.Format(CultureInfo.InvariantCulture, "{0}{1}_{2}_{3}", optionsPrefix, this.feedCollectionLocation.Uri.Host, this.databaseResourceId, this.collectionResourceId);
         }
-
-
 
         private async Task InitializeCollectionPropertiesForBuildAsync()
         {

@@ -8,12 +8,12 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal class ChangeFeedHost : IChangeFeedProcessor
+    internal class ChangeFeedHost : IChangeFeedHost
     {
-        private readonly IPartitionManager partitionManager;
+        private readonly IChangeFeedProcessor partitionManager;
         private readonly IRemainingWorkEstimator remainingWorkEstimator;
 
-        public ChangeFeedHost(IPartitionManager partitionManager, IRemainingWorkEstimator remainingWorkEstimator)
+        public ChangeFeedHost(IChangeFeedProcessor partitionManager, IRemainingWorkEstimator remainingWorkEstimator)
         {
             if (partitionManager == null)
             {

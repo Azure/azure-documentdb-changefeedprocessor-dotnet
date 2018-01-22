@@ -2,13 +2,11 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System.Threading.Tasks;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal interface IPartitionManager
+    internal interface IChangeFeedHost: IChangeFeedProcessor, IRemainingWorkEstimator
     {
-        Task StartAsync();
-        Task StopAsync();
     }
 }
