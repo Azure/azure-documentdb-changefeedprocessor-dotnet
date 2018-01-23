@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         /// </summary>
         /// <param name="context">The context specifying partition for this observer, etc.</param>
         /// <returns>A Task to allow asynchronous execution.</returns>
-        Task OpenAsync(IChangeFeedObserverContext context);
+        Task OpenAsync(ChangeFeedObserverContext context);
 
         /// <summary>
         /// This is called when change feed observer is closed.
@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         /// <param name="context">The context specifying partition for this observer, etc.</param>
         /// <param name="reason">Specifies the reason the observer is closed.</param>
         /// <returns>A Task to allow asynchronous execution.</returns>
-        Task CloseAsync(IChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason);
+        Task CloseAsync(ChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason);
 
         /// <summary>
         /// This is called when document changes are available on change feed.
@@ -34,6 +34,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         /// <param name="context">The context specifying partition for this change event, etc.</param>
         /// <param name="docs">The documents changed.</param>
         /// <returns>A Task to allow asynchronous execution.</returns>
-        Task ProcessChangesAsync(IChangeFeedObserverContext context, IReadOnlyList<Document> docs);
+        Task ProcessChangesAsync(ChangeFeedObserverContext context, IReadOnlyList<Document> docs);
     }
 }

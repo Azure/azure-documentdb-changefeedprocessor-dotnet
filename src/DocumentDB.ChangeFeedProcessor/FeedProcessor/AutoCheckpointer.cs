@@ -27,17 +27,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
             this.observer = observer;
         }
 
-        public Task OpenAsync(IChangeFeedObserverContext context)
+        public Task OpenAsync(ChangeFeedObserverContext context)
         {
             return observer.OpenAsync(context);
         }
 
-        public Task CloseAsync(IChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
+        public Task CloseAsync(ChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
         {
             return observer.CloseAsync(context, reason);
         }
 
-        public async Task ProcessChangesAsync(IChangeFeedObserverContext context, IReadOnlyList<Document> docs)
+        public async Task ProcessChangesAsync(ChangeFeedObserverContext context, IReadOnlyList<Document> docs)
         {
             await observer.ProcessChangesAsync(context, docs).ConfigureAwait(false);
             processedDocCount += docs.Count;

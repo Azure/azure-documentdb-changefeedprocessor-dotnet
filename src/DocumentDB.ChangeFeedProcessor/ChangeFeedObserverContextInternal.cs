@@ -11,17 +11,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// <summary>
     /// The context passed to <see cref="IChangeFeedObserver"/> events.
     /// </summary>
-    public abstract class ChangeFeedObserverContext
+    internal class ChangeFeedObserverContextInternal : ChangeFeedObserverContext
     {
-        /// <summary>
-        /// Gets the id of the partition for current event.
-        /// </summary>
-        public string PartitionKeyRangeId { get; protected set; }
+        private readonly IPartitionCheckpointer checkpointer;
 
-        /// <summary>
-        /// The response from the underlying <see cref="Microsoft.Azure.Documents.Linq.IDocumentQuery&lt;T&gt;.ExecuteNextAsync"/> call.
-        /// </summary>
-        public IFeedResponse<Document> FeedResponse { get; protected set; }
+        internal ChangeFeedObserverContextInternal(string partitionId)
+        {
+            PartitionKeyRangeId = partitionId;
+        }
+
+        internal ChangeFeedObserverContextInternal(string partitionId, IFeedResponse<Document> feedResponse, IPartitionCheckpointer checkpointer)
+        {
+            PartitionKeyRangeId = partitionId;
+            FeedResponse = feedResponse;
+            this.checkpointer = checkpointer;
+        }
 
         /// <summary>
         /// Checkpoints progress of a stream. This method is valid only if manual checkpoint was configured. 
@@ -30,6 +34,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// In case of automatic checkpointing this is method throws.
         /// </summary>
         /// <exception cref="Exceptions.LeaseLostException">Thrown if other host acquired the lease or the lease was deleted</exception>
-        public abstract Task CheckpointAsync();
+        public override Task CheckpointAsync()
+        {
+            return checkpointer.CheckpointPartitionAsync(FeedResponse.ResponseContinuation);
+        }
     }
 }
