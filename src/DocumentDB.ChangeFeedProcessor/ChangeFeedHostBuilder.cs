@@ -145,7 +145,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return new ChangeFeedProcessor(partitionManager);
         }
 
-        internal async Task<IRemainingWorkEstimator> BuildEstimatorAsync()
+        public async Task<IRemainingWorkEstimator> BuildEstimatorAsync()
         {
             if (this.feedCollectionLocation == null)
             {

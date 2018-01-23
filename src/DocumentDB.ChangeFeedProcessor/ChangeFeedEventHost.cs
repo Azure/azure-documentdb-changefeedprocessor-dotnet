@@ -81,8 +81,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     public class ChangeFeedEventHost
     {
         protected readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
-        private IChangeFeedProcessor host;
-        private IRemainingWorkEstimator hostForEstimate;
+        private IChangeFeedProcessor processor;
+        private IRemainingWorkEstimator remainingWorkEstimator;
 
         static ChangeFeedEventHost()
         {
@@ -158,7 +158,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             this.builder.WithObserver<T>();
             await this.CreateHost().ConfigureAwait(false);
-            await this.host.StartAsync().ConfigureAwait(false);
+            await this.processor.StartAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             this.builder.WithObserverFactory(factory);
             await this.CreateHost().ConfigureAwait(false);
-            await this.host.StartAsync().ConfigureAwait(false);
+            await this.processor.StartAsync().ConfigureAwait(false);
         }
 
         /// <summary>Asynchronously shuts down the host instance. This method maintains the leases on all partitions currently held, and enables each 
@@ -179,9 +179,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>A task that indicates the host instance has stopped.</returns>
         public async Task UnregisterObserversAsync()
         {
-            if (this.host == null) throw new Exception("No observers were registered");
+            if (this.processor == null) throw new Exception("No observers were registered");
 
-            await this.host.StopAsync().ConfigureAwait(false);
+            await this.processor.StopAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -190,19 +190,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>An estimate amount of remaining documents to be processed</returns>
         public async Task<long> GetEstimatedRemainingWork()
         {
-            if (this.hostForEstimate == null)
+            if (this.remainingWorkEstimator == null)
             {
-                this.hostForEstimate = await this.builder.BuildEstimatorAsync().ConfigureAwait(false);
+                this.remainingWorkEstimator = await this.builder.BuildEstimatorAsync().ConfigureAwait(false);
             }
 
-            return await this.hostForEstimate.GetEstimatedRemainingWork().ConfigureAwait(false);
+            return await this.remainingWorkEstimator.GetEstimatedRemainingWork().ConfigureAwait(false);
         }
 
         private async Task CreateHost()
         {
-            if (this.host != null) throw new Exception("Host was already initialized.");
+            if (this.processor != null) throw new Exception("Host was already initialized.");
 
-            this.host = await this.builder.BuildProcessorAsync().ConfigureAwait(false);
+            this.processor = await this.builder.BuildProcessorAsync().ConfigureAwait(false);
         }
     }
 }
