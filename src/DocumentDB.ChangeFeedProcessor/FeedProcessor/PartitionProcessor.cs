@@ -19,11 +19,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
     {
         private static readonly int DefaultMaxItemCount = 100;
         private readonly ILog logger = LogProvider.GetCurrentClassLogger();
+        private readonly IDocumentQueryEx<Document> query;
         private readonly IDocumentClientEx documentClient;
         private readonly ProcessorSettings settings;
         private readonly IPartitionCheckpointer checkpointer;
         private readonly IChangeFeedObserver observer;
-        private IDocumentQueryEx<Document> query;
+        private ChangeFeedOptions options;
 
         public PartitionProcessor(IChangeFeedObserver observer, IDocumentClientEx documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
         {
@@ -31,12 +32,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
             this.observer = observer;
             this.settings = settings;
             this.checkpointer = checkpointer;
-            this.query = CreateChangeFeedQuery(settings.MaxItemCount, settings.RequestContinuation);
+            this.options = new ChangeFeedOptions
+            {
+                MaxItemCount = settings.MaxItemCount,
+                PartitionKeyRangeId = settings.PartitionKeyRangeId,
+                SessionToken = settings.SessionToken,
+                StartFromBeginning = settings.StartFromBeginning,
+                RequestContinuation = settings.RequestContinuation,
+                StartTime = settings.StartTime
+            };
+
+            this.query = documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
         }
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
-            int? maxItemCount = settings.MaxItemCount;
             string requestContinuation = settings.RequestContinuation;
 
             while (!cancellationToken.IsCancellationRequested)
@@ -46,6 +56,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                 try
                 {
                     requestContinuation = await ProcessBatch(cancellationToken).ConfigureAwait(false);
+
+                    if (options.MaxItemCount != settings.MaxItemCount)
+                    {
+                        options.MaxItemCount = settings.MaxItemCount;   // Reset after successful execution.
+                    }
                 }
                 catch (DocumentClientException clientException)
                 {
@@ -60,17 +75,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                         case DocDbError.Undefined:
                             throw;
                         case DocDbError.MaxItemCountTooLarge:
-                            if (!maxItemCount.HasValue) maxItemCount = DefaultMaxItemCount;
-                            else if (maxItemCount <= 1)
+                            if (!options.MaxItemCount.HasValue) options.MaxItemCount = DefaultMaxItemCount;
+                            else if (options.MaxItemCount <= 1)
                             {
-                                logger.ErrorFormat("Cannot reduce maxItemCount further as it's already at {0}.", maxItemCount);
+                                logger.ErrorFormat("Cannot reduce maxItemCount further as it's already at {0}.", options.MaxItemCount);
                                 throw;
                             }
 
-                            maxItemCount /= 2;
-                            logger.WarnFormat("Reducing maxItemCount, new value: {0}.", maxItemCount);
-
-                            query = CreateChangeFeedQuery(maxItemCount, requestContinuation);
+                            options.MaxItemCount /= 2;
+                            logger.WarnFormat("Reducing maxItemCount, new value: {0}.", options.MaxItemCount);
                             break;
                     }
 
@@ -84,12 +97,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 
                     logger.WarnException("exception: partition '{0}'", canceledException, settings.PartitionKeyRangeId);
                     // ignore as it is caused by DocumentDB client
-                }
-
-                if (maxItemCount != settings.MaxItemCount)
-                {
-                    maxItemCount = settings.MaxItemCount;
-                    query = CreateChangeFeedQuery(maxItemCount, requestContinuation);   // Reset query to default after reducing max item count.
                 }
 
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
@@ -123,21 +130,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
             }
 
             return observer.ProcessChangesAsync(context, docs);
-        }
-
-        private IDocumentQueryEx<Document> CreateChangeFeedQuery(int? maxItemCount, string requestContinuation)
-        {
-            var options = new ChangeFeedOptions
-            {
-                MaxItemCount = maxItemCount,
-                PartitionKeyRangeId = settings.PartitionKeyRangeId,
-                SessionToken = settings.SessionToken,
-                StartFromBeginning = settings.StartFromBeginning,
-                RequestContinuation = requestContinuation,
-                StartTime = settings.StartTime
-            };
-
-            return documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
         }
     }
 }

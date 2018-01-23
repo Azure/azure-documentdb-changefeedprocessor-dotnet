@@ -215,20 +215,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .ReturnsAsync(feedResponse2)    // Call with maxItemCount = 1.
                 .ReturnsAsync(feedResponse3);   // After restoring query to take default item count.
 
+            // (accumulator += context.FeedResponse.ResponseContinuation + ".") != null && 
+            string accumulator = string.Empty;
             int observerCallCount = 0;
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
                     .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>()))
                 .Returns(Task.FromResult(false))
-                .Callback(() => { if (++observerCallCount == 3) cancellationTokenSource.Cancel(); });
-
-            string accumulator = string.Empty;
-            Mock.Get(docClient)
-                .Reset();
-            Mock.Get(docClient)
-                .Setup(ex => ex.CreateDocumentChangeFeedQuery(It.IsAny<string>(), It.IsAny<ChangeFeedOptions>()))
-                .Returns(documentQuery)
-                .Callback<string, ChangeFeedOptions>((link, options) => accumulator += options.RequestContinuation + ".");
+                .Callback<ChangeFeedObserverContext, IReadOnlyList<Document>>((context, docs) => 
+                {
+                    accumulator += context.FeedResponse.ResponseContinuation + ".";
+                    if (++observerCallCount == 3) cancellationTokenSource.Cancel();
+                });
 
             await Assert.ThrowsAsync<TaskCanceledException>(() => sut.RunAsync(cancellationTokenSource.Token));
 
@@ -245,7 +243,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                                         list.SequenceEqual(documents3))),
                     Times.Exactly(3));
 
-            Assert.Equal("token.token.token.token.", accumulator);
+            Assert.Equal("token.token2.token3.", accumulator);
         }
     }
 }
