@@ -41,7 +41,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                TimeSpan retryDelay = settings.FeedPollDelay;
+                TimeSpan delay = settings.FeedPollDelay;
 
                 try
                 {
@@ -75,7 +75,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                     }
 
                     if (clientException.RetryAfter != TimeSpan.Zero)
-                        retryDelay = clientException.RetryAfter;
+                        delay = clientException.RetryAfter;
                 }
                 catch (TaskCanceledException canceledException)
                 {
@@ -92,7 +92,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                     query = CreateChangeFeedQuery(maxItemCount, requestContinuation);   // Reset query to default after reducing max item count.
                 }
 
-                await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
         }
 
