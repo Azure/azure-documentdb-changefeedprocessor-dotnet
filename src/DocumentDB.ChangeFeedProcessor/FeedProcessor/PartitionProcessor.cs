@@ -20,7 +20,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         private static readonly int DefaultMaxItemCount = 100;
         private readonly ILog logger = LogProvider.GetCurrentClassLogger();
         private readonly IDocumentQueryEx<Document> query;
-        private readonly IDocumentClientEx documentClient;
         private readonly ProcessorSettings settings;
         private readonly IPartitionCheckpointer checkpointer;
         private readonly IChangeFeedObserver observer;
@@ -28,7 +27,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 
         public PartitionProcessor(IChangeFeedObserver observer, IDocumentClientEx documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
         {
-            this.documentClient = documentClient;
             this.observer = observer;
             this.settings = settings;
             this.checkpointer = checkpointer;
