@@ -16,7 +16,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal class ChangeFeedHostBuilder
+    public class ChangeFeedHostBuilder
     {
         private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
         private string hostName;

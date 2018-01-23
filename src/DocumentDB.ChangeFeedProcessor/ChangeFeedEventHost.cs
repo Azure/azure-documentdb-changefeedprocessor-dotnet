@@ -80,7 +80,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// </example>
     public class ChangeFeedEventHost
     {
-        internal readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+        protected readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
         private IChangeFeedHost host;
 
         static ChangeFeedEventHost()
@@ -178,10 +178,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>A task that indicates the host instance has stopped.</returns>
         public async Task UnregisterObserversAsync()
         {
-            if (this.host == null)
-            {
-                throw new Exception("No observers were registered");
-            }
+            if (this.host == null) throw new Exception("No observers were registered");
 
             await this.host.StopAsync().ConfigureAwait(false);
         }
@@ -203,10 +200,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         private async Task CreateHost()
         {
-            if (this.host != null)
-            {
-                throw new Exception("Host was already initialized.");
-            }
+            if (this.host != null) throw new Exception("Host was already initialized.");
 
             this.host = await this.builder.BuildAsync().ConfigureAwait(false);
         }

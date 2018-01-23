@@ -22,20 +22,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public RemainingWorkEstimator(ILeaseManager leaseManager, IDocumentClientEx feedDocumentClient, string collectionSelfLink)
         {
-            if (leaseManager == null)
-            {
-                throw new ArgumentNullException(nameof(leaseManager));
-            }
+            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
 
-            if (string.IsNullOrEmpty(collectionSelfLink))
-            {
-                throw new ArgumentNullException(nameof(collectionSelfLink));
-            }
+            if (string.IsNullOrEmpty(collectionSelfLink)) throw new ArgumentNullException(nameof(collectionSelfLink));
 
-            if (feedDocumentClient == null)
-            {
-                throw new ArgumentNullException(nameof(feedDocumentClient));
-            }
+            if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
 
             this.leaseManager = leaseManager;
             this.collectionSelfLink = collectionSelfLink;

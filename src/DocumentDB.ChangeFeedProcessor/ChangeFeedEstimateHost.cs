@@ -14,10 +14,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         public ChangeFeedEstimateHost(IRemainingWorkEstimator remainingWorkEstimator)
         {
-            if (remainingWorkEstimator == null)
-            {
-                throw new ArgumentNullException(nameof(remainingWorkEstimator));
-            }
+            if (remainingWorkEstimator == null) throw new ArgumentNullException(nameof(remainingWorkEstimator));
 
             this.remainingWorkEstimator = remainingWorkEstimator;
         }

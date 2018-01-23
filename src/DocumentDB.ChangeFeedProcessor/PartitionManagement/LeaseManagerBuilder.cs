@@ -18,10 +18,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public LeaseManagerBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation)
         {
-            if (leaseCollectionLocation == null)
-            {
-                throw new ArgumentNullException(nameof(leaseCollectionLocation));
-            }
+            if (leaseCollectionLocation == null) throw new ArgumentNullException(nameof(leaseCollectionLocation));
 
             this.leaseCollectionLocation = leaseCollectionLocation.Canonicalize();
             return this;
@@ -29,10 +26,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public LeaseManagerBuilder WithLeaseDocumentClient(IDocumentClientEx leaseDocumentClient)
         {
-            if (leaseDocumentClient == null)
-            {
-                throw new ArgumentNullException(nameof(leaseDocumentClient));
-            }
+            if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
 
             this.leaseDocumentClient = leaseDocumentClient;
             return this;
@@ -40,10 +34,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public LeaseManagerBuilder WithLeasePrefix(string leasePrefix)
         {
-            if (leasePrefix == null)
-            {
-                throw new ArgumentNullException(nameof(leasePrefix));
-            }
+            if (leasePrefix == null) throw new ArgumentNullException(nameof(leasePrefix));
 
             this.leasePrefix = leasePrefix;
             return this;
@@ -51,10 +42,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public LeaseManagerBuilder WithLeaseCollectionLink(string leaseStoreCollectionLink)
         {
-            if (leaseStoreCollectionLink == null)
-            {
-                throw new ArgumentNullException(nameof(leaseStoreCollectionLink));
-            }
+            if (leaseStoreCollectionLink == null) throw new ArgumentNullException(nameof(leaseStoreCollectionLink));
 
             this.leaseStoreCollectionLink = leaseStoreCollectionLink;
             return this;
@@ -62,10 +50,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public async Task<ILeaseManager> BuildAsync()
         {
-            if (this.leaseCollectionLocation == null)
-            {
-                throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
-            }
+            if (this.leaseCollectionLocation == null) throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
 
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
 

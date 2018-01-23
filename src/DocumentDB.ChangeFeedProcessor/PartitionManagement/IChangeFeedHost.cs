@@ -6,7 +6,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal interface IChangeFeedHost: IChangeFeedProcessor, IRemainingWorkEstimator
+    public interface IChangeFeedHost: IChangeFeedProcessor, IRemainingWorkEstimator
     {
     }
 }

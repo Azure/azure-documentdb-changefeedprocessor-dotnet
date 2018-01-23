@@ -15,15 +15,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         public ChangeFeedHost(IChangeFeedProcessor partitionManager, IRemainingWorkEstimator remainingWorkEstimator)
         {
-            if (partitionManager == null)
-            {
-                throw new ArgumentNullException(nameof(partitionManager));
-            }
+            if (partitionManager == null) throw new ArgumentNullException(nameof(partitionManager));
 
-            if (remainingWorkEstimator == null)
-            {
-                throw new ArgumentNullException(nameof(remainingWorkEstimator));
-            }
+            if (remainingWorkEstimator == null) throw new ArgumentNullException(nameof(remainingWorkEstimator));
 
             this.partitionManager = partitionManager;
             this.remainingWorkEstimator = remainingWorkEstimator;
