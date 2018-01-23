@@ -81,7 +81,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     public class ChangeFeedEventHost
     {
         protected readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
-        private IChangeFeedHost host;
+        private IChangeFeedProcessor host;
+        private IRemainingWorkEstimator hostForEstimate;
 
         static ChangeFeedEventHost()
         {
@@ -189,20 +190,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>An estimate amount of remaining documents to be processed</returns>
         public async Task<long> GetEstimatedRemainingWork()
         {
-            IChangeFeedHost hostForEstimate = this.host;
-            if (hostForEstimate == null)
+            if (this.hostForEstimate == null)
             {
-                hostForEstimate = await this.builder.BuildEstimatorAsync().ConfigureAwait(false);
+                this.hostForEstimate = await this.builder.BuildEstimatorAsync().ConfigureAwait(false);
             }
 
-            return await hostForEstimate.GetEstimatedRemainingWork().ConfigureAwait(false);
+            return await this.hostForEstimate.GetEstimatedRemainingWork().ConfigureAwait(false);
         }
 
         private async Task CreateHost()
         {
             if (this.host != null) throw new Exception("Host was already initialized.");
 
-            this.host = await this.builder.BuildAsync().ConfigureAwait(false);
+            this.host = await this.builder.BuildProcessorAsync().ConfigureAwait(false);
         }
     }
 }

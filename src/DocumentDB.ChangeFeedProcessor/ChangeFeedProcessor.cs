@@ -8,19 +8,15 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal class ChangeFeedHost : IChangeFeedHost
+    internal class ChangeFeedProcessor : IChangeFeedProcessor
     {
-        private readonly IChangeFeedProcessor partitionManager;
-        private readonly IRemainingWorkEstimator remainingWorkEstimator;
+        private readonly IPartitionManager partitionManager;
 
-        public ChangeFeedHost(IChangeFeedProcessor partitionManager, IRemainingWorkEstimator remainingWorkEstimator)
+        public ChangeFeedProcessor(IPartitionManager partitionManager)
         {
             if (partitionManager == null) throw new ArgumentNullException(nameof(partitionManager));
 
-            if (remainingWorkEstimator == null) throw new ArgumentNullException(nameof(remainingWorkEstimator));
-
             this.partitionManager = partitionManager;
-            this.remainingWorkEstimator = remainingWorkEstimator;
         }
 
         public async Task StartAsync()
@@ -31,11 +27,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public async Task StopAsync()
         {
             await this.partitionManager.StopAsync().ConfigureAwait(false);
-        }
-
-        public async Task<long> GetEstimatedRemainingWork()
-        {
-            return await this.remainingWorkEstimator.GetEstimatedRemainingWork().ConfigureAwait(false);
         }
     }
 }

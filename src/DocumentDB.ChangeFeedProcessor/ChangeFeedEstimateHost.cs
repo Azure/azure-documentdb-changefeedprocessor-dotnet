@@ -8,7 +8,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal class ChangeFeedEstimateHost : IChangeFeedHost
+    internal class ChangeFeedEstimateHost : IRemainingWorkEstimator
     {
         private readonly IRemainingWorkEstimator remainingWorkEstimator;
 
@@ -17,16 +17,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             if (remainingWorkEstimator == null) throw new ArgumentNullException(nameof(remainingWorkEstimator));
 
             this.remainingWorkEstimator = remainingWorkEstimator;
-        }
-
-        public async Task StartAsync()
-        {
-            throw new NotImplementedException("This instance of IChangeFeedHost was created for work estimation only.");
-        }
-
-        public async Task StopAsync()
-        {
-            throw new NotImplementedException("This instance of IChangeFeedHost was created for work estimation only.");
         }
 
         public async Task<long> GetEstimatedRemainingWork()

@@ -115,7 +115,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public async Task<IChangeFeedHost> BuildAsync()
+        public async Task<IChangeFeedProcessor> BuildProcessorAsync()
         {
             if (this.hostName == null)
             {
@@ -141,12 +141,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             ILeaseManager leaseManager = await this.GetLeaseManagerAsync().ConfigureAwait(false);
 
-            IChangeFeedProcessor partitionManager = await this.BuildPartitionManagerAsync(leaseManager).ConfigureAwait(false);
-            IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink());
-            return new ChangeFeedHost(partitionManager, remainingWorkEstimator);
+            IPartitionManager partitionManager = await this.BuildPartitionManagerAsync(leaseManager).ConfigureAwait(false);
+            return new ChangeFeedProcessor(partitionManager);
         }
 
-        internal async Task<IChangeFeedHost> BuildEstimatorAsync()
+        internal async Task<IRemainingWorkEstimator> BuildEstimatorAsync()
         {
             if (this.feedCollectionLocation == null)
             {
@@ -181,7 +180,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return documentCollection.ResourceId;
         }
 
-        private async Task<IChangeFeedProcessor> BuildPartitionManagerAsync(ILeaseManager leaseManager)
+        private async Task<IPartitionManager> BuildPartitionManagerAsync(ILeaseManager leaseManager)
         {
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
 
