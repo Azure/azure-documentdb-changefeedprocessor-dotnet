@@ -4,6 +4,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
@@ -19,7 +20,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     ///   - New instance takes leases from existing instances to make distribution equal.
     ///   - If an instance dies, the leases are distributed across remaining instances.
     /// It's useful for scenario when partition count is high so that one host/VM is not capable of processing that many change feed events.
-    /// Client application needs to implement <see cref="Microsoft.Azure.Documents.ChangeFeedProcessor.IChangeFeedObserver"/> and register processor implementation with ChangeFeedEventHost.
+    /// Client application needs to implement <see cref="IChangeFeedObserver"/> and register processor implementation with ChangeFeedEventHost.
     /// </summary>
     /// <remarks>
     /// It uses auxiliary document collection for managing leases for a partition.
@@ -79,8 +80,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// </example>
     public class ChangeFeedEventHost
     {
-        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
-        private IChangeFeedHost host;
+        protected readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+        private IChangeFeedProcessor processor;
+        private IRemainingWorkEstimator remainingWorkEstimator;
 
         static ChangeFeedEventHost()
         {
@@ -140,14 +142,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             if (changeFeedHostOptions == null)
                 throw new ArgumentNullException(nameof(changeFeedHostOptions));
 
-            builder
+            this.builder
                 .WithHostName(hostName)
                 .WithFeedCollection(feedCollectionLocation)
                 .WithChangeFeedHostOptions(changeFeedHostOptions)
                 .WithChangeFeedOptions(changeFeedOptions)
-                .WithPartitionManagerBuilder(
-                    new PartitionManagerBuilder()
-                        .WithLeaseCollection(leaseCollectionLocation));
+                .WithLeaseCollection(leaseCollectionLocation);
         }
 
         /// <summary>Asynchronously registers the observer interface implementation with the host.
@@ -156,9 +156,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
         public async Task RegisterObserverAsync<T>() where T : IChangeFeedObserver, new()
         {
-            builder.WithObserver<T>();
-            host = await builder.BuildAsync().ConfigureAwait(false);
-            await host.StartAsync().ConfigureAwait(false);
+            this.builder.WithObserver<T>();
+            await this.CreateHost().ConfigureAwait(false);
+            await this.processor.StartAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -169,9 +169,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
         public async Task RegisterObserverFactoryAsync(IChangeFeedObserverFactory factory)
         {
-            builder.WithObserverFactory(factory);
-            host = await builder.BuildAsync().ConfigureAwait(false);
-            await host.StartAsync().ConfigureAwait(false);
+            this.builder.WithObserverFactory(factory);
+            await this.CreateHost().ConfigureAwait(false);
+            await this.processor.StartAsync().ConfigureAwait(false);
         }
 
         /// <summary>Asynchronously shuts down the host instance. This method maintains the leases on all partitions currently held, and enables each 
@@ -179,7 +179,30 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>A task that indicates the host instance has stopped.</returns>
         public async Task UnregisterObserversAsync()
         {
-            await host.StopAsync().ConfigureAwait(false);
+            if (this.processor == null) throw new Exception("No observers were registered");
+
+            await this.processor.StopAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Asynchronously checks the current existing leases and calculates an estimate of remaining work per leased partitions.
+        /// </summary>
+        /// <returns>An estimate amount of remaining documents to be processed</returns>
+        public async Task<long> GetEstimatedRemainingWork()
+        {
+            if (this.remainingWorkEstimator == null)
+            {
+                this.remainingWorkEstimator = await this.builder.BuildEstimatorAsync().ConfigureAwait(false);
+            }
+
+            return await this.remainingWorkEstimator.GetEstimatedRemainingWork().ConfigureAwait(false);
+        }
+
+        private async Task CreateHost()
+        {
+            if (this.processor != null) throw new Exception("Host was already initialized.");
+
+            this.processor = await this.builder.BuildProcessorAsync().ConfigureAwait(false);
         }
     }
 }

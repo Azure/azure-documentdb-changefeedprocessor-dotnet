@@ -12,6 +12,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
@@ -26,7 +27,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private IChangeFeedObserverFactory observerFactory;
         private string databaseResourceId;
         private string collectionResourceId;
-        private IPartitionManagerBuilder partitionManagerBuilder;
+        private DocumentCollectionInfo leaseCollectionLocation;
+        private IDocumentClientEx leaseDocumentClient;
+        private ILeaseManager leaseManager;
+        private readonly TimeSpan sleepTime = TimeSpan.FromSeconds(15);
+        private readonly TimeSpan lockTime = TimeSpan.FromSeconds(30);
 
         public ChangeFeedHostBuilder WithHostName(string hostName)
         {
@@ -89,32 +94,75 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithPartitionManagerBuilder(IPartitionManagerBuilder partitionManagerBuilder)
+        public ChangeFeedHostBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation)
         {
-            if (partitionManagerBuilder == null) throw new ArgumentNullException(nameof(partitionManagerBuilder));
-            this.partitionManagerBuilder = partitionManagerBuilder;
+            if (leaseCollectionLocation == null) throw new ArgumentNullException(nameof(leaseCollectionLocation));
+            this.leaseCollectionLocation = leaseCollectionLocation.Canonicalize();
             return this;
         }
 
-        public async Task<IChangeFeedHost> BuildAsync()
+        public ChangeFeedHostBuilder WithLeaseDocumentClient(IDocumentClientEx leaseDocumentClient)
         {
-            if (hostName == null) throw new InvalidOperationException("Host name was not specified");
-            if (feedCollectionLocation == null) throw new InvalidOperationException(nameof(feedCollectionLocation) + " was not specified");
-            if (observerFactory == null) throw new InvalidOperationException("Observer was not specified");
+            if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
+            this.leaseDocumentClient = leaseDocumentClient;
+            return this;
+        }
 
-            feedDocumentClient = feedDocumentClient ?? feedCollectionLocation.CreateDocumentClient();
-            changeFeedHostOptions = changeFeedHostOptions ?? new ChangeFeedHostOptions();
-            changeFeedOptions = changeFeedOptions ?? new ChangeFeedOptions();
-            databaseResourceId = databaseResourceId ?? await GetDatabaseResourceIdAsync(feedDocumentClient, feedCollectionLocation).ConfigureAwait(false);
-            collectionResourceId = collectionResourceId ?? await GetCollectionResourceIdAsync(feedDocumentClient, feedCollectionLocation).ConfigureAwait(false);
-            partitionManagerBuilder = partitionManagerBuilder ?? new PartitionManagerBuilder();
+        public ChangeFeedHostBuilder WithLeaseManager(ILeaseManager leaseManager)
+        {
+            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
+            this.leaseManager = leaseManager;
+            return this;
+        }
 
-            string optionsPrefix = changeFeedHostOptions.LeasePrefix ?? string.Empty;
-            string leasePrefix = string.Format(CultureInfo.InvariantCulture, "{0}{1}_{2}_{3}", optionsPrefix, feedCollectionLocation.Uri.Host, databaseResourceId, collectionResourceId);
+        public async Task<IChangeFeedProcessor> BuildProcessorAsync()
+        {
+            if (this.hostName == null)
+            {
+                throw new InvalidOperationException("Host name was not specified");
+            }
 
-            IPartitionManager partitionManager = await partitionManagerBuilder.BuildPartitionManagerAsync(hostName, leasePrefix, observerFactory,
-                feedDocumentClient, feedCollectionLocation, changeFeedOptions, changeFeedHostOptions).ConfigureAwait(false);
-            return new ChangeFeedHost(partitionManager);
+            if (this.feedCollectionLocation == null)
+            {
+                throw new InvalidOperationException(nameof(this.feedCollectionLocation) + " was not specified");
+            }
+
+            if (this.leaseCollectionLocation == null)
+            {
+                throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
+            }
+
+            if (this.observerFactory == null)
+            {
+                throw new InvalidOperationException("Observer was not specified");
+            }
+
+            await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
+
+            ILeaseManager leaseManager = await this.GetLeaseManagerAsync().ConfigureAwait(false);
+
+            IPartitionManager partitionManager = await this.BuildPartitionManagerAsync(leaseManager).ConfigureAwait(false);
+            return new ChangeFeedProcessor(partitionManager);
+        }
+
+        public async Task<IRemainingWorkEstimator> BuildEstimatorAsync()
+        {
+            if (this.feedCollectionLocation == null)
+            {
+                throw new InvalidOperationException(nameof(this.feedCollectionLocation) + " was not specified");
+            }
+
+            if (this.leaseCollectionLocation == null)
+            {
+                throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
+            }
+
+            await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
+
+            ILeaseManager leaseManager = await this.GetLeaseManagerAsync().ConfigureAwait(false);
+
+            IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink());
+            return new ChangeFeedEstimateHost(remainingWorkEstimator);
         }
 
         private static async Task<string> GetDatabaseResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
@@ -130,6 +178,54 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             logger.InfoFormat("Reading collection: '{0}'", collectionLocation.CollectionName);
             DocumentCollection documentCollection = await documentClient.GetDocumentCollectionAsync(collectionLocation).ConfigureAwait(false);
             return documentCollection.ResourceId;
+        }
+
+        private async Task<IPartitionManager> BuildPartitionManagerAsync(ILeaseManager leaseManager)
+        {
+            this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
+
+            DocumentCollection documentCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
+            string leaseStoreCollectionLink = documentCollection.SelfLink;
+
+            string collectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
+            IChangeFeedObserverFactory factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions.CheckpointFrequency);
+            var synchronizer = new PartitionSynchronizer(this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions.DegreeOfParallelism, this.changeFeedHostOptions.QueryPartitionsMaxBatchSize);
+            var leaseStore = new LeaseStore(this.leaseDocumentClient, this.leaseCollectionLocation, this.GetLeasePrefix(), leaseStoreCollectionLink);
+            var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);
+            var partitionObserverFactory = new PartitionSupervisorFactory(factory, this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions, this.changeFeedOptions);
+            var partitionController = new PartitionController(this.hostName, leaseManager, partitionObserverFactory, synchronizer);
+            var loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.hostName, this.changeFeedHostOptions.MinPartitionCount, this.changeFeedHostOptions.MaxPartitionCount, this.changeFeedHostOptions.LeaseExpirationInterval);
+            var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, loadBalancingStrategy, this.changeFeedHostOptions.LeaseAcquireInterval);
+            return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
+        }
+
+        private async Task<ILeaseManager> GetLeaseManagerAsync()
+        {
+            if (this.leaseManager == null)
+            {
+                string leasePrefix = this.GetLeasePrefix();
+                var leaseManagerBuilder = new LeaseManagerBuilder()
+                    .WithLeasePrefix(leasePrefix)
+                    .WithLeaseCollection(this.leaseCollectionLocation);
+                this.leaseManager = await leaseManagerBuilder.BuildAsync().ConfigureAwait(false);
+            }
+
+            return this.leaseManager;
+        }
+
+        private string GetLeasePrefix()
+        {
+            string optionsPrefix = this.changeFeedHostOptions.LeasePrefix ?? string.Empty;
+            return string.Format(CultureInfo.InvariantCulture, "{0}{1}_{2}_{3}", optionsPrefix, this.feedCollectionLocation.Uri.Host, this.databaseResourceId, this.collectionResourceId);
+        }
+
+        private async Task InitializeCollectionPropertiesForBuildAsync()
+        {
+            this.feedDocumentClient = this.feedDocumentClient ?? this.feedCollectionLocation.CreateDocumentClient();
+            this.changeFeedHostOptions = this.changeFeedHostOptions ?? new ChangeFeedHostOptions();
+            this.changeFeedOptions = this.changeFeedOptions ?? new ChangeFeedOptions();
+            this.databaseResourceId = this.databaseResourceId ?? await GetDatabaseResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
+            this.collectionResourceId = this.collectionResourceId ?? await GetCollectionResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
         }
     }
 }

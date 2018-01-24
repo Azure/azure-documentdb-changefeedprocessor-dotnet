@@ -1,14 +1,15 @@
-//----------------------------------------------------------------
+﻿//----------------------------------------------------------------
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-    public interface IChangeFeedHost
+    public interface IChangeFeedProcessor
     {
         Task StartAsync();
+
         Task StopAsync();
     }
 }
