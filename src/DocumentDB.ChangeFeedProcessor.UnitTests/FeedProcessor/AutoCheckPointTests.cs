@@ -16,30 +16,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 {
     public class AutoCheckPointTests
     {
-        public class FailingChangeFeedObserverContext : ChangeFeedObserverContext
-        {
-            public override Task CheckpointAsync()
-            {
-                throw new LeaseLostException();
-            }
-        }
-
-        public class WorkingChangeFeedObserverContext : ChangeFeedObserverContext
-        {
-            private readonly IPartitionCheckpointer checkpointer;
-
-            public WorkingChangeFeedObserverContext(IPartitionCheckpointer checkpointer)
-            {
-                this.checkpointer = checkpointer;
-            }
-            public override Task CheckpointAsync()
-            {
-                return checkpointer.CheckpointPartitionAsync(FeedResponse.ResponseContinuation);
-            }
-        }        
-
         private readonly IChangeFeedObserver changeFeedObserver;
-        private readonly Mock<WorkingChangeFeedObserverContext> observerContext;
+        private readonly Mock<ChangeFeedObserverContext> observerContext;
         private readonly CheckpointFrequency checkpointFrequency;
         private readonly AutoCheckpointer sut;
         private readonly IReadOnlyList<Document> documents;
@@ -69,7 +47,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Setup(response => response.GetEnumerator())
                 .Returns(documents.GetEnumerator());
 
-            observerContext = new Mock<WorkingChangeFeedObserverContext>(MockBehavior.Strict, partitionCheckpointer);
+            observerContext = new Mock<ChangeFeedObserverContext>();
             Mock.Get(observerContext.Object)
                 .Setup(context => context.CheckpointAsync())
                 .Returns(partitionCheckpointer.CheckpointPartitionAsync("token"));
@@ -107,9 +85,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         {
             checkpointFrequency.TimeInterval = TimeSpan.Zero;
 
-            var failingObserverContext = new FailingChangeFeedObserverContext();
-
-            Exception ex = await Record.ExceptionAsync(() => sut.ProcessChangesAsync(failingObserverContext, documents));
+            var mock = new Moq.Mock<ChangeFeedObserverContext>();
+            mock.Setup(abs => abs.CheckpointAsync()).Throws(new LeaseLostException());
+            Exception ex = await Record.ExceptionAsync(() => sut.ProcessChangesAsync(mock.Object, documents));
             Assert.IsType<LeaseLostException>(ex);
         }
 
