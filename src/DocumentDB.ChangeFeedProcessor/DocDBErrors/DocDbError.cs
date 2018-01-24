@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors
         Undefined,
         PartitionNotFound,
         PartitionSplit,
-        TransientError
+        TransientError,
+        MaxItemCountTooLarge,
     }
 }
