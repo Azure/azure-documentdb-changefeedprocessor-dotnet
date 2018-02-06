@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 {
+    [Trait("Category", "Gated")]
     public class PartitionChainingTests
     {
         private readonly ProcessorSettings processorSettings;
