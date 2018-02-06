@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
 {
+    [Trait("Category", "Gated")]
     public class EqualPartitionsBalancingStrategyTests
     {
         private const string ownerSelf = "self";

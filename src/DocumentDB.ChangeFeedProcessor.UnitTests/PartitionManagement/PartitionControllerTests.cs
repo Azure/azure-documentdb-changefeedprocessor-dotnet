@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
 {
+    [Trait("Category", "Gated")]
     public class PartitionControllerTests : IAsyncLifetime
     {
         private readonly ILease lease;

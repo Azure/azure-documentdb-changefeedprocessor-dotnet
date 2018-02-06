@@ -17,6 +17,7 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
 {
+    [Trait("Category", "Gated")]
     public class PartitionExceptionsTests
     {
         private readonly ProcessorSettings processorSettings;

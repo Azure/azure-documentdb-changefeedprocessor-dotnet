@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
 {
+    [Trait("Category", "Gated")]
     public class PartitionSupervisorTests : IDisposable
     {
         private readonly ILease lease;

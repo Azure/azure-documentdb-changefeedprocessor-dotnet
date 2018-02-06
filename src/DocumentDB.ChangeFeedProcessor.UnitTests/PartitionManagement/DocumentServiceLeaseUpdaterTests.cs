@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
 {
+    [Trait("Category", "Gated")]
     public class DocumentServiceLeaseUpdaterTests
     {
         private const string eTag1 = "ETag #1";

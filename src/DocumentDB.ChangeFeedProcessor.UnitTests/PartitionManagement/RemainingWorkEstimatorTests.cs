@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
 {
+    [Trait("Category", "Gated")]
     public class RemainingWorkEstimatorTests
     {
         private const string collectionSelfLink = "selfLink";

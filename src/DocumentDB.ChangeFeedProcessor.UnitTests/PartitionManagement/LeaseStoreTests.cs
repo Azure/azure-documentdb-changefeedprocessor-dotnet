@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
 {
+    [Trait("Category", "Gated")]
     public class LeaseStoreTests
     {
         private static readonly DocumentCollectionInfo collectionInfo = new DocumentCollectionInfo()

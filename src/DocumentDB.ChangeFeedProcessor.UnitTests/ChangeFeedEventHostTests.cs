@@ -38,6 +38,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
     }
 
+    [Trait("Category", "Gated")]
     public class ChangeFeedEventHostTests
     {
         private const string collectionLink = "Collection link";
@@ -136,7 +137,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Returns(Task.FromResult(false))
                 .Callback(cancellationTokenSource.Cancel);
             Mock.Get(observer)
-                .Setup(observer => observer.OpenAsync(It.IsAny<IChangeFeedObserverContext>()))
+                .Setup(observer => observer.OpenAsync(It.IsAny<ChangeFeedObserverContext>()))
                 .Returns(Task.FromResult(false));
 
             this.observerFactory = Mock.Of<IChangeFeedObserverFactory>();
