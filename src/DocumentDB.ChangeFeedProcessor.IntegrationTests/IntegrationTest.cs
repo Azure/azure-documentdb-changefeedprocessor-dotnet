@@ -11,11 +11,11 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Xunit;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.IntegrationTests
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {
     public class TestClassData
     {

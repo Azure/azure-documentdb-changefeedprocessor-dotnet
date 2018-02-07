@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.IntegrationTests
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {
     class TestObserverFactory : IChangeFeedObserverFactory, IChangeFeedObserver
     {
