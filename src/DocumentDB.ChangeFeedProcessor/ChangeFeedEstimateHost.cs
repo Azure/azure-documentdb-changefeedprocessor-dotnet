@@ -2,12 +2,12 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+
     internal class ChangeFeedEstimateHost : IRemainingWorkEstimator
     {
         private readonly IRemainingWorkEstimator remainingWorkEstimator;

@@ -2,11 +2,11 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
+
     internal class PartitionManager : IPartitionManager
     {
         private readonly IBootstrapper bootstrapper;

@@ -2,11 +2,11 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+
     public class PartitionCheckpointer : IPartitionCheckpointer
     {
         private readonly ILeaseManager leaseManager;
@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         public async Task CheckpointPartitionAsync(string сontinuationToken)
         {
-            await leaseManager.CheckpointAsync(lease, сontinuationToken).ConfigureAwait(false);
+            await this.leaseManager.CheckpointAsync(this.lease, сontinuationToken).ConfigureAwait(false);
         }
     }
 }

@@ -2,15 +2,15 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Net;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
+    using System;
+    using System.Net;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+    using Microsoft.Azure.Documents.Client;
+
     internal static class DocumentClientExtensions
     {
         public static async Task<Document> TryGetDocumentAsync(this IDocumentClientEx client, Uri documentUri)
@@ -21,7 +21,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             }
             catch (DocumentClientException ex)
             {
-                if (HttpStatusCode.NotFound != ex.StatusCode)
+                if (ex.StatusCode != HttpStatusCode.NotFound)
                 {
                     throw;
                 }
@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             }
             catch (DocumentClientException ex)
             {
-                if (HttpStatusCode.Conflict != ex.StatusCode)
+                if (ex.StatusCode != HttpStatusCode.Conflict)
                 {
                     throw;
                 }

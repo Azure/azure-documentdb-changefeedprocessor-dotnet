@@ -2,21 +2,21 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Net;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
+    using System;
+    using System.Net;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.Client;
+
     internal class DocumentServiceLeaseUpdater : IDocumentServiceLeaseUpdater
     {
-        private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
         private const int RetryCountOnConflict = 5;
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly IDocumentClientEx client;
 
         public DocumentServiceLeaseUpdater(IDocumentClientEx client)
@@ -37,30 +37,36 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 }
 
                 lease.Timestamp = DateTime.UtcNow;
-                Document leaseDocument = await TryReplaceLeaseAsync(lease, documentUri).ConfigureAwait(false);
+                Document leaseDocument = await this.TryReplaceLeaseAsync(lease, documentUri).ConfigureAwait(false);
                 if (leaseDocument != null)
                 {
                     return DocumentServiceLease.FromDocument(leaseDocument);
                 }
 
-                logger.InfoFormat("Partition '{0}' lease update conflict. Reading the the current version of lease.", lease.PartitionId);
+                Logger.InfoFormat("Partition '{0}' lease update conflict. Reading the the current version of lease.", lease.PartitionId);
                 Document document;
                 try
                 {
-                    document = await client.ReadDocumentAsync(documentUri).ConfigureAwait(false);
+                    document = await this.client.ReadDocumentAsync(documentUri).ConfigureAwait(false);
                 }
-                catch (DocumentClientException ex) when(HttpStatusCode.NotFound == ex.StatusCode)
+                catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
                 {
-                    logger.InfoFormat("Partition '{0}' lease no longer exists", lease.PartitionId);
+                    Logger.InfoFormat("Partition '{0}' lease no longer exists", lease.PartitionId);
                     throw new LeaseLostException(lease);
                 }
 
                 DocumentServiceLease serverLease = DocumentServiceLease.FromDocument(document);
-                logger.InfoFormat("Partition '{0}' update failed because the lease with token '{1}' was updated by host '{2}' with token '{3}'. Will retry, {4} retry(s) left.",
-                    lease.PartitionId, lease.ConcurrencyToken, serverLease.Owner, serverLease.ConcurrencyToken, retryCount);
+                Logger.InfoFormat(
+                    "Partition '{0}' update failed because the lease with token '{1}' was updated by host '{2}' with token '{3}'. Will retry, {4} retry(s) left.",
+                    lease.PartitionId,
+                    lease.ConcurrencyToken,
+                    serverLease.Owner,
+                    serverLease.ConcurrencyToken,
+                    retryCount);
 
                 lease = serverLease;
             }
+
             throw new LeaseLostException(lease);
         }
 
@@ -68,20 +74,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             try
             {
-                return await client.ReplaceDocumentAsync(leaseUri, lease, CreateIfMatchOptions(lease)).ConfigureAwait(false);
+                return await this.client.ReplaceDocumentAsync(leaseUri, lease, this.CreateIfMatchOptions(lease)).ConfigureAwait(false);
             }
-            catch (DocumentClientException ex) when (HttpStatusCode.PreconditionFailed == ex.StatusCode)
+            catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.PreconditionFailed)
             {
                 return null;
             }
             catch (DocumentClientException ex)
             {
-                logger.WarnFormat("Lease operation exception, status code: ", ex.StatusCode);
-                if (HttpStatusCode.Conflict == ex.StatusCode ||
-                    HttpStatusCode.NotFound == ex.StatusCode)
+                Logger.WarnFormat("Lease operation exception, status code: ", ex.StatusCode);
+                if (ex.StatusCode == HttpStatusCode.Conflict ||
+                    ex.StatusCode == HttpStatusCode.NotFound)
                 {
-                    throw new LeaseLostException(lease, ex, HttpStatusCode.NotFound == ex.StatusCode);
+                    throw new LeaseLostException(lease, ex, ex.StatusCode == HttpStatusCode.NotFound);
                 }
+
                 throw;
             }
         }

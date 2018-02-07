@@ -4,7 +4,8 @@
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
-    internal class ChangeFeedObserverFactory<T> : IChangeFeedObserverFactory where T : IChangeFeedObserver, new()
+    internal class ChangeFeedObserverFactory<T> : IChangeFeedObserverFactory
+        where T : IChangeFeedObserver, new()
     {
         public IChangeFeedObserver CreateObserver()
         {

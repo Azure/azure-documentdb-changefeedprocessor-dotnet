@@ -2,17 +2,17 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+
     internal class EqualPartitionsBalancingStrategy : ILoadBalancingStrategy
     {
-        private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly string hostName;
         private readonly int minPartitionCount;
         private readonly int maxPartitionCount;
@@ -32,26 +32,26 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             var workerToPartitionCount = new Dictionary<string, int>();
             var expiredLeases = new List<ILease>();
             var allPartitions = new Dictionary<string, ILease>();
-            CategorizeLeases(allLeases, allPartitions, expiredLeases, workerToPartitionCount);
+            this.CategorizeLeases(allLeases, allPartitions, expiredLeases, workerToPartitionCount);
 
             int partitionCount = allPartitions.Count;
             int workerCount = workerToPartitionCount.Count;
             if (partitionCount <= 0)
                 return Enumerable.Empty<ILease>();
 
-            int target = CalculateTargetPartitionCount(partitionCount, workerCount);
-            int myCount = workerToPartitionCount[hostName];
+            int target = this.CalculateTargetPartitionCount(partitionCount, workerCount);
+            int myCount = workerToPartitionCount[this.hostName];
             int partitionsNeededForMe = target - myCount;
 
-            logger.InfoFormat(
+            Logger.InfoFormat(
                 "Host '{0}' {1} partitions, {2} hosts, {3} available leases, target = {4}, min = {5}, max = {6}, mine = {7}, will try to take {8} lease(s) for myself'.",
-                hostName,
+                this.hostName,
                 partitionCount,
                 workerCount,
                 expiredLeases.Count,
                 target,
-                minPartitionCount,
-                maxPartitionCount,
+                this.minPartitionCount,
+                this.maxPartitionCount,
                 myCount,
                 Math.Max(partitionsNeededForMe, 0));
 
@@ -62,6 +62,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             {
                 return expiredLeases.Take(partitionsNeededForMe);
             }
+
             ILease stolenLease = GetLeaseToSteal(workerToPartitionCount, target, partitionsNeededForMe, allPartitions);
             return stolenLease == null ? Enumerable.Empty<ILease>() : new[] { stolenLease };
         }
@@ -73,6 +74,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             {
                 return allPartitions.Values.First(partition => string.Equals(partition.Owner, workerToStealFrom.Key, StringComparison.OrdinalIgnoreCase));
             }
+
             return null;
         }
 
@@ -86,6 +88,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                     workerToStealFrom = kvp;
                 }
             }
+
             return workerToStealFrom;
         }
 
@@ -96,14 +99,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             {
                 target = (int)Math.Ceiling((double)partitionCount / workerCount);
             }
-            if (maxPartitionCount > 0 && target > maxPartitionCount)
+
+            if (this.maxPartitionCount > 0 && target > this.maxPartitionCount)
             {
-                target = maxPartitionCount;
+                target = this.maxPartitionCount;
             }
-            if (minPartitionCount > 0 && target < minPartitionCount)
+
+            if (this.minPartitionCount > 0 && target < this.minPartitionCount)
             {
-                target = minPartitionCount;
+                target = this.minPartitionCount;
             }
+
             return target;
         }
 
@@ -114,9 +120,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 Debug.Assert(lease.PartitionId != null, "TakeLeasesAsync: lease.PartitionId cannot be null.");
 
                 allPartitions.Add(lease.PartitionId, lease);
-                if (string.IsNullOrWhiteSpace(lease.Owner) || IsExpired(lease))
+                if (string.IsNullOrWhiteSpace(lease.Owner) || this.IsExpired(lease))
                 {
-                    logger.DebugFormat("Found unused or expired lease: {0}", lease);
+                    Logger.DebugFormat("Found unused or expired lease: {0}", lease);
                     expiredLeases.Add(lease);
                 }
                 else
@@ -133,15 +139,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                     }
                 }
             }
-            if (!workerToPartitionCount.ContainsKey(hostName))
+
+            if (!workerToPartitionCount.ContainsKey(this.hostName))
             {
-                workerToPartitionCount.Add(hostName, 0);
+                workerToPartitionCount.Add(this.hostName, 0);
             }
         }
 
         private bool IsExpired(ILease lease)
         {
-            return lease.Timestamp.ToUniversalTime() + leaseExpirationInterval < DateTime.UtcNow;
+            return lease.Timestamp.ToUniversalTime() + this.leaseExpirationInterval < DateTime.UtcNow;
         }
     }
 }

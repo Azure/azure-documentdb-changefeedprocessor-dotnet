@@ -2,30 +2,30 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
+    using System;
+
     /// <summary>
     /// Options to control various aspects of partition distribution happening within <see cref="ChangeFeedEventHost"/> instance.
-    /// </summary> 
+    /// </summary>
     public class ChangeFeedHostOptions
     {
+        private const int DefaultQueryPartitionsMaxBatchSize = 100;
         private static readonly TimeSpan DefaultRenewInterval = TimeSpan.FromSeconds(17);
         private static readonly TimeSpan DefaultAcquireInterval = TimeSpan.FromSeconds(13);
         private static readonly TimeSpan DefaultExpirationInterval = TimeSpan.FromSeconds(60);
         private static readonly TimeSpan DefaultFeedPollDelay = TimeSpan.FromSeconds(5);
-        private const int DefaultQueryPartitionsMaxBatchSize = 100;
 
         /// <summary>Initializes a new instance of the <see cref="ChangeFeedHostOptions" /> class.</summary>
         public ChangeFeedHostOptions()
         {
-            LeaseRenewInterval = DefaultRenewInterval;
-            LeaseAcquireInterval = DefaultAcquireInterval;
-            LeaseExpirationInterval = DefaultExpirationInterval;
-            FeedPollDelay = DefaultFeedPollDelay;
-            QueryPartitionsMaxBatchSize = DefaultQueryPartitionsMaxBatchSize;
-            CheckpointFrequency = new CheckpointFrequency();
+            this.LeaseRenewInterval = DefaultRenewInterval;
+            this.LeaseAcquireInterval = DefaultAcquireInterval;
+            this.LeaseExpirationInterval = DefaultExpirationInterval;
+            this.FeedPollDelay = DefaultFeedPollDelay;
+            this.QueryPartitionsMaxBatchSize = DefaultQueryPartitionsMaxBatchSize;
+            this.CheckpointFrequency = new CheckpointFrequency();
         }
 
         /// <summary>
@@ -34,12 +34,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public TimeSpan LeaseRenewInterval { get; set; }
 
         /// <summary>
-        /// Gets or sets the interval to kick off a task to compute if partitions are distributed evenly among known host instances. 
+        /// Gets or sets the interval to kick off a task to compute if partitions are distributed evenly among known host instances.
         /// </summary>
         public TimeSpan LeaseAcquireInterval { get; set; }
 
         /// <summary>
-        /// Gets or sets the interval for which the lease is taken on a lease representing a partition. If the lease is not renewed within this 
+        /// Gets or sets the interval for which the lease is taken on a lease representing a partition. If the lease is not renewed within this
         /// interval, it will cause it to expire and ownership of the partition will move to another <see cref="ChangeFeedEventHost"/> instance.
         /// </summary>
         public TimeSpan LeaseExpirationInterval { get; set; }
@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public CheckpointFrequency CheckpointFrequency { get; set; }
 
         /// <summary>
-        /// Gets or sets a prefix to be used as part of the lease id. This can be used to support multiple <see cref="ChangeFeedEventHost"/> 
+        /// Gets or sets a prefix to be used as part of the lease id. This can be used to support multiple <see cref="ChangeFeedEventHost"/>
         /// instances pointing at the same feed while using the same auxiliary collection.
         /// </summary>
         public string LeasePrefix { get; set; }
@@ -79,13 +79,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         internal bool DiscardExistingLeases { get; set; }
 
         /// <summary>
-        /// Batch size of query partitions API. 
+        /// Gets or sets the Batch size of query partitions API.
         /// </summary>
         internal int QueryPartitionsMaxBatchSize { get; set; }
 
         /// <summary>
         /// Gets maximum number of tasks to use for auxiliary calls.
         /// </summary>
-        internal int DegreeOfParallelism => MaxPartitionCount > 0 ? MaxPartitionCount : 25;
+        internal int DegreeOfParallelism => this.MaxPartitionCount > 0 ? this.MaxPartitionCount : 25;
     }
 }

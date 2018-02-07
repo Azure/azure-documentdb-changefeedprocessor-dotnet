@@ -2,23 +2,23 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
+
     internal class PartitionSupervisor : IPartitionSupervisor
     {
         private readonly ILease lease;
         private readonly IChangeFeedObserver observer;
         private readonly IPartitionProcessor processor;
         private readonly ILeaseRenewer renewer;
-        private CancellationTokenSource processorCancellation;
         private readonly CancellationTokenSource renewerCancellation = new CancellationTokenSource();
+        private CancellationTokenSource processorCancellation;
 
         public PartitionSupervisor(ILease lease, IChangeFeedObserver observer, IPartitionProcessor processor, ILeaseRenewer renewer)
         {
@@ -30,14 +30,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public async Task RunAsync(CancellationToken shutdownToken)
         {
-            var context = new ChangeFeedObserverContextInternal(lease.PartitionId);
-            await observer.OpenAsync(context).ConfigureAwait(false);
+            var context = new ChangeFeedObserverContextInternal(this.lease.PartitionId);
+            await this.observer.OpenAsync(context).ConfigureAwait(false);
 
-            processorCancellation = CancellationTokenSource.CreateLinkedTokenSource(shutdownToken);
-            Task processorTask = processor.RunAsync(processorCancellation.Token);
-            processorTask.ContinueWith(_ => renewerCancellation.Cancel()).LogException();
-            Task renewerTask = renewer.RunAsync(renewerCancellation.Token);
-            renewerTask.ContinueWith(_ => processorCancellation.Cancel()).LogException();
+            this.processorCancellation = CancellationTokenSource.CreateLinkedTokenSource(shutdownToken);
+            Task processorTask = this.processor.RunAsync(this.processorCancellation.Token);
+            processorTask.ContinueWith(_ => this.renewerCancellation.Cancel()).LogException();
+            Task renewerTask = this.renewer.RunAsync(this.renewerCancellation.Token);
+            renewerTask.ContinueWith(_ => this.processorCancellation.Cancel()).LogException();
 
             ChangeFeedObserverCloseReason closeReason = shutdownToken.IsCancellationRequested ? ChangeFeedObserverCloseReason.Shutdown : ChangeFeedObserverCloseReason.Unknown;
 
@@ -58,7 +58,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             catch (OperationCanceledException) when (shutdownToken.IsCancellationRequested)
             {
                 closeReason = ChangeFeedObserverCloseReason.Shutdown;
-                // ignore
             }
             catch (Exception) when (processorTask.IsFaulted)
             {
@@ -67,14 +66,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             }
             finally
             {
-                await observer.CloseAsync(context, closeReason).ConfigureAwait(false);
+                await this.observer.CloseAsync(context, closeReason).ConfigureAwait(false);
             }
         }
 
         public void Dispose()
         {
-            processorCancellation?.Dispose();
-            renewerCancellation.Dispose();
+            this.processorCancellation?.Dispose();
+            this.renewerCancellation.Dispose();
         }
     }
 }

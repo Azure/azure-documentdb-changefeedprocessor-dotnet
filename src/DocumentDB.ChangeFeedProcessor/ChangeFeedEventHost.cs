@@ -2,17 +2,16 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
-using Microsoft.Azure.Documents.Client;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
+    using Microsoft.Azure.Documents.Client;
+
     /// <summary>
     /// Simple host for distributing change feed events across observers and thus allowing these observers scale.
     /// It distributes the load across its instances and allows dynamic scaling:
@@ -26,7 +25,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// It uses auxiliary document collection for managing leases for a partition.
     /// Every EventProcessorHost instance is performing the following two tasks:
     ///     1) Renew Leases: It keeps track of leases currently owned by the host and continuously keeps on renewing the leases.
-    ///     2) Acquire Leases: Each instance continuously polls all leases to check if there are any leases it should acquire 
+    ///     2) Acquire Leases: Each instance continuously polls all leases to check if there are any leases it should acquire
     ///     for the system to get into balanced state.
     /// </remarks>
     /// <example>
@@ -80,6 +79,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// </example>
     public class ChangeFeedEventHost
     {
+        /// <summary>
+        /// Default builder for the <see cref="ChangeFeedEventHost"/>
+        /// </summary>
         protected readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
         private IChangeFeedProcessor processor;
         private IRemainingWorkEstimator remainingWorkEstimator;
@@ -108,13 +110,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <param name="feedCollectionLocation">Specifies location of the Cosmos DB collection to monitor changes for.</param>
         /// <param name="leaseCollectionLocation">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
         /// <param name="changeFeedHostOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
-        public ChangeFeedEventHost(string hostName,
-                                   DocumentCollectionInfo feedCollectionLocation,
-                                   DocumentCollectionInfo leaseCollectionLocation,
-                                   ChangeFeedHostOptions changeFeedHostOptions) 
+        public ChangeFeedEventHost(
+            string hostName,
+            DocumentCollectionInfo feedCollectionLocation,
+            DocumentCollectionInfo leaseCollectionLocation,
+            ChangeFeedHostOptions changeFeedHostOptions)
             : this(hostName, feedCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), changeFeedHostOptions)
         {
-
         }
 
         /// <summary>
@@ -125,11 +127,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <param name="leaseCollectionLocation">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
         /// <param name="changeFeedOptions">Options to pass to the <see cref="DocumentClient.CreateDocumentChangeFeedQuery" /> API.</param>
         /// <param name="changeFeedHostOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
-        public ChangeFeedEventHost(string hostName,
-                                   DocumentCollectionInfo feedCollectionLocation,
-                                   DocumentCollectionInfo leaseCollectionLocation,
-                                   ChangeFeedOptions changeFeedOptions,
-                                   ChangeFeedHostOptions changeFeedHostOptions)
+        public ChangeFeedEventHost(
+            string hostName,
+            DocumentCollectionInfo feedCollectionLocation,
+            DocumentCollectionInfo leaseCollectionLocation,
+            ChangeFeedOptions changeFeedOptions,
+            ChangeFeedHostOptions changeFeedHostOptions)
         {
             if (string.IsNullOrEmpty(hostName))
                 throw new ArgumentNullException(nameof(hostName));
@@ -154,7 +157,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// This method also starts the host and enables it to start participating in the partition distribution process.</summary>
         /// <typeparam name="T">Implementation of your application-specific event observer.</typeparam>
         /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
-        public async Task RegisterObserverAsync<T>() where T : IChangeFeedObserver, new()
+        public async Task RegisterObserverAsync<T>()
+            where T : IChangeFeedObserver, new()
         {
             this.builder.WithObserver<T>();
             await this.CreateHost().ConfigureAwait(false);
@@ -174,8 +178,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             await this.processor.StartAsync().ConfigureAwait(false);
         }
 
-        /// <summary>Asynchronously shuts down the host instance. This method maintains the leases on all partitions currently held, and enables each 
-        /// host instance to shut down cleanly by invoking the method with object.</summary> 
+        /// <summary>Asynchronously shuts down the host instance. This method maintains the leases on all partitions currently held, and enables each
+        /// host instance to shut down cleanly by invoking the method with object.</summary>
         /// <returns>A task that indicates the host instance has stopped.</returns>
         public async Task UnregisterObserversAsync()
         {

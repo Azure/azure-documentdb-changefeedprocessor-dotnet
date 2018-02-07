@@ -2,17 +2,17 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+
     internal class LeaseRenewer : ILeaseRenewer
     {
-        private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly ILease lease;
         private readonly ILeaseManager leaseManager;
         private readonly TimeSpan leaseRenewInterval;
@@ -28,20 +28,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             try
             {
-                logger.Info("Renewer task started.");
+                Logger.Info("Renewer task started.");
                 while (true)
                 {
-                    await RenewLeaseAsync(lease).ConfigureAwait(false);
-                    await Task.Delay(leaseRenewInterval, cancellationToken).ConfigureAwait(false);
+                    await this.RenewLeaseAsync(this.lease).ConfigureAwait(false);
+                    await Task.Delay(this.leaseRenewInterval, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                logger.Info("Renewer task stopped.");
+                Logger.Info("Renewer task stopped.");
             }
             catch (Exception ex)
             {
-                logger.FatalException("Renew lease loop failed", ex);
+                Logger.FatalException("Renew lease loop failed", ex);
                 throw;
             }
         }
@@ -50,16 +50,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             try
             {
-                await leaseManager.RenewAsync(lease).ConfigureAwait(false);
+                await this.leaseManager.RenewAsync(lease).ConfigureAwait(false);
             }
             catch (LeaseLostException leaseLostException)
             {
-                logger.ErrorException("Lost lease on renew {0}.", leaseLostException, lease.PartitionId);
+                Logger.ErrorException("Lost lease on renew {0}.", leaseLostException, lease.PartitionId);
                 throw;
             }
             catch (Exception ex)
             {
-                logger.ErrorException("Failed to renew lease for partition {0}.", ex, lease.PartitionId);
+                Logger.ErrorException("Failed to renew lease for partition {0}.", ex, lease.PartitionId);
             }
         }
     }

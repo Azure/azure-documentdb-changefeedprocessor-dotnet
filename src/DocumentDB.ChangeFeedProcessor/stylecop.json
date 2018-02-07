@@ -4,13 +4,14 @@
     "documentationRules": {
       "companyName": "Microsoft",
       "documentInternalElements": false,
-      "documentInterfaces": true
+      "documentInterfaces": false,
+      "xmlHeader": false
     },
     "indentation": {
       "useTabs": false
     },
     "orderingRules": {
-      "systemUsingDirectivesFirst": true 
+      "systemUsingDirectivesFirst": true
     }
   }
 }

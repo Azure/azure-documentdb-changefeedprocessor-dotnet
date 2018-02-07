@@ -2,12 +2,12 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-using Microsoft.Azure.Documents.Client;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
+    using System;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+    using Microsoft.Azure.Documents.Client;
+
     /// <summary>
     /// Holds information specifying how to get Document collection.
     /// </summary>
@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// </summary>
         public DocumentCollectionInfo()
         {
-            ConnectionPolicy = new ConnectionPolicy();
+            this.ConnectionPolicy = new ConnectionPolicy();
         }
 
         /// <summary>
@@ -27,11 +27,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <param name="other">The other <see cref="DocumentCollectionInfo"/> to copy settings from.</param>
         public DocumentCollectionInfo(DocumentCollectionInfo other)
         {
-            Uri = other.Uri;
-            MasterKey = other.MasterKey;
-            DatabaseName = other.DatabaseName;
-            CollectionName = other.CollectionName;
-            ConnectionPolicy = other.ConnectionPolicy;
+            this.Uri = other.Uri;
+            this.MasterKey = other.MasterKey;
+            this.DatabaseName = other.DatabaseName;
+            this.CollectionName = other.CollectionName;
+            this.ConnectionPolicy = other.ConnectionPolicy;
         }
 
         /// <summary>
