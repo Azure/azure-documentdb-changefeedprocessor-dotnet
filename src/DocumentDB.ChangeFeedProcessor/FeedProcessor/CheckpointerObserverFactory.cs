@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         private readonly CheckpointFrequency checkpointFrequency;
 
         /// <summary>
-        /// Factory class used to create instance(s) of <see cref="IChangeFeedObserver"/>
+        /// Initializes a new instance of the <see cref="CheckpointerObserverFactory"/> class.
         /// </summary>
         /// <param name="observerFactory">Instance of Observer Factory</param>
         /// <param name="checkpointFrequency">Defined checkpoint frequency</param>

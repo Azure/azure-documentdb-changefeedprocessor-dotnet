@@ -19,6 +19,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 {
     public class ChangeFeedEventHostInternal: ChangeFeedEventHost
     {
+        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+
         public ChangeFeedEventHostInternal(string hostName,
                                    DocumentCollectionInfo feedCollectionLocation,
                                    DocumentCollectionInfo leaseCollectionLocation,

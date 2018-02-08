@@ -8,13 +8,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 
     internal class ProcessorSettings
     {
-        public string CollectionSelfLink;
-        public string PartitionKeyRangeId;
-        public int? MaxItemCount;
-        public string RequestContinuation;
-        public TimeSpan FeedPollDelay;
-        public bool StartFromBeginning;
-        public DateTime? StartTime;
-        public string SessionToken;
+        public string CollectionSelfLink { get; set; }
+
+        public string PartitionKeyRangeId { get; set; }
+
+        public int? MaxItemCount { get; set; }
+
+        public string RequestContinuation { get; set; }
+
+        public TimeSpan FeedPollDelay { get; set; }
+
+        public bool StartFromBeginning { get; set; }
+
+        public DateTime? StartTime { get; set; }
+
+        public string SessionToken { get; set; }
     }
 }

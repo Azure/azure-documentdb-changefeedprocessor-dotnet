@@ -82,7 +82,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <summary>
         /// Default builder for the <see cref="ChangeFeedEventHost"/>
         /// </summary>
-        protected readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
         private IChangeFeedProcessor processor;
         private IRemainingWorkEstimator remainingWorkEstimator;
 

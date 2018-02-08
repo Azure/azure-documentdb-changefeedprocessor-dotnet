@@ -20,8 +20,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             int maxParallelTaskCount = 0,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            Debug.Assert(source != null, "Source is not null");
-            Debug.Assert(worker != null, "Worker is not null");
+            Debug.Assert(source != null, "source is null");
+            Debug.Assert(worker != null, "worker is null");
             if (maxParallelTaskCount <= 0)
                 maxParallelTaskCount = 100;
 

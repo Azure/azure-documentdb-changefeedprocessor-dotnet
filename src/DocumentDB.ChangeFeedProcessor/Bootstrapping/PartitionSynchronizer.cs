@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
                 var feedOptions = new FeedOptions
                 {
                     MaxItemCount = this.maxBatchSize,
-                    RequestContinuation = response?.ResponseContinuation
+                    RequestContinuation = response?.ResponseContinuation,
                 };
                 response = await this.documentClient.ReadPartitionKeyRangeFeedAsync(partitionKeyRangesPath, feedOptions).ConfigureAwait(false);
                 partitionKeyRanges.AddRange(response);
