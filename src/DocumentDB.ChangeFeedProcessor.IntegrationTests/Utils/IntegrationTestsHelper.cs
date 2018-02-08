@@ -10,7 +10,7 @@ using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Configuration;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
 {
     internal class IntegrationTestsHelper
     {

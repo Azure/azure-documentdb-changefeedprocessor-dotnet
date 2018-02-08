@@ -11,11 +11,11 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Xunit;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.IntegrationTests
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {
     public class TestClassData
     {
@@ -69,10 +69,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.IntegrationTes
         public IDictionary<string, TestClassData> testClasses { get; private set; }
     }
 
-    [CollectionDefinition("Integration test collection")]
+    [CollectionDefinition("Integration tests")]
     public class IntegrationTestCollection : ICollectionFixture<IntegrationTestFixture>
     {
-        
     }
 
 
@@ -84,13 +83,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.IntegrationTes
     /// - Per test method, initialize/cleanup of lease collection.
     /// - Each derived class needs to have a constructor that receives the fixture and passes it to base along with its typeof. For example:
     ///      public DynamicCollectionTests(IntegrationTestFixture fixture): base(fixture, typeof(DynamicCollectionTests))
-    /// - Each derived class needs to decorate with [Trait("Category", "Integration")] and [Collection("Integration test collection")]
+    /// - Each derived class needs to decorate with [Trait("Category", "Integration")] and [Collection("Integration tests")]
     /// </summary>
     /// <remarks>
     /// Test method instance is not preserved across tests in same test class, can't share state in test class instance across test methods.
     /// </remarks>
     [Trait("Category", "Integration")]
-    [Collection("Integration test collection")]
+    [Collection("Integration tests")]
     public class IntegrationTest: IDisposable
     {
         private const string leaseCollectionInfoPropertyName = "leaseCollectionInfo";

@@ -1,20 +1,18 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
 
     <IsPackable>false</IsPackable>
 
-    <AssemblyName>Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests</AssemblyName>
+    <AssemblyName>Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests</AssemblyName>
 
-    <RootNamespace>Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests</RootNamespace>
+    <RootNamespace>Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.7.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="1.1.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
-    <PackageReference Include="Moq" Version="4.8.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
@@ -22,6 +20,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DocumentDB.ChangeFeedProcessor\DocumentDB.ChangeFeedProcessor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

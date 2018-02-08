@@ -9,7 +9,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.Client;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
 {
     internal class CollectionHelper
     {
