@@ -13,7 +13,7 @@ using Xunit;
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {
     [Trait("Category", "Integration")]
-    [Collection("Integration test collection")]
+    [Collection("Integration tests")]
     public class StaticCollectionTests : IntegrationTest
     {
         const int documentCount = 1519;

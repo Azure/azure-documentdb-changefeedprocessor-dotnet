@@ -17,14 +17,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     /// The collection is modified while Change Feed Processor is running.
     /// </summary>
     [Trait("Category", "Integration")]
-    [Collection("Integration test collection")]
+    [Collection("Integration tests")]
     public class DynamicCollectionTests : IntegrationTest
     {
         const int documentCount = 513;
         
         public DynamicCollectionTests(IntegrationTestFixture fixture): base(fixture, typeof(DynamicCollectionTests))
         {
-
         }
 
         [Fact]
