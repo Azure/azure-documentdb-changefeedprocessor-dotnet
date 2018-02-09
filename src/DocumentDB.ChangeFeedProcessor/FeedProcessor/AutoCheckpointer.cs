@@ -2,13 +2,13 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents;
+
     internal class AutoCheckpointer : IChangeFeedObserver
     {
         private readonly CheckpointFrequency checkpointFrequency;
@@ -29,39 +29,39 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 
         public Task OpenAsync(ChangeFeedObserverContext context)
         {
-            return observer.OpenAsync(context);
+            return this.observer.OpenAsync(context);
         }
 
         public Task CloseAsync(ChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
         {
-            return observer.CloseAsync(context, reason);
+            return this.observer.CloseAsync(context, reason);
         }
 
         public async Task ProcessChangesAsync(ChangeFeedObserverContext context, IReadOnlyList<Document> docs)
         {
-            await observer.ProcessChangesAsync(context, docs).ConfigureAwait(false);
-            processedDocCount += docs.Count;
+            await this.observer.ProcessChangesAsync(context, docs).ConfigureAwait(false);
+            this.processedDocCount += docs.Count;
 
-            if (IsCheckpointNeeded())
+            if (this.IsCheckpointNeeded())
             {
                 await context.CheckpointAsync().ConfigureAwait(false);
-                processedDocCount = 0;
-                lastCheckpointTime = DateTime.UtcNow;
+                this.processedDocCount = 0;
+                this.lastCheckpointTime = DateTime.UtcNow;
             }
         }
 
         private bool IsCheckpointNeeded()
         {
-            if(!checkpointFrequency.ProcessedDocumentCount.HasValue && !checkpointFrequency.TimeInterval.HasValue)
+            if (!this.checkpointFrequency.ProcessedDocumentCount.HasValue && !this.checkpointFrequency.TimeInterval.HasValue)
             {
                 return true;
             }
 
-            if (processedDocCount >= checkpointFrequency.ProcessedDocumentCount)
+            if (this.processedDocCount >= this.checkpointFrequency.ProcessedDocumentCount)
                 return true;
 
-            TimeSpan delta = DateTime.UtcNow - lastCheckpointTime;
-            if (delta >= checkpointFrequency.TimeInterval)
+            TimeSpan delta = DateTime.UtcNow - this.lastCheckpointTime;
+            if (delta >= this.checkpointFrequency.TimeInterval)
                 return true;
 
             return false;

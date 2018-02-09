@@ -2,19 +2,19 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.Client;
+
     internal class PartitionProcessor : IPartitionProcessor
     {
         private static readonly int DefaultMaxItemCount = 100;
@@ -40,29 +40,29 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                 StartTime = settings.StartTime
             };
 
-            this.query = documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, options);
+            this.query = documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, this.options);
         }
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
-            string requestContinuation = settings.RequestContinuation;
+            string requestContinuation = this.settings.RequestContinuation;
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                TimeSpan delay = settings.FeedPollDelay;
+                TimeSpan delay = this.settings.FeedPollDelay;
 
                 try
                 {
-                    requestContinuation = await ProcessBatch(cancellationToken).ConfigureAwait(false);
+                    requestContinuation = await this.ProcessBatch(cancellationToken).ConfigureAwait(false);
 
-                    if (options.MaxItemCount != settings.MaxItemCount)
+                    if (this.options.MaxItemCount != this.settings.MaxItemCount)
                     {
-                        options.MaxItemCount = settings.MaxItemCount;   // Reset after successful execution.
+                        this.options.MaxItemCount = this.settings.MaxItemCount;   // Reset after successful execution.
                     }
                 }
                 catch (DocumentClientException clientException)
                 {
-                    logger.WarnException("exception: partition '{0}'", clientException, settings.PartitionKeyRangeId);
+                    this.logger.WarnException("exception: partition '{0}'", clientException, this.settings.PartitionKeyRangeId);
                     DocDbError docDbError = ExceptionClassifier.ClassifyClientException(clientException);
                     switch (docDbError)
                     {
@@ -73,15 +73,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                         case DocDbError.Undefined:
                             throw;
                         case DocDbError.MaxItemCountTooLarge:
-                            if (!options.MaxItemCount.HasValue) options.MaxItemCount = DefaultMaxItemCount;
-                            else if (options.MaxItemCount <= 1)
+                            if (!this.options.MaxItemCount.HasValue)
                             {
-                                logger.ErrorFormat("Cannot reduce maxItemCount further as it's already at {0}.", options.MaxItemCount);
+                                this.options.MaxItemCount = DefaultMaxItemCount;
+                            }
+                            else if (this.options.MaxItemCount <= 1)
+                            {
+                                this.logger.ErrorFormat("Cannot reduce maxItemCount further as it's already at {0}.", this.options.MaxItemCount);
                                 throw;
                             }
 
-                            options.MaxItemCount /= 2;
-                            logger.WarnFormat("Reducing maxItemCount, new value: {0}.", options.MaxItemCount);
+                            this.options.MaxItemCount /= 2;
+                            this.logger.WarnFormat("Reducing maxItemCount, new value: {0}.", this.options.MaxItemCount);
                             break;
                     }
 
@@ -93,7 +96,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                     if (cancellationToken.IsCancellationRequested)
                         throw;
 
-                    logger.WarnException("exception: partition '{0}'", canceledException, settings.PartitionKeyRangeId);
+                    this.logger.WarnException("exception: partition '{0}'", canceledException, this.settings.PartitionKeyRangeId);
+
                     // ignore as it is caused by DocumentDB client
                 }
 
@@ -106,18 +110,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
             string lastContinuation;
             do
             {
-                IFeedResponse<Document> response = await query.ExecuteNextAsync<Document>(cancellation).ConfigureAwait(false);
+                IFeedResponse<Document> response = await this.query.ExecuteNextAsync<Document>(cancellation).ConfigureAwait(false);
                 lastContinuation = response.ResponseContinuation;
                 if (response.Count > 0)
-                    await DispatchChanges(response).ConfigureAwait(false);
+                    await this.DispatchChanges(response).ConfigureAwait(false);
             }
-            while (query.HasMoreResults && !cancellation.IsCancellationRequested);
+            while (this.query.HasMoreResults && !cancellation.IsCancellationRequested);
             return lastContinuation;
         }
 
         private Task DispatchChanges(IFeedResponse<Document> response)
         {
-            var context = new ChangeFeedObserverContextInternal(settings.PartitionKeyRangeId, response, checkpointer);
+            var context = new ChangeFeedObserverContextInternal(this.settings.PartitionKeyRangeId, response, this.checkpointer);
             var docs = new List<Document>(response.Count);
             using (IEnumerator<Document> e = response.GetEnumerator())
             {
@@ -127,7 +131,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                 }
             }
 
-            return observer.ProcessChangesAsync(context, docs);
+            return this.observer.ProcessChangesAsync(context, docs);
         }
     }
 }

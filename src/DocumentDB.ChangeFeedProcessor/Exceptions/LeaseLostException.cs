@@ -2,12 +2,12 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Runtime.Serialization;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
 {
+    using System;
+    using System.Runtime.Serialization;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+
     [Serializable]
     public class LeaseLostException : Exception
     {
@@ -18,14 +18,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
 
         public LeaseLostException(ILease lease)
         {
-            Lease = lease;
+            this.Lease = lease;
         }
 
         public LeaseLostException(ILease lease, Exception innerException, bool isGone = false)
             : base(null, innerException)
         {
-            Lease = lease;
-            IsGone = isGone;
+            this.Lease = lease;
+            this.IsGone = isGone;
         }
 
         public LeaseLostException(string message)
@@ -38,8 +38,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         {
         }
 
-        protected LeaseLostException(SerializationInfo info, StreamingContext context) :
-            base(info, context)
+        protected LeaseLostException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
             this.Lease = (ILease)info.GetValue("Lease", typeof(ILease));
         }
@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         {
             base.GetObjectData(info, context);
 
-            if (Lease != null)
+            if (this.Lease != null)
             {
                 info.AddValue("Lease", this.Lease);
             }

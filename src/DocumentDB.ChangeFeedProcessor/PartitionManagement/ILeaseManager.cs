@@ -2,12 +2,12 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+
     public interface ILeaseManager
     {
         /// <summary>
@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         Task<IEnumerable<ILease>> ListLeasesAsync();
 
         /// <summary>
-        /// Renew the lease 
+        /// Renew the lease
         /// </summary>
         /// <param name="lease">Lease to renew</param>
         /// <returns>Updated renewed lease</returns>
@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         Task<ILease> RenewAsync(ILease lease);
 
         /// <summary>
-        /// Update the lease 
+        /// Update the lease
         /// </summary>
         /// <param name="lease">Lease to renew</param>
         /// <param name="continuationToken">Continuation token</param>

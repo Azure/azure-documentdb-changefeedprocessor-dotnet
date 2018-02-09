@@ -2,13 +2,13 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Globalization;
-using Microsoft.Azure.Documents;
-using Newtonsoft.Json;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
+    using System;
+    using System.Globalization;
+    using Microsoft.Azure.Documents;
+    using Newtonsoft.Json;
+
     internal class DocumentServiceLease : ILease
     {
         private static readonly DateTime UnixStartTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
@@ -19,13 +19,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public DocumentServiceLease(DocumentServiceLease other)
         {
-            Id = other.Id;
-            PartitionId = other.PartitionId;
-            Owner = other.Owner;
-            ContinuationToken = other.ContinuationToken;
-            ETag = other.ETag;
-            TS = other.TS;
-            ExplicitTimestamp = other.ExplicitTimestamp;
+            this.Id = other.Id;
+            this.PartitionId = other.PartitionId;
+            this.Owner = other.Owner;
+            this.ContinuationToken = other.ContinuationToken;
+            this.ETag = other.ETag;
+            this.TS = other.TS;
+            this.ExplicitTimestamp = other.ExplicitTimestamp;
         }
 
         [JsonProperty("id")]
@@ -46,32 +46,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         [JsonProperty("ContinuationToken")]
         public string ContinuationToken { get; set; }
 
-        [JsonProperty("timestamp")]
-        private DateTime? ExplicitTimestamp { get; set; }
-
         [JsonIgnore]
         public DateTime Timestamp
         {
-            get { return ExplicitTimestamp ?? UnixStartTime.AddSeconds(TS); }
-            set { ExplicitTimestamp = value; }
+            get { return this.ExplicitTimestamp ?? UnixStartTime.AddSeconds(this.TS); }
+            set { this.ExplicitTimestamp = value; }
         }
 
         [JsonIgnore]
-        public string ConcurrencyToken => ETag;
+        public string ConcurrencyToken => this.ETag;
+
+        [JsonProperty("timestamp")]
+        private DateTime? ExplicitTimestamp { get; set; }
 
         [JsonProperty("_ts")]
         private long TS { get; set; }
-
-        public override string ToString()
-        {
-            return string.Format(
-                CultureInfo.InvariantCulture,
-                "{0} Owner='{1}' Continuation={2} Timestamp(local)={3}",
-                Id,
-                Owner,
-                ContinuationToken,
-                Timestamp.ToLocalTime());
-        }
 
         public static DocumentServiceLease FromDocument(Document document)
         {
@@ -79,6 +68,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 throw new ArgumentNullException(nameof(document));
             string json = JsonConvert.SerializeObject(document);
             return JsonConvert.DeserializeObject<DocumentServiceLease>(json);
+        }
+
+        public override string ToString()
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} Owner='{1}' Continuation={2} Timestamp(local)={3}",
+                this.Id,
+                this.Owner,
+                this.ContinuationToken,
+                this.Timestamp.ToLocalTime());
         }
     }
 }

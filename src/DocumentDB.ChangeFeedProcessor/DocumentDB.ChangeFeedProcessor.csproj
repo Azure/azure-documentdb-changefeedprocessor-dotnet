@@ -34,10 +34,6 @@
     <PackageTags>microsoft azure cosmosdb documentdb docdb nosql azureofficial</PackageTags>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <CodeAnalysisRuleSet>stylecop.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-
   <ItemGroup>
     <AdditionalFiles Include="stylecop.json" />
   </ItemGroup>

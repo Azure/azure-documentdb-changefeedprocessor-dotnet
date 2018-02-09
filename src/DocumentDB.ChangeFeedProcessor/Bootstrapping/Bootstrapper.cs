@@ -2,16 +2,16 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 {
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+
     internal class Bootstrapper : IBootstrapper
     {
-        private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly IPartitionSynchronizer synchronizer;
         private readonly ILeaseStore leaseStore;
         private readonly TimeSpan lockTime;
@@ -34,24 +34,24 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         {
             while (true)
             {
-                bool initialized = await leaseStore.IsInitializedAsync().ConfigureAwait(false);
+                bool initialized = await this.leaseStore.IsInitializedAsync().ConfigureAwait(false);
                 if (initialized) break;
 
-                bool shouldInitialize = await leaseStore.LockInitializationAsync(lockTime).ConfigureAwait(false);
+                bool shouldInitialize = await this.leaseStore.LockInitializationAsync(this.lockTime).ConfigureAwait(false);
                 if (!shouldInitialize)
                 {
-                    logger.InfoFormat("Another instance is initializing the store");
-                    await Task.Delay(sleepTime).ConfigureAwait(false);
+                    Logger.InfoFormat("Another instance is initializing the store");
+                    await Task.Delay(this.sleepTime).ConfigureAwait(false);
                     continue;
                 }
 
-                logger.InfoFormat("Initializing the store");
-                await synchronizer.CreateMissingLeasesAsync().ConfigureAwait(false);
-                await leaseStore.MarkInitializedAsync().ConfigureAwait(false);
+                Logger.InfoFormat("Initializing the store");
+                await this.synchronizer.CreateMissingLeasesAsync().ConfigureAwait(false);
+                await this.leaseStore.MarkInitializedAsync().ConfigureAwait(false);
                 break;
             }
 
-            logger.InfoFormat("The store is initialized");
+            Logger.InfoFormat("The store is initialized");
         }
     }
 }

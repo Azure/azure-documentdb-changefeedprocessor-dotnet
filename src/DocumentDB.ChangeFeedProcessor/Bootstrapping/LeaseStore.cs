@@ -2,16 +2,16 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 {
-    class LeaseStore : ILeaseStore
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
+    using Microsoft.Azure.Documents.Client;
+
+    public class LeaseStore : ILeaseStore
     {
         private readonly IDocumentClientEx client;
         private readonly DocumentCollectionInfo leaseStoreCollectionInfo;
@@ -28,34 +28,34 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 
         public async Task<bool> IsInitializedAsync()
         {
-            string markerDocId = GetStoreMarkerName();
-            Uri documentUri = UriFactory.CreateDocumentUri(leaseStoreCollectionInfo.DatabaseName, leaseStoreCollectionInfo.CollectionName, markerDocId);
-            Document document = await client.TryGetDocumentAsync(documentUri).ConfigureAwait(false);
+            string markerDocId = this.GetStoreMarkerName();
+            Uri documentUri = UriFactory.CreateDocumentUri(this.leaseStoreCollectionInfo.DatabaseName, this.leaseStoreCollectionInfo.CollectionName, markerDocId);
+            Document document = await this.client.TryGetDocumentAsync(documentUri).ConfigureAwait(false);
             return document != null;
         }
 
         public async Task MarkInitializedAsync()
         {
-            string markerDocId = GetStoreMarkerName();
+            string markerDocId = this.GetStoreMarkerName();
             var containerDocument = new Document { Id = markerDocId };
-            await client.TryCreateDocumentAsync(leaseStoreCollectionLink, containerDocument).ConfigureAwait(false);
+            await this.client.TryCreateDocumentAsync(this.leaseStoreCollectionLink, containerDocument).ConfigureAwait(false);
         }
 
         public async Task<bool> LockInitializationAsync(TimeSpan lockTime)
         {
-            string lockId = GetStoreLockName();
+            string lockId = this.GetStoreLockName();
             var containerDocument = new Document { Id = lockId, TimeToLive = (int)lockTime.TotalSeconds };
-            return await client.TryCreateDocumentAsync(leaseStoreCollectionLink, containerDocument).ConfigureAwait(false);
+            return await this.client.TryCreateDocumentAsync(this.leaseStoreCollectionLink, containerDocument).ConfigureAwait(false);
         }
 
         private string GetStoreMarkerName()
         {
-            return containerNamePrefix + ".info";
+            return this.containerNamePrefix + ".info";
         }
 
         private string GetStoreLockName()
         {
-            return containerNamePrefix + ".lock";
+            return this.containerNamePrefix + ".lock";
         }
     }
 }

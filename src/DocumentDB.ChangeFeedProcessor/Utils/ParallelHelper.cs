@@ -2,16 +2,16 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     internal static class ParallelHelper
     {
         public static Task ForEachAsync<TSource>(
@@ -20,8 +20,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             int maxParallelTaskCount = 0,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            Debug.Assert(source != null);
-            Debug.Assert(worker != null);
+            Debug.Assert(source != null, "source is null");
+            Debug.Assert(worker != null, "worker is null");
             if (maxParallelTaskCount <= 0)
                 maxParallelTaskCount = 100;
 
@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
                 Partitioner.Create(source)
                            .GetPartitions(maxParallelTaskCount)
                            .Select(partition => Task.Run(
-                               async delegate
+                               async () =>
                                {
                                    using (partition)
                                    {

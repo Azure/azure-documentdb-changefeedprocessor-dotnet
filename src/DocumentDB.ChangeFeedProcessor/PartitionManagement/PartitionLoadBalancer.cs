@@ -2,17 +2,17 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+
     internal class PartitionLoadBalancer : IPartitionLoadBalancer
     {
-        private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly IPartitionController partitionController;
         private readonly ILeaseManager leaseManager;
         private readonly ILoadBalancingStrategy loadBalancingStrategy;
@@ -30,26 +30,28 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             this.leaseManager = leaseManager;
             this.loadBalancingStrategy = loadBalancingStrategy;
             this.leaseAcquireInterval = leaseAcquireInterval;
-            cancellationTokenSource = new CancellationTokenSource();
+            this.cancellationTokenSource = new CancellationTokenSource();
         }
 
         public void Start()
         {
-            if (runTask != null)
+            if (this.runTask != null)
             {
                 throw new InvalidOperationException("Already started");
             }
-            runTask = RunAsync();
+
+            this.runTask = this.RunAsync();
         }
 
         public async Task StopAsync()
         {
-            if (runTask == null)
+            if (this.runTask == null)
             {
                 throw new InvalidOperationException("Start has to be called before stop");
             }
-            cancellationTokenSource.Cancel();
-            await runTask.ConfigureAwait(false);
+
+            this.cancellationTokenSource.Cancel();
+            await this.runTask.ConfigureAwait(false);
         }
 
         private async Task RunAsync()
@@ -58,23 +60,24 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             {
                 while (true)
                 {
-                    IEnumerable<ILease> allLeases = await leaseManager.ListLeasesAsync().ConfigureAwait(false);
-                    IEnumerable<ILease> leasesToTake = loadBalancingStrategy.CalculateLeasesToTake(allLeases);
+                    IEnumerable<ILease> allLeases = await this.leaseManager.ListLeasesAsync().ConfigureAwait(false);
+                    IEnumerable<ILease> leasesToTake = this.loadBalancingStrategy.CalculateLeasesToTake(allLeases);
 
                     foreach (ILease lease in leasesToTake)
                     {
-                        await partitionController.AddLeaseAsync(lease).ConfigureAwait(false);
+                        await this.partitionController.AddLeaseAsync(lease).ConfigureAwait(false);
                     }
-                    await Task.Delay(leaseAcquireInterval, cancellationTokenSource.Token).ConfigureAwait(false);
+
+                    await Task.Delay(this.leaseAcquireInterval, this.cancellationTokenSource.Token).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
             {
-                logger.Info("Partition load balancer task stopped.");
+                Logger.Info("Partition load balancer task stopped.");
             }
             catch (Exception ex)
             {
-                logger.FatalException("Partition load balancer loop failed", ex);
+                Logger.FatalException("Partition load balancer loop failed", ex);
                 throw;
             }
         }

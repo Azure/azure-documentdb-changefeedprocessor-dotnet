@@ -4,13 +4,19 @@
     "documentationRules": {
       "companyName": "Microsoft",
       "documentInternalElements": false,
-      "documentInterfaces": true
+      "documentInterfaces": false,
+      "xmlHeader": false,
+      "copyrightText": "{decoration}\r\nCopyright (c) Microsoft Corporation.  Licensed under the {licenseName} license.\r\n{decoration}",
+      "variables": {
+        "licenseName": "MIT",
+        "decoration": " ----------------------------------------------------------------"
+      }
     },
     "indentation": {
       "useTabs": false
     },
     "orderingRules": {
-      "systemUsingDirectivesFirst": true 
+      "systemUsingDirectivesFirst": true
     }
   }
 }

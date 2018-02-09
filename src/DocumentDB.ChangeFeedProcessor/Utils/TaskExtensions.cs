@@ -2,19 +2,19 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+
     internal static class TaskExtensions
     {
-        private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
         public static void LogException(this Task task)
         {
-            task.ContinueWith(_ => logger.ErrorException("exception caught", task.Exception), TaskContinuationOptions.OnlyOnFaulted);
+            task.ContinueWith(_ => Logger.ErrorException("exception caught", task.Exception), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public static async Task IgnoreException(this Task task)

@@ -2,12 +2,12 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents;
+
     /// <summary>
     /// This interface is used to deliver change events to document feed observers.
     /// </summary>

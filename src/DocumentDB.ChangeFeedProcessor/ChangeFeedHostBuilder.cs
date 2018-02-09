@@ -2,23 +2,25 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Globalization;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
+    using System;
+    using System.Globalization;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
+    using Microsoft.Azure.Documents.Client;
+
     public class ChangeFeedHostBuilder
     {
-        private static readonly ILog logger = LogProvider.GetCurrentClassLogger();
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
+        private readonly TimeSpan sleepTime = TimeSpan.FromSeconds(15);
+        private readonly TimeSpan lockTime = TimeSpan.FromSeconds(30);
         private string hostName;
         private DocumentCollectionInfo feedCollectionLocation;
         private ChangeFeedHostOptions changeFeedHostOptions;
@@ -30,8 +32,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private DocumentCollectionInfo leaseCollectionLocation;
         private IDocumentClientEx leaseDocumentClient;
         private ILeaseManager leaseManager;
-        private readonly TimeSpan sleepTime = TimeSpan.FromSeconds(15);
-        private readonly TimeSpan lockTime = TimeSpan.FromSeconds(30);
 
         public ChangeFeedHostBuilder WithHostName(string hostName)
         {
@@ -74,7 +74,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithObserver<T>() where T : IChangeFeedObserver, new()
+        public ChangeFeedHostBuilder WithObserver<T>()
+            where T : IChangeFeedObserver, new()
         {
             this.observerFactory = new ChangeFeedObserverFactory<T>();
             return this;
@@ -167,7 +168,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         private static async Task<string> GetDatabaseResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
         {
-            logger.InfoFormat("Reading database: '{0}'", collectionLocation.DatabaseName);
+            Logger.InfoFormat("Reading database: '{0}'", collectionLocation.DatabaseName);
             Uri databaseUri = UriFactory.CreateDatabaseUri(collectionLocation.DatabaseName);
             Database database = await documentClient.ReadDatabaseAsync(databaseUri, null).ConfigureAwait(false);
             return database.ResourceId;
@@ -175,7 +176,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         private static async Task<string> GetCollectionResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
         {
-            logger.InfoFormat("Reading collection: '{0}'", collectionLocation.CollectionName);
+            Logger.InfoFormat("Reading collection: '{0}'", collectionLocation.CollectionName);
             DocumentCollection documentCollection = await documentClient.GetDocumentCollectionAsync(collectionLocation).ConfigureAwait(false);
             return documentCollection.ResourceId;
         }
