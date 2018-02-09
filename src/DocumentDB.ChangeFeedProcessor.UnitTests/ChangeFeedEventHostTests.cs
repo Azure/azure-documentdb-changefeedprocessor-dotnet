@@ -17,29 +17,6 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 {
-    public class ChangeFeedEventHostInternal: ChangeFeedEventHost
-    {
-        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
-
-        public ChangeFeedEventHostInternal(string hostName,
-                                   DocumentCollectionInfo feedCollectionLocation,
-                                   DocumentCollectionInfo leaseCollectionLocation,
-                                   IDocumentClientEx feedCollectionClient,
-                                   IDocumentClientEx leaseCollectionClient,
-                                   ILeaseManager leaseManager,
-                                   ChangeFeedHostOptions changeFeedHostOptions): base(hostName, feedCollectionLocation, leaseCollectionLocation)
-        {
-            this.builder
-                .WithHostName(hostName)
-                .WithFeedDocumentClient(feedCollectionClient)
-                .WithFeedCollection(feedCollectionLocation)
-                .WithChangeFeedHostOptions(changeFeedHostOptions)
-                .WithLeaseManager(leaseManager)
-                .WithLeaseCollection(leaseCollectionLocation)
-                .WithLeaseDocumentClient(leaseCollectionClient);
-        }
-    }
-
     [Trait("Category", "Gated")]
     public class ChangeFeedEventHostTests
     {
@@ -62,6 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly IChangeFeedObserver observer;
         private readonly IChangeFeedObserverFactory observerFactory;
+        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
 
         public ChangeFeedEventHostTests()
         {
@@ -130,7 +108,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(manager => manager.ReleaseAsync(lease))
                 .Returns(Task.FromResult(false));
 
-            this.changeFeedEventHost = new ChangeFeedEventHostInternal("someHost", collectionInfo, collectionInfo, documentClient, leaseDocumentClient, leaseManager, new ChangeFeedHostOptions());
+            this.builder
+                .WithHostName("someHost")
+                .WithFeedDocumentClient(documentClient)
+                .WithFeedCollection(collectionInfo)
+                .WithChangeFeedHostOptions(new ChangeFeedHostOptions())
+                .WithLeaseManager(leaseManager)
+                .WithLeaseCollection(collectionInfo)
+                .WithLeaseDocumentClient(leaseDocumentClient);
 
             this.observer = Mock.Of<IChangeFeedObserver>();
             Mock.Get(observer)
@@ -151,15 +136,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         [Fact]
         public async Task RegisterObserver_Then_Estimate()
         {
-            await this.changeFeedEventHost.RegisterObserverFactoryAsync(this.observerFactory);
-            await this.changeFeedEventHost.GetEstimatedRemainingWork();
+            this.builder.WithObserverFactory(this.observerFactory);
+            var processor = await this.builder.BuildProcessorAsync();
+            await processor.StartAsync();
+            var remainingWorkEstimator = await this.builder.BuildEstimatorAsync();
+            await remainingWorkEstimator.GetEstimatedRemainingWork();
         }
 
         [Fact]
         public async Task Estimate_Then_RegisterObserver()
         {
-            await this.changeFeedEventHost.GetEstimatedRemainingWork();
-            await this.changeFeedEventHost.RegisterObserverFactoryAsync(this.observerFactory);
+            var remainingWorkEstimator = await this.builder.BuildEstimatorAsync();
+            await remainingWorkEstimator.GetEstimatedRemainingWork();
+            this.builder.WithObserverFactory(this.observerFactory);
+            var processor = await this.builder.BuildProcessorAsync();
+            await processor.StartAsync();
         }
     }
 }
