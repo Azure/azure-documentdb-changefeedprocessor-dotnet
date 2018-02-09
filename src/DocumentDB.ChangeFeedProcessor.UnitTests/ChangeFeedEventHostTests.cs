@@ -151,7 +151,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             this.builder.WithObserverFactory(this.observerFactory);
             var processor = await this.builder.BuildProcessorAsync();
             await processor.StartAsync();
-
         }
     }
 }
