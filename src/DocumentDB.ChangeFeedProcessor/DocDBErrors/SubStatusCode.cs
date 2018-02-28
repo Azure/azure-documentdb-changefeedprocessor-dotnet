@@ -21,6 +21,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors
         /// <summary>
         /// 404: LSN in session token is higher
         /// </summary>
-        ReadSessionNotAvailable = 1002
+        ReadSessionNotAvailable = 1002,
     }
 }

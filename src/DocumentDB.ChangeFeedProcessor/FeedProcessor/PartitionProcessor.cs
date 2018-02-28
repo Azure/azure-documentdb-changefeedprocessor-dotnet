@@ -37,7 +37,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                 SessionToken = settings.SessionToken,
                 StartFromBeginning = settings.StartFromBeginning,
                 RequestContinuation = settings.RequestContinuation,
-                StartTime = settings.StartTime
+                StartTime = settings.StartTime,
             };
 
             this.query = documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, this.options);

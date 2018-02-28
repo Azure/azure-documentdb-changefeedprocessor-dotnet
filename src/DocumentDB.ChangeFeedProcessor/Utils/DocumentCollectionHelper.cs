@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             {
                 result = new DocumentCollectionInfo(collectionInfo)
                 {
-                    ConnectionPolicy = { UserAgentSuffix = DefaultUserAgentSuffix }
+                    ConnectionPolicy = { UserAgentSuffix = DefaultUserAgentSuffix },
                 };
             }
 
