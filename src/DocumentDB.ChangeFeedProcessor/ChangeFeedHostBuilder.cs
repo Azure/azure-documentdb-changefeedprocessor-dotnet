@@ -109,7 +109,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithLeaseManager(ILeaseManager leaseManager)
+        #if PRIVATE_API
+        public
+        #else
+        internal
+        #endif
+        ChangeFeedHostBuilder WithLeaseManager(ILeaseManager leaseManager)
         {
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
             this.leaseManager = leaseManager;
@@ -189,7 +194,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             string leaseStoreCollectionLink = documentCollection.SelfLink;
 
             string collectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
-            IChangeFeedObserverFactory factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions.CheckpointFrequency);
+            IChangeFeedObserverFactory factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions);
             var synchronizer = new PartitionSynchronizer(this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions.DegreeOfParallelism, this.changeFeedHostOptions.QueryPartitionsMaxBatchSize);
             var leaseStore = new LeaseStore(this.leaseDocumentClient, this.leaseCollectionLocation, this.GetLeasePrefix(), leaseStoreCollectionLink);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);

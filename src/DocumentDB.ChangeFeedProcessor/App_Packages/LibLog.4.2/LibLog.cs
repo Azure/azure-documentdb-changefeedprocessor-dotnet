@@ -64,7 +64,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging
 #endif
 #endif
 
-#if LIBLOG_PROVIDERS_ONLY
+#if !LIBLOG_PUBLIC
     internal
 #else
     public
@@ -104,7 +104,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging
     /// <summary>
     /// The log level.
     /// </summary>
-#if LIBLOG_PROVIDERS_ONLY
+#if !LIBLOG_PUBLIC
     internal
 #else
     public
@@ -380,7 +380,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging
     /// <summary>
     /// Represents a way to get a <see cref="ILog"/>
     /// </summary>
-#if LIBLOG_PROVIDERS_ONLY
+#if !LIBLOG_PUBLIC
     internal
 #else
     public
@@ -413,7 +413,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging
     /// <summary>
     /// Provides a mechanism to create instances of <see cref="ILog" /> objects.
     /// </summary>
-#if LIBLOG_PROVIDERS_ONLY
+#if !LIBLOG_PUBLIC
     internal
 #else
     public

@@ -68,7 +68,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             {
                 Id = leaseDocId,
                 PartitionId = partitionId,
-                ContinuationToken = continuationToken
+                ContinuationToken = continuationToken,
             };
 
             bool created = await this.client.TryCreateDocumentAsync(this.leaseStoreCollectionLink, documentServiceLease).ConfigureAwait(false);
