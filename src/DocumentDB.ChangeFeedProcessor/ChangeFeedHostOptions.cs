@@ -26,7 +26,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             this.FeedPollDelay = DefaultFeedPollDelay;
             this.QueryPartitionsMaxBatchSize = DefaultQueryPartitionsMaxBatchSize;
             this.CheckpointFrequency = new CheckpointFrequency();
-            this.IsAutoCheckpointEnabled = true;
         }
 
         /// <summary>
@@ -66,7 +65,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// When this is set to false, use ChangeFeedObserverContext.CheckpointAsync for manual control of checkpoint.
         /// </summary>
         [Obsolete("IsAutoCheckpointEnabled is deprecated, please use CheckpointFrequency.ExplicitCheckpoint instead.")]
-        public bool IsAutoCheckpointEnabled { get; set; }
+        public bool IsAutoCheckpointEnabled
+        {
+            get
+            {
+                return !this.CheckpointFrequency.ExplicitCheckpoint;
+            }
+
+            set
+            {
+                this.CheckpointFrequency.ExplicitCheckpoint = !value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the minimum partition count for the host.

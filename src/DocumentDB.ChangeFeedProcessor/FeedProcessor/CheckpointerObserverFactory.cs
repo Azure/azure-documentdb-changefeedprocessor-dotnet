@@ -37,7 +37,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         public IChangeFeedObserver CreateObserver()
         {
             IChangeFeedObserver observer = this.observerFactory.CreateObserver();
-            if (this.changeFeedHostOptions.CheckpointFrequency.ExplicitCheckpoint || !this.changeFeedHostOptions.IsAutoCheckpointEnabled) return observer;
+            if (this.changeFeedHostOptions.CheckpointFrequency.ExplicitCheckpoint) return observer;
 
             return new AutoCheckpointer(this.changeFeedHostOptions.CheckpointFrequency, observer);
         }
