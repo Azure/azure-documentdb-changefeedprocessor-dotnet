@@ -69,7 +69,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
                 },
                 this.degreeOfParallelism).ConfigureAwait(false);
 
-            Logger.InfoFormat("partition {0} split into {1}", partitionId, addedPartitionIds.Count);
+            if (Logger.IsInfoEnabled())
+            {
+                Logger.InfoFormat("partition {0} split into {1}", partitionId, string.Join(", ", newLeases.Select(l => l.PartitionId)));
+            }
+
             return newLeases;
         }
 

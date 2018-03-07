@@ -13,9 +13,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     internal class LeaseRenewer : ILeaseRenewer
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
-        private readonly ILease lease;
         private readonly ILeaseManager leaseManager;
         private readonly TimeSpan leaseRenewInterval;
+        private ILease lease;
 
         public LeaseRenewer(ILease lease, ILeaseManager leaseManager, TimeSpan leaseRenewInterval)
         {
@@ -28,38 +28,43 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             try
             {
-                Logger.Info("Renewer task started.");
+                Logger.InfoFormat("Partition {0}: renewer task started.", this.lease.PartitionId);
+                await Task.Delay(TimeSpan.FromTicks(this.leaseRenewInterval.Ticks / 2), cancellationToken).ConfigureAwait(false);
+
                 while (true)
                 {
-                    await this.RenewLeaseAsync(this.lease).ConfigureAwait(false);
+                    await this.RenewAsync().ConfigureAwait(false);
                     await Task.Delay(this.leaseRenewInterval, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                Logger.Info("Renewer task stopped.");
+                Logger.InfoFormat("Partition {0}: renewer task stopped.", this.lease.PartitionId);
             }
             catch (Exception ex)
             {
-                Logger.FatalException("Renew lease loop failed", ex);
+                Logger.FatalException("Partition {0}: renew lease loop failed", ex, this.lease.PartitionId);
                 throw;
             }
         }
 
-        private async Task RenewLeaseAsync(ILease lease)
+        private async Task RenewAsync()
         {
             try
             {
-                await this.leaseManager.RenewAsync(lease).ConfigureAwait(false);
+                var renewedLease = await this.leaseManager.RenewAsync(this.lease).ConfigureAwait(false);
+                if (renewedLease != null) this.lease = renewedLease;
+
+                Logger.InfoFormat("Partition {0}: renewed lease with result {1}", this.lease.PartitionId, renewedLease != null);
             }
             catch (LeaseLostException leaseLostException)
             {
-                Logger.ErrorException("Lost lease on renew {0}.", leaseLostException, lease.PartitionId);
+                Logger.ErrorException("Partition {0}: lost lease on renew.", leaseLostException, this.lease.PartitionId);
                 throw;
             }
             catch (Exception ex)
             {
-                Logger.ErrorException("Failed to renew lease for partition {0}.", ex, lease.PartitionId);
+                Logger.ErrorException("Partition {0}: failed to renew lease.", ex, this.lease.PartitionId);
             }
         }
     }

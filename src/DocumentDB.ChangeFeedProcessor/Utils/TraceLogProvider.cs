@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
                 return true;
             }
 
-            string message = messageFunc();
+            string message = string.Format(CultureInfo.InvariantCulture, "{0}: {1}", DateTime.UtcNow, messageFunc());
             IEnumerable<string> patternMatches;
             string formattedMessage =
                 LogMessageFormatter.FormatStructuredMessage(

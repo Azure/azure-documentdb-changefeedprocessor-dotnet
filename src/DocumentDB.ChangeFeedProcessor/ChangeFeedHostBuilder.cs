@@ -143,7 +143,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             ILeaseManager leaseManager = await this.GetLeaseManagerAsync().ConfigureAwait(false);
 
             IPartitionManager partitionManager = await this.BuildPartitionManagerAsync(leaseManager).ConfigureAwait(false);
-            return new ChangeFeedProcessor(partitionManager);
+            return new ChangeFeedProcessor(this.hostName, partitionManager);
         }
 
         public async Task<IRemainingWorkEstimator> BuildEstimatorAsync()
