@@ -17,22 +17,22 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
     class CheckpointerObserverFactory : IChangeFeedObserverFactory
     {
         private readonly IChangeFeedObserverFactory observerFactory;
-        private readonly ChangeFeedHostOptions changeFeedHostOptions;
+        private readonly CheckpointFrequency checkpointFrequency;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CheckpointerObserverFactory"/> class.
         /// </summary>
         /// <param name="observerFactory">Instance of Observer Factory</param>
-        /// <param name="changeFeedHostOptions">Defined <see cref="ChangeFeedHostOptions"/></param>
-        public CheckpointerObserverFactory(IChangeFeedObserverFactory observerFactory, ChangeFeedHostOptions changeFeedHostOptions)
+        /// <param name="checkpointFrequency">Defined <see cref="CheckpointFrequency"/></param>
+        public CheckpointerObserverFactory(IChangeFeedObserverFactory observerFactory, CheckpointFrequency checkpointFrequency)
         {
             if (observerFactory == null)
                 throw new ArgumentNullException(nameof(observerFactory));
-            if (changeFeedHostOptions == null)
-                throw new ArgumentNullException(nameof(changeFeedHostOptions));
+            if (checkpointFrequency == null)
+                throw new ArgumentNullException(nameof(checkpointFrequency));
 
             this.observerFactory = observerFactory;
-            this.changeFeedHostOptions = changeFeedHostOptions;
+            this.checkpointFrequency = checkpointFrequency;
         }
 
         /// <summary>
@@ -42,9 +42,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         public IChangeFeedObserver CreateObserver()
         {
             IChangeFeedObserver observer = this.observerFactory.CreateObserver();
-            if (this.changeFeedHostOptions.CheckpointFrequency.ExplicitCheckpoint) return observer;
+            if (this.checkpointFrequency.ExplicitCheckpoint) return observer;
 
-            return new AutoCheckpointer(this.changeFeedHostOptions.CheckpointFrequency, observer);
+            return new AutoCheckpointer(this.checkpointFrequency, observer);
         }
     }
 }
