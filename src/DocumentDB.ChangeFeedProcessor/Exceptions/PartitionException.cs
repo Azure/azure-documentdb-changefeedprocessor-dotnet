@@ -6,13 +6,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
 {
     using System;
 
-    public class PartitionException : Exception
+    internal class PartitionException : Exception
     {
-        public string LastContinuation { get; }
-
         public PartitionException(string lastContinuation)
         {
-            LastContinuation = lastContinuation;
+            this.LastContinuation = lastContinuation;
         }
+
+        public string LastContinuation { get; }
     }
 }

@@ -7,7 +7,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
-    public class PartitionCheckpointer : IPartitionCheckpointer
+#if PRIVATE_API
+    public
+#else
+    internal
+#endif
+    class PartitionCheckpointer : IPartitionCheckpointer
     {
         private readonly ILeaseManager leaseManager;
         private readonly ILease lease;

@@ -34,6 +34,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <summary>
         /// The lease is gone. This can be due to partition split.
         /// </summary>
-        LeaseGone
+        LeaseGone,
     }
 }

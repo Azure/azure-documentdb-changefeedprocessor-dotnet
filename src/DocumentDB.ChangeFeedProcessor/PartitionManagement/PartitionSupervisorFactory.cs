@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 MaxItemCount = this.changeFeedHostOptions.QueryPartitionsMaxBatchSize,
                 StartFromBeginning = this.changeFeedOptions.StartFromBeginning,
                 StartTime = this.changeFeedOptions.StartTime,
-                SessionToken = this.changeFeedOptions.SessionToken
+                SessionToken = this.changeFeedOptions.SessionToken,
             };
 
             var checkpointer = new PartitionCheckpointer(this.leaseManager, lease);

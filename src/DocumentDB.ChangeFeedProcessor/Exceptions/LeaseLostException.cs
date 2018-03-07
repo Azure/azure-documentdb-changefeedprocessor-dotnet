@@ -9,7 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
     [Serializable]
-    public class LeaseLostException : Exception
+    internal class LeaseLostException : Exception
     {
         /// <summary>Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.</summary>
         public LeaseLostException()

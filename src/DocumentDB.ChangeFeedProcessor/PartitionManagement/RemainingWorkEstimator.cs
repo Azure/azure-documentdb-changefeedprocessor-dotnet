@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             ChangeFeedOptions options = new ChangeFeedOptions
             {
-                MaxItemCount = 1
+                MaxItemCount = 1,
             };
 
             foreach (ILease existingLease in await this.leaseManager.ListLeasesAsync())

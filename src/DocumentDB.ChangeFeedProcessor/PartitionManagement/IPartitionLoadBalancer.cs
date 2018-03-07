@@ -6,7 +6,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System.Threading.Tasks;
 
-    public interface IPartitionLoadBalancer
+#if PRIVATE_API
+    public
+#else
+    internal
+#endif
+    interface IPartitionLoadBalancer
     {
         /// <summary>
         /// Starts the load balancer

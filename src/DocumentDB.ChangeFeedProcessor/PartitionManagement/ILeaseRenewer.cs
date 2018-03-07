@@ -7,7 +7,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Threading;
     using System.Threading.Tasks;
 
-    public interface ILeaseRenewer
+#if PRIVATE_API
+    public
+#else
+    internal
+#endif
+    interface ILeaseRenewer
     {
         /// <summary>
         /// Starts the lease renewer

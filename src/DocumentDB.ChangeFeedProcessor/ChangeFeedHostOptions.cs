@@ -61,6 +61,24 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public string LeasePrefix { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the host will checkpoint leases automatically.
+        /// When this is set to false, use ChangeFeedObserverContext.CheckpointAsync for manual control of checkpoint.
+        /// </summary>
+        [Obsolete("IsAutoCheckpointEnabled is deprecated, please use CheckpointFrequency.ExplicitCheckpoint instead.")]
+        public bool IsAutoCheckpointEnabled
+        {
+            get
+            {
+                return !this.CheckpointFrequency.ExplicitCheckpoint;
+            }
+
+            set
+            {
+                this.CheckpointFrequency.ExplicitCheckpoint = !value;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the minimum partition count for the host.
         /// This can be used to increase the number of partitions for the host and thus override equal distribution (which is the default) of leases between hosts.
         /// </summary>

@@ -109,7 +109,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithLeaseManager(ILeaseManager leaseManager)
+        #if PRIVATE_API
+        public
+        #else
+        internal
+        #endif
+        ChangeFeedHostBuilder WithLeaseManager(ILeaseManager leaseManager)
         {
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
             this.leaseManager = leaseManager;

@@ -8,7 +8,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 
-    public interface ILeaseManager
+#if PRIVATE_API
+    public
+#else
+    internal
+#endif
+    interface ILeaseManager
     {
         /// <summary>
         /// Checks whether lease exists and creates if does not exist.
