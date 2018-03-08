@@ -16,6 +16,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
 
+// Keep PRIVATE_SDK members in same places as where they would be if they were public.
+#pragma warning disable SA1202 // StyleCop.CSharp.OrderingRules", "SA1202:ElementsMustBeOrderedByAccess": 'public' members should come before 'internal' members.
+
     public class ChangeFeedHostBuilder
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
@@ -265,3 +268,5 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
     }
 }
+
+#pragma warning restore SA1202 // StyleCop.CSharp.OrderingRules", "SA1202:ElementsMustBeOrderedByAccess"

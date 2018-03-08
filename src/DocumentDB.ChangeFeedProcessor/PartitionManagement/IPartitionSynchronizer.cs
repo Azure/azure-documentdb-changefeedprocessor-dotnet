@@ -7,14 +7,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Collections.Generic;
     using System.Threading.Tasks;
 
+    /// <summary>
+    /// Read DocDB partitions and create leases if they do not exist
+    /// </summary>
 #if PRIVATE_API
     public
 #else
     internal
 #endif
-    /// <summary>
-    /// Read DocDB partitions and create leases if they do not exist
-    /// </summary>
     interface IPartitionSynchronizer
     {
         Task CreateMissingLeasesAsync();
