@@ -44,12 +44,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             var tcs = new TaskCompletionSource<bool>();
             if (!this.currentlyOwnedPartitions.TryAdd(lease.PartitionId, tcs))
             {
+                Logger.InfoFormat("cannot add partition {0} to owned as it is already owned", lease.PartitionId);
                 return;
             }
 
             try
             {
-                await this.leaseManager.AcquireAsync(lease, this.hostName).ConfigureAwait(false);
+                var updatedLease = await this.leaseManager.AcquireAsync(lease, this.hostName).ConfigureAwait(false);
+                if (updatedLease != null) lease = updatedLease;
+
                 Logger.InfoFormat("partition {0}: acquired", lease.PartitionId);
             }
             catch (Exception)

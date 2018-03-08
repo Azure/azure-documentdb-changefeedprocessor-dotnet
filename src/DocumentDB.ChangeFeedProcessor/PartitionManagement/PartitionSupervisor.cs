@@ -34,12 +34,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             await this.observer.OpenAsync(context).ConfigureAwait(false);
 
             this.processorCancellation = CancellationTokenSource.CreateLinkedTokenSource(shutdownToken);
+
             Task processorTask = this.processor.RunAsync(this.processorCancellation.Token);
             processorTask.ContinueWith(_ => this.renewerCancellation.Cancel()).LogException();
+
             Task renewerTask = this.renewer.RunAsync(this.renewerCancellation.Token);
             renewerTask.ContinueWith(_ => this.processorCancellation.Cancel()).LogException();
 
-            ChangeFeedObserverCloseReason closeReason = shutdownToken.IsCancellationRequested ? ChangeFeedObserverCloseReason.Shutdown : ChangeFeedObserverCloseReason.Unknown;
+            ChangeFeedObserverCloseReason closeReason = shutdownToken.IsCancellationRequested ?
+                ChangeFeedObserverCloseReason.Shutdown :
+                ChangeFeedObserverCloseReason.Unknown;
 
             try
             {

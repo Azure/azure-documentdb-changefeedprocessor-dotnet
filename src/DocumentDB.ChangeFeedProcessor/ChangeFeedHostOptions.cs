@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public TimeSpan FeedPollDelay { get; set; }
 
         /// <summary>
-        /// Gets or sets the the frequency how often to checkpoint leases.
+        /// Gets or sets the frequency how often to checkpoint leases.
         /// </summary>
         public CheckpointFrequency CheckpointFrequency { get; set; }
 

@@ -108,6 +108,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         private async Task<string> ProcessBatch(CancellationToken cancellation)
         {
             string lastContinuation;
+
             do
             {
                 IFeedResponse<Document> response = await this.query.ExecuteNextAsync<Document>(cancellation).ConfigureAwait(false);
@@ -116,6 +117,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                     await this.DispatchChanges(response).ConfigureAwait(false);
             }
             while (this.query.HasMoreResults && !cancellation.IsCancellationRequested);
+
             return lastContinuation;
         }
 

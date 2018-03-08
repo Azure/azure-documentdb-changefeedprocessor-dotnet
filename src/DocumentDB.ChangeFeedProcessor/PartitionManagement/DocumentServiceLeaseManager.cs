@@ -74,11 +74,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             bool created = await this.client.TryCreateDocumentAsync(this.leaseStoreCollectionLink, documentServiceLease).ConfigureAwait(false);
             if (created)
             {
-                Logger.InfoFormat("Created lease for partition '{0}'.", partitionId);
+                Logger.InfoFormat("Created lease for partition {0}.", partitionId);
                 return documentServiceLease;
             }
 
-            Logger.InfoFormat("Some other host created lease for '{0}'.", partitionId);
+            Logger.InfoFormat("Some other host created lease for {0}.", partitionId);
             return null;
         }
 
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 {
                     if (serverLease.Owner != lease.Owner)
                     {
-                        Logger.InfoFormat("Partition '{0}' lease was taken over by owner '{1}'", lease.PartitionId, serverLease.Owner);
+                        Logger.InfoFormat("Partition {0} lease was taken over by owner '{1}'", lease.PartitionId, serverLease.Owner);
                         throw new LeaseLostException(lease);
                     }
                     serverLease.ContinuationToken = continuationToken;
@@ -122,7 +122,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 {
                     if (serverLease.Owner != oldOwner)
                     {
-                        Logger.InfoFormat("Partition '{0}' lease was taken over by owner '{1}'", lease.PartitionId, serverLease.Owner);
+                        Logger.InfoFormat("Partition {0} lease was taken over by owner '{1}'", lease.PartitionId, serverLease.Owner);
                         throw new LeaseLostException(lease);
                     }
                     serverLease.Owner = owner;
@@ -140,7 +140,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             DocumentServiceLease refreshedLease = await this.TryGetLeaseAsync(lease).ConfigureAwait(false);
             if (refreshedLease == null)
             {
-                Logger.InfoFormat("Partition '{0}' failed to renew lease. The lease is gone already.", lease.PartitionId);
+                Logger.InfoFormat("Partition {0} failed to renew lease. The lease is gone already.", lease.PartitionId);
                 throw new LeaseLostException(lease);
             }
 
@@ -151,7 +151,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 {
                     if (serverLease.Owner != lease.Owner)
                     {
-                        Logger.InfoFormat("Partition '{0}' lease was taken over by owner '{1}'", lease.PartitionId, serverLease.Owner);
+                        Logger.InfoFormat("Partition {0} lease was taken over by owner '{1}'", lease.PartitionId, serverLease.Owner);
                         throw new LeaseLostException(lease);
                     }
                     return serverLease;
@@ -166,7 +166,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             DocumentServiceLease refreshedLease = await this.TryGetLeaseAsync(lease).ConfigureAwait(false);
             if (refreshedLease == null)
             {
-                Logger.InfoFormat("Partition '{0}' failed to release lease. The lease is gone already.", lease.PartitionId);
+                Logger.InfoFormat("Partition {0} failed to release lease. The lease is gone already.", lease.PartitionId);
                 throw new LeaseLostException(lease);
             }
 
@@ -177,7 +177,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 {
                     if (serverLease.Owner != lease.Owner)
                     {
-                        Logger.InfoFormat("Partition '{0}' no need to release lease. The lease was already taken by another host '{1}.", lease.PartitionId, serverLease.Owner);
+                        Logger.InfoFormat("Partition {0} no need to release lease. The lease was already taken by another host '{1}.", lease.PartitionId, serverLease.Owner);
                         throw new LeaseLostException(lease);
                     }
                     serverLease.Owner = null;

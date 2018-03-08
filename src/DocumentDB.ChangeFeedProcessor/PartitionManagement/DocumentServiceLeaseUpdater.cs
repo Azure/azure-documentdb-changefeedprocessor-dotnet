@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                     return DocumentServiceLease.FromDocument(leaseDocument);
                 }
 
-                Logger.InfoFormat("Partition '{0}' lease update conflict. Reading the the current version of lease.", lease.PartitionId);
+                Logger.InfoFormat("Partition {0} lease update conflict. Reading the current version of lease.", lease.PartitionId);
                 Document document;
                 try
                 {
@@ -51,13 +51,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 }
                 catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
                 {
-                    Logger.InfoFormat("Partition '{0}' lease no longer exists", lease.PartitionId);
+                    Logger.InfoFormat("Partition {0} lease no longer exists", lease.PartitionId);
                     throw new LeaseLostException(lease);
                 }
 
                 DocumentServiceLease serverLease = DocumentServiceLease.FromDocument(document);
                 Logger.InfoFormat(
-                    "Partition '{0}' update failed because the lease with token '{1}' was updated by host '{2}' with token '{3}'. Will retry, {4} retry(s) left.",
+                    "Partition {0} update failed because the lease with token '{1}' was updated by host '{2}' with token '{3}'. Will retry, {4} retry(s) left.",
                     lease.PartitionId,
                     lease.ConcurrencyToken,
                     serverLease.Owner,

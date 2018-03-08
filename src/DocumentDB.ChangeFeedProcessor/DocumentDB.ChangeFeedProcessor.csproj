@@ -33,6 +33,9 @@
     <Copyright>Copyright © Microsoft Corporation</Copyright>
     <PackageTags>microsoft azure cosmosdb documentdb docdb nosql azureofficial</PackageTags>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+  </PropertyGroup>
 
   <ItemGroup>
     <AdditionalFiles Include="stylecop.json" />
