@@ -72,14 +72,22 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(leaseManager)
                 .Setup(manager => manager.AcquireAsync(leaseChild, "host"))
-                .ReturnsAsync(lease);
+                .ReturnsAsync(leaseChild);
 
             Mock.Get(leaseManager)
                 .Setup(manager => manager.AcquireAsync(leaseChild2, "host"))
-                .ReturnsAsync(lease);
+                .ReturnsAsync(leaseChild2);
 
             Mock.Get(leaseManager)
                 .Setup(manager => manager.DeleteAsync(lease))
+                .Returns(Task.FromResult(false));
+
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.ReleaseAsync(leaseChild))
+                .Returns(Task.FromResult(false));
+
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.ReleaseAsync(leaseChild2))
                 .Returns(Task.FromResult(false));
 
             Mock.Get(synchronizer)
@@ -173,7 +181,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(leaseManager)
                 .Setup(manager => manager.AcquireAsync(leaseChild, "host"))
-                .ReturnsAsync(lease);
+                .ReturnsAsync(leaseChild);
 
             Mock.Get(leaseManager)
                 .Setup(manager => manager.AcquireAsync(leaseChild2, "host"))
@@ -181,6 +189,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(leaseManager)
                 .Setup(manager => manager.DeleteAsync(lease))
+                .Returns(Task.FromResult(false));
+
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.ReleaseAsync(leaseChild))
                 .Returns(Task.FromResult(false));
 
             await sut.AddLeaseAsync(lease).ConfigureAwait(false);
