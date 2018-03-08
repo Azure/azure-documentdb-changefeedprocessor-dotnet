@@ -46,7 +46,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithFeedDocumentClient(IDocumentClientEx feedDocumentClient)
+        public ChangeFeedHostBuilder WithFeedDocumentClient(DocumentClient feedDocumentClient)
+        {
+            if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
+            this.feedDocumentClient = new DocumentClientEx(feedDocumentClient);
+            return this;
+        }
+
+#if PRIVATE_API
+        public
+#else
+        internal
+#endif
+        ChangeFeedHostBuilder WithFeedDocumentClient(IDocumentClientEx feedDocumentClient)
         {
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
             this.feedDocumentClient = feedDocumentClient;
@@ -102,18 +114,30 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithLeaseDocumentClient(IDocumentClientEx leaseDocumentClient)
+        public ChangeFeedHostBuilder WithLeaseDocumentClient(DocumentClient leaseDocumentClient)
+        {
+            if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
+            this.leaseDocumentClient = new DocumentClientEx(leaseDocumentClient);
+            return this;
+        }
+
+#if PRIVATE_API
+        public
+#else
+        internal
+#endif
+        ChangeFeedHostBuilder WithLeaseDocumentClient(IDocumentClientEx leaseDocumentClient)
         {
             if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
             this.leaseDocumentClient = leaseDocumentClient;
             return this;
         }
 
-        #if PRIVATE_API
+#if PRIVATE_API
         public
-        #else
+#else
         internal
-        #endif
+#endif
         ChangeFeedHostBuilder WithLeaseManager(ILeaseManager leaseManager)
         {
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
