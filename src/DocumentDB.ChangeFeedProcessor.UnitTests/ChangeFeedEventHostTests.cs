@@ -64,10 +64,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Mock.Get(leaseDocumentClient)
                 .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>()))
                 .ReturnsAsync(new ResourceResponse<Document>(new Document()));
-            
 
             var documents = new List<Document> { };
-            var feedResponse = Mock.Of<IFeedResponse<Document>>();            
+            var feedResponse = Mock.Of<IFeedResponse<Document>>();
             Mock.Get(feedResponse)
                 .Setup(response => response.Count)
                 .Returns(documents.Count);
