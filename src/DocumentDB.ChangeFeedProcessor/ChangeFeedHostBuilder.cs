@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private ChangeFeedHostOptions changeFeedHostOptions;
         private ChangeFeedOptions changeFeedOptions;
         private IDocumentClientEx feedDocumentClient;
-        private IChangeFeedObserverFactory observerFactory;
+        private IObserverFactory observerFactory;
         private string databaseResourceId;
         private string collectionResourceId;
         private DocumentCollectionInfo leaseCollectionLocation;
@@ -70,6 +70,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public ChangeFeedHostBuilder WithObserverFactory(IChangeFeedObserverFactory observerFactory)
         {
             if (observerFactory == null) throw new ArgumentNullException(nameof(observerFactory));
+            this.observerFactory = new ChangeFeedObserverFactoryAdapter(observerFactory);
+            return this;
+        }
+
+        public ChangeFeedHostBuilder WithObserverFactory(IObserverFactory observerFactory)
+        {
+            if (observerFactory == null) throw new ArgumentNullException(nameof(observerFactory));
             this.observerFactory = observerFactory;
             return this;
         }
@@ -77,7 +84,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public ChangeFeedHostBuilder WithObserver<T>()
             where T : IChangeFeedObserver, new()
         {
-            this.observerFactory = new ChangeFeedObserverFactory<T>();
+            this.observerFactory = new ChangeFeedObserverFactoryAdapter(new ChangeFeedObserverFactory<T>());
             return this;
         }
 
@@ -194,7 +201,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             string leaseStoreCollectionLink = documentCollection.SelfLink;
 
             string collectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
-            IChangeFeedObserverFactory factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions.CheckpointFrequency);
+            IObserverFactory factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions.CheckpointFrequency);
             var synchronizer = new PartitionSynchronizer(this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions.DegreeOfParallelism, this.changeFeedHostOptions.QueryPartitionsMaxBatchSize);
             var leaseStore = new LeaseStore(this.leaseDocumentClient, this.leaseCollectionLocation, this.GetLeasePrefix(), leaseStoreCollectionLink);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);

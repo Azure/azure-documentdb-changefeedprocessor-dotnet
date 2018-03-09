@@ -14,9 +14,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 #else
     internal
 #endif
-    class CheckpointerObserverFactory : IChangeFeedObserverFactory
+    class CheckpointerObserverFactory : IObserverFactory
     {
-        private readonly IChangeFeedObserverFactory observerFactory;
+        private readonly IObserverFactory observerFactory;
         private readonly CheckpointFrequency checkpointFrequency;
 
         /// <summary>
@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         /// </summary>
         /// <param name="observerFactory">Instance of Observer Factory</param>
         /// <param name="checkpointFrequency">Defined <see cref="CheckpointFrequency"/></param>
-        public CheckpointerObserverFactory(IChangeFeedObserverFactory observerFactory, CheckpointFrequency checkpointFrequency)
+        public CheckpointerObserverFactory(IObserverFactory observerFactory, CheckpointFrequency checkpointFrequency)
         {
             if (observerFactory == null)
                 throw new ArgumentNullException(nameof(observerFactory));
@@ -39,9 +39,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         /// Creates a new instance of <see cref="IChangeFeedObserver"/>.
         /// </summary>
         /// <returns>Created instance of <see cref="IChangeFeedObserver"/>.</returns>
-        public IChangeFeedObserver CreateObserver()
+        public IObserver CreateObserver()
         {
-            IChangeFeedObserver observer = this.observerFactory.CreateObserver();
+            IObserver observer = this.observerFactory.CreateObserver();
             if (this.checkpointFrequency.ExplicitCheckpoint) return observer;
 
             return new AutoCheckpointer(this.checkpointFrequency, observer);

@@ -22,10 +22,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         private readonly IDocumentQueryEx<Document> query;
         private readonly ProcessorSettings settings;
         private readonly IPartitionCheckpointer checkpointer;
-        private readonly IChangeFeedObserver observer;
+        private readonly IObserver observer;
         private ChangeFeedOptions options;
 
-        public PartitionProcessor(IChangeFeedObserver observer, IDocumentClientEx documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
+        public PartitionProcessor(IObserver observer, IDocumentClientEx documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
         {
             this.observer = observer;
             this.settings = settings;
@@ -114,14 +114,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                 IFeedResponse<Document> response = await this.query.ExecuteNextAsync<Document>(cancellation).ConfigureAwait(false);
                 lastContinuation = response.ResponseContinuation;
                 if (response.Count > 0)
-                    await this.DispatchChanges(response).ConfigureAwait(false);
+                    await this.DispatchChanges(response, cancellation).ConfigureAwait(false);
             }
             while (this.query.HasMoreResults && !cancellation.IsCancellationRequested);
 
             return lastContinuation;
         }
 
-        private Task DispatchChanges(IFeedResponse<Document> response)
+        private Task DispatchChanges(IFeedResponse<Document> response, CancellationToken cancellationToken)
         {
             var context = new ChangeFeedObserverContextInternal(this.settings.PartitionKeyRangeId, response, this.checkpointer);
             var docs = new List<Document>(response.Count);
@@ -133,7 +133,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
                 }
             }
 
-            return this.observer.ProcessChangesAsync(context, docs);
+            return this.observer.ProcessChangesAsync(context, docs, cancellationToken);
         }
     }
 }
