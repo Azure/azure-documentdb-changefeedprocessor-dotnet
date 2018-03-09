@@ -7,7 +7,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
     using System.Threading;
     using System.Threading.Tasks;
 
-    public interface IPartitionProcessor
+#if PRIVATE_API
+    public
+#else
+    internal
+#endif
+    interface IPartitionProcessor
     {
         Task RunAsync(CancellationToken cancellationToken);
     }

@@ -21,11 +21,11 @@
     <AssemblyName>Microsoft.Azure.Documents.ChangeFeedProcessor</AssemblyName>
 
     <PackageId>Microsoft.Azure.DocumentDB.ChangeFeedProcessor</PackageId>
-    <PackageVersion>1.2.0</PackageVersion>
+    <PackageVersion>2.0.0-beta</PackageVersion>
     <Title>Microsoft Azure Cosmos DB Change Feed Processor library</Title>
     <Authors>Microsoft</Authors>
     <PackageLicenseUrl>http://go.microsoft.com/fwlink/?LinkID=509837</PackageLicenseUrl>
-    <PackageProjectUrl>http://go.microsoft.com/fwlink/?LinkID=509927</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/azure/azure-documentdb-changefeedprocessor-dotnet</PackageProjectUrl>
     <PackageIconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</PackageIconUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageDescription>This library provides a host for distributing change feed events in partitioned collection across multiple observers. Instances of the host can scale up (by adding) or down (by removing) dynamically, and the load will be automatically distributed among active instances in about-equal way.</PackageDescription>

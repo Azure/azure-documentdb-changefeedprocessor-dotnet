@@ -35,7 +35,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             ResourceId = "someResource"
         };
 
-        private readonly ChangeFeedEventHost changeFeedEventHost;
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly IChangeFeedObserver observer;
         private readonly IChangeFeedObserverFactory observerFactory;
