@@ -16,6 +16,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
 
+// Keep PRIVATE_SDK members in same places as where they would be if they were public.
+#pragma warning disable SA1202 // StyleCop.CSharp.OrderingRules", "SA1202:ElementsMustBeOrderedByAccess": 'public' members should come before 'internal' members.
+
     public class ChangeFeedHostBuilder
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
@@ -46,7 +49,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithFeedDocumentClient(IDocumentClientEx feedDocumentClient)
+        public ChangeFeedHostBuilder WithFeedDocumentClient(DocumentClient feedDocumentClient)
+        {
+            if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
+            this.feedDocumentClient = new DocumentClientEx(feedDocumentClient);
+            return this;
+        }
+
+#if PRIVATE_API
+        public
+#else
+        internal
+#endif
+        ChangeFeedHostBuilder WithFeedDocumentClient(IDocumentClientEx feedDocumentClient)
         {
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
             this.feedDocumentClient = feedDocumentClient;
@@ -102,18 +117,30 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithLeaseDocumentClient(IDocumentClientEx leaseDocumentClient)
+        public ChangeFeedHostBuilder WithLeaseDocumentClient(DocumentClient leaseDocumentClient)
+        {
+            if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
+            this.leaseDocumentClient = new DocumentClientEx(leaseDocumentClient);
+            return this;
+        }
+
+#if PRIVATE_API
+        public
+#else
+        internal
+#endif
+        ChangeFeedHostBuilder WithLeaseDocumentClient(IDocumentClientEx leaseDocumentClient)
         {
             if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
             this.leaseDocumentClient = leaseDocumentClient;
             return this;
         }
 
-        #if PRIVATE_API
+#if PRIVATE_API
         public
-        #else
+#else
         internal
-        #endif
+#endif
         ChangeFeedHostBuilder WithLeaseManager(ILeaseManager leaseManager)
         {
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
@@ -190,8 +217,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
 
-            DocumentCollection documentCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
-            string leaseStoreCollectionLink = documentCollection.SelfLink;
+            DocumentCollection leaseCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
+            string leaseStoreCollectionLink = leaseCollection.SelfLink;
 
             string collectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
             IChangeFeedObserverFactory factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions.CheckpointFrequency);
@@ -213,6 +240,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 var leaseManagerBuilder = new LeaseManagerBuilder()
                     .WithLeasePrefix(leasePrefix)
                     .WithLeaseCollection(this.leaseCollectionLocation);
+
+                if (this.leaseDocumentClient != null)
+                {
+                    leaseManagerBuilder = leaseManagerBuilder.WithLeaseDocumentClient(this.leaseDocumentClient);
+                }
+
                 this.leaseManager = await leaseManagerBuilder.BuildAsync().ConfigureAwait(false);
             }
 
@@ -235,3 +268,5 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
     }
 }
+
+#pragma warning restore SA1202 // StyleCop.CSharp.OrderingRules", "SA1202:ElementsMustBeOrderedByAccess"

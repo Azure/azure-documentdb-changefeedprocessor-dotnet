@@ -10,7 +10,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
 
-    public interface IDocumentClientEx
+#if PRIVATE_API
+    public
+#else
+    internal
+#endif
+    interface IDocumentClientEx
     {
         Task<FeedResponse<PartitionKeyRange>> ReadPartitionKeyRangeFeedAsync(string partitionKeyRangesOrCollectionLink, FeedOptions options);
 
