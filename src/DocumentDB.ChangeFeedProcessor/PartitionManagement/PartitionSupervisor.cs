@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
@@ -15,13 +15,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     internal class PartitionSupervisor : IPartitionSupervisor
     {
         private readonly ILease lease;
-        private readonly IObserver observer;
+        private readonly Processing.IChangeFeedObserver observer;
         private readonly IPartitionProcessor processor;
         private readonly ILeaseRenewer renewer;
         private readonly CancellationTokenSource renewerCancellation = new CancellationTokenSource();
         private CancellationTokenSource processorCancellation;
 
-        public PartitionSupervisor(ILease lease, IObserver observer, IPartitionProcessor processor, ILeaseRenewer renewer)
+        public PartitionSupervisor(ILease lease, Processing.IChangeFeedObserver observer, IPartitionProcessor processor, ILeaseRenewer renewer)
         {
             this.lease = lease;
             this.observer = observer;
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public async Task RunAsync(CancellationToken shutdownToken)
         {
-            var context = new ChangeFeedObserverContextInternal(this.lease.PartitionId);
+            var context = new Processing.ChangeFeedObserverContext(this.lease.PartitionId);
             await this.observer.OpenAsync(context).ConfigureAwait(false);
 
             this.processorCancellation = CancellationTokenSource.CreateLinkedTokenSource(shutdownToken);

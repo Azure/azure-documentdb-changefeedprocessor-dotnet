@@ -4,7 +4,7 @@
 
 using System.Collections.Generic;
 using System.Threading;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
@@ -22,7 +22,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     ///   - New instance takes leases from existing instances to make distribution equal.
     ///   - If an instance dies, the leases are distributed across remaining instances.
     /// It's useful for scenario when partition count is high so that one host/VM is not capable of processing that many change feed events.
-    /// Client application needs to implement <see cref="IChangeFeedObserverObsolete"/> and register processor implementation with ChangeFeedEventHost.
+    /// Client application needs to implement <see cref="IChangeFeedObserver"/> and register processor implementation with ChangeFeedEventHost.
     /// </summary>
     /// <remarks>
     /// It uses auxiliary document collection for managing leases for a partition.
@@ -80,6 +80,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// ]]>
     /// </code>
     /// </example>
+    [Obsolete]
     public class ChangeFeedEventHost
     {
         /// <summary>
@@ -96,11 +97,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedEventHost"/> class.
+        /// Initializes a new instance of the <see cref="ChangeFeedEventHost"/> class.
         /// </summary>
         /// <param name="hostName">Unique name for this host.</param>
         /// <param name="documentCollectionLocation">Specifies location of the DocumentDB collection to monitor changes for.</param>
-        /// <param name="leaseCollectionLocation ">Specifies location of auxiliary data for load-balancing instances of <see cref="Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedEventHost" />.</param>
+        /// <param name="leaseCollectionLocation ">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
         public ChangeFeedEventHost(string hostName, DocumentCollectionInfo documentCollectionLocation, DocumentCollectionInfo leaseCollectionLocation)
             : this(hostName, documentCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), new ChangeFeedHostOptions())
         {
@@ -135,7 +136,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             DocumentCollectionInfo feedCollectionLocation,
             DocumentCollectionInfo leaseCollectionLocation,
             ChangeFeedOptions changeFeedOptions,
-            ChangeFeedHostOptions changeFeedHostOptions)
+            ChangeFeedHostOptions changeFeedHostOptions,
+            IChangeFeedDocumentClient feedClient = null,
+            IChangeFeedDocumentClient leaseClient = null,
+            string databaseResourceId = null,
+            string collectionResourceId = null)
         {
             if (string.IsNullOrEmpty(hostName))
                 throw new ArgumentNullException(nameof(hostName));
@@ -154,6 +159,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 .WithChangeFeedHostOptions(changeFeedHostOptions)
                 .WithChangeFeedOptions(changeFeedOptions)
                 .WithLeaseCollection(leaseCollectionLocation);
+
+            if (leaseClient != null) this.builder.WithLeaseDocumentClient(leaseClient);
+            if (feedClient != null) this.builder.WithFeedDocumentClient(feedClient);
+            if (!string.IsNullOrEmpty(collectionResourceId)) this.builder.WithCollectionResourceId(collectionResourceId);
+            if (!string.IsNullOrEmpty(databaseResourceId)) this.builder.WithDatabaseResourceId(databaseResourceId);
         }
 
         /// <summary>Asynchronously registers the observer interface implementation with the host.
@@ -161,7 +171,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <typeparam name="T">Implementation of your application-specific event observer.</typeparam>
         /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
         public async Task RegisterObserverAsync<T>()
-            where T : IChangeFeedObserverObsolete, new()
+            where T : IChangeFeedObserver, new()
         {
             this.builder.WithObserver<ChangeFeedObserverAdapter<T>>();
             await this.CreateHost().ConfigureAwait(false);
@@ -174,7 +184,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// </summary>
         /// <param name="factory">Implementation of your application-specific event observer factory.</param>
         /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
-        public async Task RegisterObserverFactoryAsync(IChangeFeedObserverFactoryObsolete factory)
+        public async Task RegisterObserverFactoryAsync(IChangeFeedObserverFactory factory)
         {
             this.builder.WithObserverFactory(new ChangeFeedObserverFactoryAdapter(factory));
             await this.CreateHost().ConfigureAwait(false);

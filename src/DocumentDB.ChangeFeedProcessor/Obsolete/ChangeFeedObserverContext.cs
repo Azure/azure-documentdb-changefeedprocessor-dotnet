@@ -2,14 +2,17 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using System;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>
-    /// The context passed to <see cref="IChangeFeedObserverObsolete"/> events.
+    /// The context passed to <see cref="IChangeFeedObserver"/> events.
     /// </summary>
+    [Obsolete]
     public abstract class ChangeFeedObserverContext
     {
         /// <summary>

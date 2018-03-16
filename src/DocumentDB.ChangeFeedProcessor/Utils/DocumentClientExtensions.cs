@@ -2,18 +2,19 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
     using System;
     using System.Net;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.Client;
 
     internal static class DocumentClientExtensions
     {
-        public static async Task<Document> TryGetDocumentAsync(this IDocumentClientEx client, Uri documentUri)
+        public static async Task<Document> TryGetDocumentAsync(this IChangeFeedDocumentClient client, Uri documentUri)
         {
             try
             {
@@ -30,7 +31,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             return null;
         }
 
-        public static async Task<bool> TryCreateDocumentAsync(this IDocumentClientEx client, string collectionLink, object document)
+        public static async Task<bool> TryCreateDocumentAsync(this IChangeFeedDocumentClient client, string collectionLink, object document)
         {
             try
             {
@@ -48,7 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             return false;
         }
 
-        public static async Task<DocumentCollection> GetDocumentCollectionAsync(this IDocumentClientEx client, DocumentCollectionInfo collectionInfo)
+        public static async Task<DocumentCollection> GetDocumentCollectionAsync(this IChangeFeedDocumentClient client, DocumentCollectionInfo collectionInfo)
         {
             Uri collectionUri = UriFactory.CreateDocumentCollectionUri(collectionInfo.DatabaseName, collectionInfo.CollectionName);
             DocumentCollection collection = await client.ReadDocumentCollectionAsync(collectionUri, new RequestOptions()).ConfigureAwait(false);

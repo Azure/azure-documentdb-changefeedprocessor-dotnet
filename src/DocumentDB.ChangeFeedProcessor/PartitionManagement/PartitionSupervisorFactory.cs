@@ -2,26 +2,26 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
-    using Adapters;
     using Client;
 
     internal class PartitionSupervisorFactory : IPartitionSupervisorFactory
     {
-        private readonly IObserverFactory observerFactory;
-        private readonly IDocumentClientEx documentClient;
+        private readonly Processing.IChangeFeedObserverFactory observerFactory;
+        private readonly IChangeFeedDocumentClient documentClient;
         private readonly string collectionSelfLink;
         private readonly ILeaseManager leaseManager;
         private readonly ChangeFeedHostOptions changeFeedHostOptions;
         private readonly ChangeFeedOptions changeFeedOptions;
 
         public PartitionSupervisorFactory(
-            IObserverFactory observerFactory,
-            IDocumentClientEx documentClient,
+            Processing.IChangeFeedObserverFactory observerFactory,
+            IChangeFeedDocumentClient documentClient,
             string collectionSelfLink,
             ILeaseManager leaseManager,
             ChangeFeedHostOptions options,
@@ -60,7 +60,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             };
 
             var checkpointer = new PartitionCheckpointer(leaseManager, lease);
-            IObserver changeFeedObserver = observerFactory.CreateObserver();
+            Processing.IChangeFeedObserver changeFeedObserver = observerFactory.CreateObserver();
             var processor = new PartitionProcessor(changeFeedObserver, documentClient, processorSettings, checkpointer);
             var renewer = new LeaseRenewer(lease, leaseManager, changeFeedHostOptions.LeaseRenewInterval);
 

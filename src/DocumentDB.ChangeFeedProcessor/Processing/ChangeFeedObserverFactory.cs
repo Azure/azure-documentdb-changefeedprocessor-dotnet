@@ -2,12 +2,12 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
 {
-    internal class ChangeFeedObserverFactoryObsolete<T> : IChangeFeedObserverFactoryObsolete
-        where T : IChangeFeedObserverObsolete, new()
+    internal class ChangeFeedObserverFactory<T> : IChangeFeedObserverFactory
+        where T : IChangeFeedObserver, new()
     {
-        public IChangeFeedObserverObsolete CreateObserver()
+        public IChangeFeedObserver CreateObserver()
         {
             return new T();
         }

@@ -2,30 +2,29 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-    using Microsoft.Azure.Documents.Client;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+using Microsoft.Azure.Documents.Client;
 
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
+{
     internal class PartitionProcessor : IPartitionProcessor
     {
         private static readonly int DefaultMaxItemCount = 100;
         private readonly ILog logger = LogProvider.GetCurrentClassLogger();
-        private readonly IDocumentQueryEx<Document> query;
+        private readonly IChangeFeedDocumentQuery<Document> query;
         private readonly ProcessorSettings settings;
         private readonly IPartitionCheckpointer checkpointer;
-        private readonly IObserver observer;
+        private readonly IChangeFeedObserver observer;
         private ChangeFeedOptions options;
 
-        public PartitionProcessor(IObserver observer, IDocumentClientEx documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
+        public PartitionProcessor(IChangeFeedObserver observer, IChangeFeedDocumentClient documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
         {
             this.observer = observer;
             this.settings = settings;
@@ -123,7 +122,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 
         private Task DispatchChanges(IFeedResponse<Document> response, CancellationToken cancellationToken)
         {
-            var context = new ChangeFeedObserverContextInternal(this.settings.PartitionKeyRangeId, response, this.checkpointer);
+            var context = new ChangeFeedObserverContext(this.settings.PartitionKeyRangeId, response, this.checkpointer);
             var docs = new List<Document>(response.Count);
             using (IEnumerator<Document> e = response.GetEnumerator())
             {
@@ -136,22 +135,4 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
             return this.observer.ProcessChangesAsync(context, docs, cancellationToken);
         }
     }
-
-
-
-    public interface IObserverFactory
-    {
-        IObserver CreateObserver();
-    }
-
-    public interface IObserver
-    {
-        Task OpenAsync(ChangeFeedObserverContext context);
-
-        Task CloseAsync(ChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason);
-
-        Task ProcessChangesAsync(ChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken);
-    }
-
-    
 }

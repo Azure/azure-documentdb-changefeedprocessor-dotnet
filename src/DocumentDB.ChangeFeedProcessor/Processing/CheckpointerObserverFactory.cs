@@ -3,21 +3,20 @@
 //----------------------------------------------------------------
 
 using System;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
 {
     /// <summary>
-    /// Factory class used to create instance(s) of <see cref="IChangeFeedObserverObsolete"/>.
+    /// Factory class used to create instance(s) of <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/>.
     /// </summary>
 #if PRIVATE_API
     public
 #else
     internal
 #endif
-    class CheckpointerObserverFactory : IObserverFactory
+    class CheckpointerObserverFactory : IChangeFeedObserverFactory
     {
-        private readonly IObserverFactory observerFactory;
+        private readonly IChangeFeedObserverFactory observerFactory;
         private readonly CheckpointFrequency checkpointFrequency;
 
         /// <summary>
@@ -25,7 +24,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
         /// </summary>
         /// <param name="observerFactory">Instance of Observer Factory</param>
         /// <param name="checkpointFrequency">Defined <see cref="CheckpointFrequency"/></param>
-        public CheckpointerObserverFactory(IObserverFactory observerFactory, CheckpointFrequency checkpointFrequency)
+        public CheckpointerObserverFactory(IChangeFeedObserverFactory observerFactory, CheckpointFrequency checkpointFrequency)
         {
             if (observerFactory == null)
                 throw new ArgumentNullException(nameof(observerFactory));
@@ -37,12 +36,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
         }
 
         /// <summary>
-        /// Creates a new instance of <see cref="IChangeFeedObserverObsolete"/>.
+        /// Creates a new instance of <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/>.
         /// </summary>
-        /// <returns>Created instance of <see cref="IChangeFeedObserverObsolete"/>.</returns>
-        public IObserver CreateObserver()
+        /// <returns>Created instance of <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/>.</returns>
+        public IChangeFeedObserver CreateObserver()
         {
-            IObserver observer = this.observerFactory.CreateObserver();
+            IChangeFeedObserver observer = this.observerFactory.CreateObserver();
             if (this.checkpointFrequency.ExplicitCheckpoint) return observer;
 
             return new AutoCheckpointer(this.checkpointFrequency, observer);

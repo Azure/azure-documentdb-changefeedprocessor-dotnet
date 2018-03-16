@@ -7,7 +7,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using System;
 
     /// <summary>
-    /// Options to control various aspects of partition distribution happening within <see cref="ChangeFeedEventHost"/> instance.
+    /// Options to control various aspects of partition distribution happening within <see cref="ChangeFeedEventHostObsolete"/> instance.
     /// </summary>
     public class ChangeFeedHostOptions
     {
@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Gets or sets renew interval for all leases for partitions currently held by <see cref="ChangeFeedEventHost"/> instance.
+        /// Gets or sets renew interval for all leases for partitions currently held by <see cref="ChangeFeedEventHostObsolete"/> instance.
         /// </summary>
         public TimeSpan LeaseRenewInterval { get; set; }
 
@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         /// <summary>
         /// Gets or sets the interval for which the lease is taken on a lease representing a partition. If the lease is not renewed within this
-        /// interval, it will cause it to expire and ownership of the partition will move to another <see cref="ChangeFeedEventHost"/> instance.
+        /// interval, it will cause it to expire and ownership of the partition will move to another <see cref="ChangeFeedEventHostObsolete"/> instance.
         /// </summary>
         public TimeSpan LeaseExpirationInterval { get; set; }
 
@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public CheckpointFrequency CheckpointFrequency { get; set; }
 
         /// <summary>
-        /// Gets or sets a prefix to be used as part of the lease id. This can be used to support multiple <see cref="ChangeFeedEventHost"/>
+        /// Gets or sets a prefix to be used as part of the lease id. This can be used to support multiple <see cref="ChangeFeedEventHostObsolete"/>
         /// instances pointing at the same feed while using the same auxiliary collection.
         /// </summary>
         public string LeasePrefix { get; set; }

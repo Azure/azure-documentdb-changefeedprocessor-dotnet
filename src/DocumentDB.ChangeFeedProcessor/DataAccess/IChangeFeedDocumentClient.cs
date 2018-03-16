@@ -2,24 +2,18 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters
-{
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.Client;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Azure.Documents.Client;
 
-#if PRIVATE_API
-    public
-#else
-    internal
-#endif
-    interface IDocumentClientEx
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
+{
+    public interface IChangeFeedDocumentClient
     {
         Task<FeedResponse<PartitionKeyRange>> ReadPartitionKeyRangeFeedAsync(string partitionKeyRangesOrCollectionLink, FeedOptions options);
 
-        IDocumentQueryEx<Document> CreateDocumentChangeFeedQuery(string collectionLink, ChangeFeedOptions feedOptions);
+        IChangeFeedDocumentQuery<Document> CreateDocumentChangeFeedQuery(string collectionLink, ChangeFeedOptions feedOptions);
 
         Task<ResourceResponse<Database>> ReadDatabaseAsync(Uri databaseUri, RequestOptions options);
 

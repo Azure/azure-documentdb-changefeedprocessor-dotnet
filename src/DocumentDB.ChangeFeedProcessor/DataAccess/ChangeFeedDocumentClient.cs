@@ -2,20 +2,19 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters
-{
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.Client;
-    using Microsoft.Azure.Documents.Linq;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.Linq;
 
-    internal class DocumentClientEx : IDocumentClientEx
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
+{
+    public class ChangeFeedDocumentClient : IChangeFeedDocumentClient
     {
         private readonly DocumentClient documentClient;
 
-        public DocumentClientEx(DocumentClient documentClient)
+        public ChangeFeedDocumentClient(DocumentClient documentClient)
         {
             if (documentClient == null) throw new ArgumentNullException(nameof(documentClient));
             this.documentClient = documentClient;
@@ -26,10 +25,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters
             return await this.documentClient.ReadPartitionKeyRangeFeedAsync(partitionKeyRangesOrCollectionLink, options).ConfigureAwait(false);
         }
 
-        public IDocumentQueryEx<Document> CreateDocumentChangeFeedQuery(string collectionLink, ChangeFeedOptions feedOptions)
+        public IChangeFeedDocumentQuery<Document> CreateDocumentChangeFeedQuery(string collectionLink, ChangeFeedOptions feedOptions)
         {
             IDocumentQuery<Document> query = this.documentClient.CreateDocumentChangeFeedQuery(collectionLink, feedOptions);
-            return new DocumentQueryEx<Document>(query);
+            return new ChangeFeedDocumentQuery<Document>(query);
         }
 
         public async Task<ResourceResponse<Database>> ReadDatabaseAsync(Uri databaseUri, RequestOptions options)

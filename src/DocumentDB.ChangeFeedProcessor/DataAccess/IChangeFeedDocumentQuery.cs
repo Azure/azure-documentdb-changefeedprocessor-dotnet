@@ -2,14 +2,14 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters
-{
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.Client;
-    using Microsoft.Azure.Documents.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.Linq;
 
-    public interface IDocumentQueryEx<T> : IDocumentQuery
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
+{
+    public interface IChangeFeedDocumentQuery<T> : IDocumentQuery
     {
         /// <summary>
         /// Gets a value indicating whether there are potentially additional results that can be

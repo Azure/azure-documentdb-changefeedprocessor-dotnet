@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal class ChangeFeedObserverAdapter<T> : IObserver where T : IChangeFeedObserverObsolete, new()
+    internal class ChangeFeedObserverAdapter<T> : Processing.IChangeFeedObserver where T : IChangeFeedObserver, new()
     {
         private T observer;
 
@@ -14,44 +14,44 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             observer = new T();
         }
 
-        public Task OpenAsync(ChangeFeedObserverContext context)
+        public Task OpenAsync(IChangeFeedObserverContext context)
         {
-            return this.observer.OpenAsync(context);
+            return this.observer.OpenAsync(new ChangeFeedObserverContextAdapter(context));
         }
 
-        public Task CloseAsync(ChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
+        public Task CloseAsync(IChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
         {
-            return this.observer.CloseAsync(context, reason);
+            return this.observer.CloseAsync(new ChangeFeedObserverContextAdapter(context), reason);
         }
 
-        public Task ProcessChangesAsync(ChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
+        public Task ProcessChangesAsync(IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
-            return this.observer.ProcessChangesAsync(context, docs);
+            return this.observer.ProcessChangesAsync(new ChangeFeedObserverContextAdapter(context), docs);
         }
     }
 
-    internal class ChangeFeedObserverAdapter : IObserver
+    internal class ChangeFeedObserverAdapter : Processing.IChangeFeedObserver
     {
-        private IChangeFeedObserverObsolete observer;
+        private IChangeFeedObserver observer;
 
-        internal ChangeFeedObserverAdapter(IChangeFeedObserverObsolete observer)
+        internal ChangeFeedObserverAdapter(IChangeFeedObserver observer)
         {
             this.observer = observer;
         }
 
-        public Task OpenAsync(ChangeFeedObserverContext context)
+        public Task OpenAsync(IChangeFeedObserverContext context)
         {
-            return this.observer.OpenAsync(context);
+            return this.observer.OpenAsync(new ChangeFeedObserverContextAdapter(context));
         }
 
-        public Task CloseAsync(ChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
+        public Task CloseAsync(IChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
         {
-            return this.observer.CloseAsync(context, reason);
+            return this.observer.CloseAsync(new ChangeFeedObserverContextAdapter(context), reason);
         }
 
-        public Task ProcessChangesAsync(ChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
+        public Task ProcessChangesAsync(IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
-            return this.observer.ProcessChangesAsync(context, docs);
+            return this.observer.ProcessChangesAsync(new ChangeFeedObserverContextAdapter(context), docs);
         }
     }
 

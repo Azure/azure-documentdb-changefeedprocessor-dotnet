@@ -1,19 +1,19 @@
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal class ChangeFeedObserverFactoryAdapter : IObserverFactory
+    internal class ChangeFeedObserverFactoryAdapter : Processing.IChangeFeedObserverFactory
     {
-        private IChangeFeedObserverFactoryObsolete factory;
+        private IChangeFeedObserverFactory factory;
 
-        internal ChangeFeedObserverFactoryAdapter(IChangeFeedObserverFactoryObsolete factory)
+        internal ChangeFeedObserverFactoryAdapter(IChangeFeedObserverFactory factory)
         {
             this.factory = factory;
         }
 
-        public IObserver CreateObserver()
+        public Processing.IChangeFeedObserver CreateObserver()
         {
-            IChangeFeedObserverObsolete observer = this.factory.CreateObserver();
+            IChangeFeedObserver observer = this.factory.CreateObserver();
             return new ChangeFeedObserverAdapter(observer);
         }
     }

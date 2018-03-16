@@ -2,6 +2,8 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
@@ -9,7 +11,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Net;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
@@ -29,12 +30,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly string containerNamePrefix;
         private readonly DocumentCollectionInfo leaseStoreCollectionInfo;
-        private readonly IDocumentClientEx client;
+        private readonly IChangeFeedDocumentClient client;
         private readonly IDocumentServiceLeaseUpdater leaseUpdater;
         private readonly string leaseStoreCollectionLink;
 
         public DocumentServiceLeaseManager(
-            IDocumentClientEx client,
+            IChangeFeedDocumentClient client,
             IDocumentServiceLeaseUpdater leaseUpdater,
             DocumentCollectionInfo leaseStoreCollectionInfo,
             string containerNamePrefix,

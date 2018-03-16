@@ -2,17 +2,18 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 
     internal class LeaseManagerBuilder : ILeaseManagerBuilder
     {
         private DocumentCollectionInfo leaseCollectionLocation;
-        private IDocumentClientEx leaseDocumentClient;
+        private IChangeFeedDocumentClient leaseDocumentClient;
         private string leasePrefix;
         private string leaseStoreCollectionLink;
 
@@ -24,7 +25,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return this;
         }
 
-        public LeaseManagerBuilder WithLeaseDocumentClient(IDocumentClientEx leaseDocumentClient)
+        public LeaseManagerBuilder WithLeaseDocumentClient(IChangeFeedDocumentClient leaseDocumentClient)
         {
             if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
 

@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
@@ -11,7 +11,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using System.Globalization;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
@@ -30,12 +29,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private DocumentCollectionInfo feedCollectionLocation;
         private ChangeFeedHostOptions changeFeedHostOptions;
         private ChangeFeedOptions changeFeedOptions;
-        private IDocumentClientEx feedDocumentClient;
-        private IObserverFactory observerFactory;
+        private IChangeFeedDocumentClient feedDocumentClient;
+        private Processing.IChangeFeedObserverFactory observerFactory;
         private string databaseResourceId;
         private string collectionResourceId;
         private DocumentCollectionInfo leaseCollectionLocation;
-        private IDocumentClientEx leaseDocumentClient;
+        private IChangeFeedDocumentClient leaseDocumentClient;
         private ILeaseManager leaseManager;
 
         public ChangeFeedHostBuilder WithHostName(string hostName)
@@ -54,7 +53,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public ChangeFeedHostBuilder WithFeedDocumentClient(DocumentClient feedDocumentClient)
         {
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
-            this.feedDocumentClient = new DocumentClientEx(feedDocumentClient);
+            this.feedDocumentClient = new ChangeFeedDocumentClient(feedDocumentClient);
             return this;
         }
 
@@ -63,7 +62,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 #else
         internal
 #endif
-        ChangeFeedHostBuilder WithFeedDocumentClient(IDocumentClientEx feedDocumentClient)
+        ChangeFeedHostBuilder WithFeedDocumentClient(IChangeFeedDocumentClient feedDocumentClient)
         {
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
             this.feedDocumentClient = feedDocumentClient;
@@ -84,7 +83,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithObserverFactory(IObserverFactory observerFactory)
+        public ChangeFeedHostBuilder WithObserverFactory(Processing.IChangeFeedObserverFactory observerFactory)
         {
             if (observerFactory == null) throw new ArgumentNullException(nameof(observerFactory));
             this.observerFactory = observerFactory;
@@ -92,9 +91,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         public ChangeFeedHostBuilder WithObserver<T>()
-            where T : IObserver, new()
+            where T : Processing.IChangeFeedObserver, new()
         {
-            this.observerFactory = new ObserverFactory<T>();
+            this.observerFactory = new ChangeFeedObserverFactory<T>();
             return this;
         }
 
@@ -122,28 +121,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public ChangeFeedHostBuilder WithLeaseDocumentClient(DocumentClient leaseDocumentClient)
         {
             if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
-            this.leaseDocumentClient = new DocumentClientEx(leaseDocumentClient);
+            this.leaseDocumentClient = new ChangeFeedDocumentClient(leaseDocumentClient);
             return this;
         }
 
-#if PRIVATE_API
-        public
-#else
-        internal
-#endif
-        ChangeFeedHostBuilder WithLeaseDocumentClient(IDocumentClientEx leaseDocumentClient)
+        public ChangeFeedHostBuilder WithLeaseDocumentClient(IChangeFeedDocumentClient leaseDocumentClient)
         {
             if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
             this.leaseDocumentClient = leaseDocumentClient;
             return this;
         }
 
-#if PRIVATE_API
-        public
-#else
-        internal
-#endif
-        ChangeFeedHostBuilder WithLeaseManager(ILeaseManager leaseManager)
+        public ChangeFeedHostBuilder WithLeaseManager(ILeaseManager leaseManager)
         {
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
             this.leaseManager = leaseManager;
@@ -200,7 +189,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return new ChangeFeedEstimateHost(remainingWorkEstimator);
         }
 
-        private static async Task<string> GetDatabaseResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
+        private static async Task<string> GetDatabaseResourceIdAsync(IChangeFeedDocumentClient documentClient, DocumentCollectionInfo collectionLocation)
         {
             Logger.InfoFormat("Reading database: '{0}'", collectionLocation.DatabaseName);
             Uri databaseUri = UriFactory.CreateDatabaseUri(collectionLocation.DatabaseName);
@@ -208,7 +197,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return database.ResourceId;
         }
 
-        private static async Task<string> GetCollectionResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
+        private static async Task<string> GetCollectionResourceIdAsync(IChangeFeedDocumentClient documentClient, DocumentCollectionInfo collectionLocation)
         {
             Logger.InfoFormat("Reading collection: '{0}'", collectionLocation.CollectionName);
             DocumentCollection documentCollection = await documentClient.GetDocumentCollectionAsync(collectionLocation).ConfigureAwait(false);

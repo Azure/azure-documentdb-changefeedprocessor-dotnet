@@ -2,20 +2,19 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters
-{
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.Client;
-    using Microsoft.Azure.Documents.Linq;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.Linq;
 
-    internal class DocumentQueryEx<T> : IDocumentQueryEx<Document>
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
+{
+    internal class ChangeFeedDocumentQuery<T> : IChangeFeedDocumentQuery<Document>
     {
         private readonly IDocumentQuery<T> query;
 
-        public DocumentQueryEx(IDocumentQuery<T> query)
+        public ChangeFeedDocumentQuery(IDocumentQuery<T> query)
         {
             if (query == null) throw new ArgumentNullException(nameof(query));
             this.query = query;

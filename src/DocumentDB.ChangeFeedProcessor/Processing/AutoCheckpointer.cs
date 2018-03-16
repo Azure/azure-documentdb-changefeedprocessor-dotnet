@@ -1,4 +1,4 @@
-﻿//----------------------------------------------------------------
+//----------------------------------------------------------------
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
@@ -6,18 +6,17 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
 {
-    internal class AutoCheckpointer : IObserver
+    internal class AutoCheckpointer : IChangeFeedObserver
     {
         private readonly CheckpointFrequency checkpointFrequency;
-        private readonly IObserver observer;
+        private readonly IChangeFeedObserver observer;
         private int processedDocCount;
         private DateTime lastCheckpointTime = DateTime.UtcNow;
 
-        public AutoCheckpointer(CheckpointFrequency checkpointFrequency, IObserver observer)
+        public AutoCheckpointer(CheckpointFrequency checkpointFrequency, IChangeFeedObserver observer)
         {
             if (checkpointFrequency == null)
                 throw new ArgumentNullException(nameof(checkpointFrequency));
@@ -28,17 +27,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
             this.observer = observer;
         }
 
-        public Task OpenAsync(ChangeFeedObserverContext context)
+        public Task OpenAsync(IChangeFeedObserverContext context)
         {
             return this.observer.OpenAsync(context);
         }
 
-        public Task CloseAsync(ChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
+        public Task CloseAsync(IChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
         {
             return this.observer.CloseAsync(context, reason);
         }
 
-        public async Task ProcessChangesAsync(ChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
+        public async Task ProcessChangesAsync(IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
             await this.observer.ProcessChangesAsync(context, docs, cancellationToken).ConfigureAwait(false);
             this.processedDocCount += docs.Count;

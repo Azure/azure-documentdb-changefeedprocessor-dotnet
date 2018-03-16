@@ -2,8 +2,8 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using System;
 using System.Threading;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
@@ -14,7 +14,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// <summary>
     /// This interface is used to deliver change events to document feed observers.
     /// </summary>
-    public interface IChangeFeedObserverObsolete
+    [Obsolete]
+    public interface IChangeFeedObserver
     {
         /// <summary>
         /// This is called when change feed observer is opened.

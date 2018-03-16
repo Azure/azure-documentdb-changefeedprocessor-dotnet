@@ -2,12 +2,13 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
 
@@ -18,12 +19,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 #endif
     class LeaseStore : ILeaseStore
     {
-        private readonly IDocumentClientEx client;
+        private readonly IChangeFeedDocumentClient client;
         private readonly DocumentCollectionInfo leaseStoreCollectionInfo;
         private readonly string containerNamePrefix;
         private readonly string leaseStoreCollectionLink;
 
-        public LeaseStore(IDocumentClientEx client, DocumentCollectionInfo leaseStoreCollectionInfo, string containerNamePrefix, string leaseStoreCollectionLink)
+        public LeaseStore(IChangeFeedDocumentClient client, DocumentCollectionInfo leaseStoreCollectionInfo, string containerNamePrefix, string leaseStoreCollectionLink)
         {
             this.client = client;
             this.leaseStoreCollectionInfo = leaseStoreCollectionInfo;
