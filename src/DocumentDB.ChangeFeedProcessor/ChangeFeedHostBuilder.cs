@@ -2,6 +2,9 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
@@ -10,7 +13,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
@@ -29,7 +31,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private ChangeFeedHostOptions changeFeedHostOptions;
         private ChangeFeedOptions changeFeedOptions;
         private IDocumentClientEx feedDocumentClient;
-        private IChangeFeedObserverFactory observerFactory;
+        private IObserverFactory observerFactory;
         private string databaseResourceId;
         private string collectionResourceId;
         private DocumentCollectionInfo leaseCollectionLocation;
@@ -82,7 +84,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithObserverFactory(IChangeFeedObserverFactory observerFactory)
+        public ChangeFeedHostBuilder WithObserverFactory(IObserverFactory observerFactory)
         {
             if (observerFactory == null) throw new ArgumentNullException(nameof(observerFactory));
             this.observerFactory = observerFactory;
@@ -90,9 +92,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         public ChangeFeedHostBuilder WithObserver<T>()
-            where T : IChangeFeedObserver, new()
+            where T : IObserver, new()
         {
-            this.observerFactory = new ChangeFeedObserverFactory<T>();
+            this.observerFactory = new ObserverFactory<T>();
             return this;
         }
 
@@ -221,7 +223,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             string leaseStoreCollectionLink = leaseCollection.SelfLink;
 
             string collectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
-            IChangeFeedObserverFactory factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions.CheckpointFrequency);
+            var factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions.CheckpointFrequency);
             var synchronizer = new PartitionSynchronizer(this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions.DegreeOfParallelism, this.changeFeedHostOptions.QueryPartitionsMaxBatchSize);
             var leaseStore = new LeaseStore(this.leaseDocumentClient, this.leaseCollectionLocation, this.GetLeasePrefix(), leaseStoreCollectionLink);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);

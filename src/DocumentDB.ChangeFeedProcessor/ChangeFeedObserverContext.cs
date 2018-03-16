@@ -5,11 +5,10 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>
-    /// The context passed to <see cref="IChangeFeedObserver"/> events.
+    /// The context passed to <see cref="IChangeFeedObserverObsolete"/> events.
     /// </summary>
     public abstract class ChangeFeedObserverContext
     {

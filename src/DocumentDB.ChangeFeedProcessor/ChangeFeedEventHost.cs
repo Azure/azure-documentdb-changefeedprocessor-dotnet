@@ -2,11 +2,14 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Threading;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
@@ -19,7 +22,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     ///   - New instance takes leases from existing instances to make distribution equal.
     ///   - If an instance dies, the leases are distributed across remaining instances.
     /// It's useful for scenario when partition count is high so that one host/VM is not capable of processing that many change feed events.
-    /// Client application needs to implement <see cref="IChangeFeedObserver"/> and register processor implementation with ChangeFeedEventHost.
+    /// Client application needs to implement <see cref="IChangeFeedObserverObsolete"/> and register processor implementation with ChangeFeedEventHost.
     /// </summary>
     /// <remarks>
     /// It uses auxiliary document collection for managing leases for a partition.
@@ -158,9 +161,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <typeparam name="T">Implementation of your application-specific event observer.</typeparam>
         /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
         public async Task RegisterObserverAsync<T>()
-            where T : IChangeFeedObserver, new()
+            where T : IChangeFeedObserverObsolete, new()
         {
-            this.builder.WithObserver<T>();
+            this.builder.WithObserver<ChangeFeedObserverAdapter<T>>();
             await this.CreateHost().ConfigureAwait(false);
             await this.processor.StartAsync().ConfigureAwait(false);
         }
@@ -171,9 +174,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// </summary>
         /// <param name="factory">Implementation of your application-specific event observer factory.</param>
         /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
-        public async Task RegisterObserverFactoryAsync(IChangeFeedObserverFactory factory)
+        public async Task RegisterObserverFactoryAsync(IChangeFeedObserverFactoryObsolete factory)
         {
-            this.builder.WithObserverFactory(factory);
+            this.builder.WithObserverFactory(new ChangeFeedObserverFactoryAdapter(factory));
             await this.CreateHost().ConfigureAwait(false);
             await this.processor.StartAsync().ConfigureAwait(false);
         }

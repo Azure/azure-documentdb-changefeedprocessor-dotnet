@@ -2,16 +2,17 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
-    using Microsoft.Azure.Documents.Client;
+    using Adapters;
+    using Client;
 
     internal class PartitionSupervisorFactory : IPartitionSupervisorFactory
     {
-        private readonly IChangeFeedObserverFactory observerFactory;
+        private readonly IObserverFactory observerFactory;
         private readonly IDocumentClientEx documentClient;
         private readonly string collectionSelfLink;
         private readonly ILeaseManager leaseManager;
@@ -19,7 +20,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private readonly ChangeFeedOptions changeFeedOptions;
 
         public PartitionSupervisorFactory(
-            IChangeFeedObserverFactory observerFactory,
+            IObserverFactory observerFactory,
             IDocumentClientEx documentClient,
             string collectionSelfLink,
             ILeaseManager leaseManager,
@@ -37,7 +38,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             this.documentClient = documentClient;
             this.collectionSelfLink = collectionSelfLink;
             this.leaseManager = leaseManager;
-            this.changeFeedHostOptions = options;
+            changeFeedHostOptions = options;
             this.changeFeedOptions = changeFeedOptions;
         }
 
@@ -48,20 +49,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             var processorSettings = new ProcessorSettings
             {
-                CollectionSelfLink = this.collectionSelfLink,
+                CollectionSelfLink = collectionSelfLink,
                 RequestContinuation = lease.ContinuationToken,
                 PartitionKeyRangeId = lease.PartitionId,
-                FeedPollDelay = this.changeFeedHostOptions.FeedPollDelay,
-                MaxItemCount = this.changeFeedHostOptions.QueryPartitionsMaxBatchSize,
-                StartFromBeginning = this.changeFeedOptions.StartFromBeginning,
-                StartTime = this.changeFeedOptions.StartTime,
-                SessionToken = this.changeFeedOptions.SessionToken,
+                FeedPollDelay = changeFeedHostOptions.FeedPollDelay,
+                MaxItemCount = changeFeedHostOptions.QueryPartitionsMaxBatchSize,
+                StartFromBeginning = changeFeedOptions.StartFromBeginning,
+                StartTime = changeFeedOptions.StartTime,
+                SessionToken = changeFeedOptions.SessionToken,
             };
 
-            var checkpointer = new PartitionCheckpointer(this.leaseManager, lease);
-            IChangeFeedObserver changeFeedObserver = this.observerFactory.CreateObserver();
-            var processor = new PartitionProcessor(changeFeedObserver, this.documentClient, processorSettings, checkpointer);
-            var renewer = new LeaseRenewer(lease, this.leaseManager, this.changeFeedHostOptions.LeaseRenewInterval);
+            var checkpointer = new PartitionCheckpointer(leaseManager, lease);
+            IObserver changeFeedObserver = observerFactory.CreateObserver();
+            var processor = new PartitionProcessor(changeFeedObserver, documentClient, processorSettings, checkpointer);
+            var renewer = new LeaseRenewer(lease, leaseManager, changeFeedHostOptions.LeaseRenewInterval);
 
             return new PartitionSupervisor(lease, changeFeedObserver, processor, renewer);
         }
