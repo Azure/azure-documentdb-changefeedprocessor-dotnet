@@ -9,12 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
     /// <summary>
     /// Factory class used to create instance(s) of <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/>.
     /// </summary>
-#if PRIVATE_API
-    public
-#else
-    internal
-#endif
-    class CheckpointerObserverFactory : IChangeFeedObserverFactory
+    internal class CheckpointerObserverFactory : IChangeFeedObserverFactory
     {
         private readonly IChangeFeedObserverFactory observerFactory;
         private readonly CheckpointFrequency checkpointFrequency;

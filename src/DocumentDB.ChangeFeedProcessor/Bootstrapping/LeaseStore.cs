@@ -12,12 +12,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
 
-#if PRIVATE_API
-    public
-#else
-    internal
-#endif
-    class LeaseStore : ILeaseStore
+    internal class LeaseStore : ILeaseStore
     {
         private readonly IChangeFeedDocumentClient client;
         private readonly DocumentCollectionInfo leaseStoreCollectionInfo;

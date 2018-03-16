@@ -57,12 +57,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-#if PRIVATE_API
-        public
-#else
-        internal
-#endif
-        ChangeFeedHostBuilder WithFeedDocumentClient(IChangeFeedDocumentClient feedDocumentClient)
+        internal ChangeFeedHostBuilder WithFeedDocumentClient(IChangeFeedDocumentClient feedDocumentClient)
         {
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
             this.feedDocumentClient = feedDocumentClient;

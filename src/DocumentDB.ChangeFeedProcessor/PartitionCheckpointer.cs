@@ -8,12 +8,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
-#if PRIVATE_API
-    public
-#else
-    internal
-#endif
-    class PartitionCheckpointer : IPartitionCheckpointer
+    internal class PartitionCheckpointer : IPartitionCheckpointer
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly ILeaseManager leaseManager;
