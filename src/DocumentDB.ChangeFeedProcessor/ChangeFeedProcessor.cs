@@ -12,30 +12,26 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     internal class ChangeFeedProcessor : IChangeFeedProcessor
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
-        private readonly string hostName;
         private readonly IPartitionManager partitionManager;
 
-        public ChangeFeedProcessor(string hostName, IPartitionManager partitionManager)
+        public ChangeFeedProcessor(IPartitionManager partitionManager)
         {
-            if (string.IsNullOrEmpty(hostName)) throw new ArgumentException(nameof(hostName));
             if (partitionManager == null) throw new ArgumentNullException(nameof(partitionManager));
-
-            this.hostName = hostName;
             this.partitionManager = partitionManager;
         }
 
         public async Task StartAsync()
         {
-            Logger.InfoFormat("Starting processor on host '{0}'", this.hostName);
-
+            Logger.InfoFormat("Starting processor...");
             await this.partitionManager.StartAsync().ConfigureAwait(false);
+            Logger.InfoFormat("Processor started.");
         }
 
         public async Task StopAsync()
         {
-            Logger.InfoFormat("Stopping processor on host '{0}'", this.hostName);
-
+            Logger.InfoFormat("Stopping processor...");
             await this.partitionManager.StopAsync().ConfigureAwait(false);
+            Logger.InfoFormat("Processor stopped.");
         }
     }
 }
