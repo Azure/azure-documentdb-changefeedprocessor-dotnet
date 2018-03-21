@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 using Moq;
 using Xunit;
 
@@ -21,7 +21,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         private readonly ILease lease;
         private readonly ILeaseRenewer leaseRenewer;
         private readonly IPartitionProcessor partitionProcessor;
-        private readonly IChangeFeedObserver observer;
+        private readonly Processing.IChangeFeedObserver observer;
         private readonly CancellationTokenSource shutdownToken = new CancellationTokenSource(TimeSpan.FromMinutes(5));
         private readonly PartitionSupervisor sut;
 
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             leaseRenewer = Mock.Of<ILeaseRenewer>();
             partitionProcessor = Mock.Of<IPartitionProcessor>();
-            observer = Mock.Of<IChangeFeedObserver>();
+            observer = Mock.Of<Processing.IChangeFeedObserver>();
 
             sut = new PartitionSupervisor(lease, observer, partitionProcessor, leaseRenewer);
         }
@@ -68,7 +68,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
-                    .CloseAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
+                    .CloseAsync(It.Is<Processing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
                         ChangeFeedObserverCloseReason.Shutdown));
         }
 
@@ -90,7 +90,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
-                    .CloseAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
+                    .CloseAsync(It.Is<Processing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
                         ChangeFeedObserverCloseReason.LeaseLost));
         }
 
@@ -113,7 +113,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
-                    .CloseAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
+                    .CloseAsync(It.Is<Processing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
                         ChangeFeedObserverCloseReason.ObserverError));
         }
 
@@ -121,13 +121,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public async Task RunObserver_ShouldPassPartitionToObserver_WhenExecuted()
         {
             Mock.Get(observer)
-                .Setup(feedObserver => feedObserver.ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>()))
+                .Setup(feedObserver => feedObserver.ProcessChangesAsync(It.IsAny<Processing.ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
                 .Callback(() => shutdownToken.Cancel());
 
             await sut.RunAsync(shutdownToken.Token).ConfigureAwait(false);
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
-                    .OpenAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId)));
+                    .OpenAsync(It.Is<Processing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId)));
         }
 
         [Fact]

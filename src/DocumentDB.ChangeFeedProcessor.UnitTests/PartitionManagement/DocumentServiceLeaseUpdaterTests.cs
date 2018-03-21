@@ -4,7 +4,7 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task UpdateLeaseAsync_ShouldReturnNull_IfMergerReturnsNull()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             var updater = new DocumentServiceLeaseUpdater(client);
             var lease = Mock.Of<ILease>();
 
@@ -41,7 +41,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             ILease oldLease = CreateLease();
             ILease updatedLease = CreateLease(eTag1);
 
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
                 .Setup(c => c.ReplaceDocumentAsync(
                     documentUri,
@@ -82,7 +82,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             ILease oldLease = CreateLease();
             ILease updatedLease = CreateLease(eTag1);
 
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
                 .Setup(c => c.ReplaceDocumentAsync(
                     documentUri,
@@ -113,7 +113,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             ILease oldLease = CreateLease();
             ILease updatedLease = CreateLease(eTag1);
 
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             SetupReplaceConflict(client, updatedLease);
             Mock.Get(client)
                 .Setup(c => c.ReadDocumentAsync(documentUri))
@@ -128,7 +128,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task UpdateLeaseAsync_ShouldRetryWithUpdatedLease_WhenConflict()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             var updater = new DocumentServiceLeaseUpdater(client);
             ILease oldLease = CreateLease();
 
@@ -161,7 +161,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task UpdateLeaseAsync_ShouldThrowLeaseLostException_WhenConflictAfterAllRetries()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             var updater = new DocumentServiceLeaseUpdater(client);
             ILease oldLease = CreateLease();
             const int retryCount = 5;
@@ -192,7 +192,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
 
-        private void SetupReplaceConflict(IDocumentClientEx client, ILease updatedLease)
+        private void SetupReplaceConflict(IChangeFeedDocumentClient client, ILease updatedLease)
         {
             Mock.Get(client)
                 .Setup(c => c.ReplaceDocumentAsync(

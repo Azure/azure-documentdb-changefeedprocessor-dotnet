@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.Documents.Linq;
 using Moq;
@@ -36,14 +36,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         };
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-        private readonly IChangeFeedObserver observer;
-        private readonly IChangeFeedObserverFactory observerFactory;
+        private readonly Processing.IChangeFeedObserver observer;
+        private readonly Processing.IChangeFeedObserverFactory observerFactory;
         private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
 
         public ChangeFeedEventHostTests()
         {
             var leaseQueryMock = new Mock<IDocumentQuery<Document>>();
-            var leaseDocumentClient = Mock.Of<IDocumentClientEx>();
+            var leaseDocumentClient = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(leaseDocumentClient)
                 .Setup(c => c.CreateDocumentQuery<Document>(collectionLink,
                     It.Is<SqlQuerySpec>(spec => spec.QueryText == "SELECT * FROM c WHERE STARTSWITH(c.id, @PartitionLeasePrefix)" &&
@@ -73,7 +73,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Mock.Get(feedResponse)
                 .Setup(response => response.GetEnumerator())
                 .Returns(documents.GetEnumerator());
-            var documentQuery = Mock.Of<IDocumentQueryEx<Document>>();
+            var documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
             Mock.Get(documentQuery)
                 .Setup(query => query.HasMoreResults)
                 .Returns(false);
@@ -81,7 +81,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(query => query.ExecuteNextAsync<Document>(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => feedResponse)
                 .Callback(() => cancellationTokenSource.Cancel());
-            var documentClient = Mock.Of<IDocumentClientEx>();
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(documentClient)
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(collectionLink, It.IsAny<ChangeFeedOptions>()))
                 .Returns(documentQuery);
@@ -115,17 +115,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithLeaseCollection(collectionInfo)
                 .WithLeaseDocumentClient(leaseDocumentClient);
 
-            this.observer = Mock.Of<IChangeFeedObserver>();
+            this.observer = Mock.Of<Processing.IChangeFeedObserver>();
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
-                    .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>()))
+                    .ProcessChangesAsync(It.IsAny<Processing.ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(false))
                 .Callback(cancellationTokenSource.Cancel);
             Mock.Get(observer)
-                .Setup(observer => observer.OpenAsync(It.IsAny<ChangeFeedObserverContext>()))
+                .Setup(observer => observer.OpenAsync(It.IsAny<Processing.ChangeFeedObserverContext>()))
                 .Returns(Task.FromResult(false));
 
-            this.observerFactory = Mock.Of<IChangeFeedObserverFactory>();
+            this.observerFactory = Mock.Of<Processing.IChangeFeedObserverFactory>();
             Mock.Get(observerFactory)
                 .Setup(observer => observer.CreateObserver())
                 .Returns(observer);

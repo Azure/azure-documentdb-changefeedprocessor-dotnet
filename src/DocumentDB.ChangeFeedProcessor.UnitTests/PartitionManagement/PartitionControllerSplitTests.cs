@@ -6,8 +6,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 using Moq;
 using Xunit;
 
@@ -235,10 +235,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             return mock.Object;
         }
 
-        private static IChangeFeedObserver MockObserver()
+        private static Processing.IChangeFeedObserver MockObserver()
         {
-            var mock = new Mock<IChangeFeedObserver>();
-            mock.Setup(observer => observer.OpenAsync(It.IsAny<ChangeFeedObserverContext>()))
+            var mock = new Mock<Processing.IChangeFeedObserver>();
+            mock.Setup(observer => observer.OpenAsync(It.IsAny<Processing.ChangeFeedObserverContext>()))
                 .Returns(Task.FromResult(false));
             return mock.Object;
         }
