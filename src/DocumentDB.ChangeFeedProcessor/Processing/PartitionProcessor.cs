@@ -113,7 +113,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
                 IFeedResponse<Document> response = await this.query.ExecuteNextAsync<Document>(cancellation).ConfigureAwait(false);
                 lastContinuation = response.ResponseContinuation;
                 if (response.Count > 0)
+                {
                     await this.DispatchChanges(response, cancellation).ConfigureAwait(false);
+                }
             }
             while (this.query.HasMoreResults && !cancellation.IsCancellationRequested);
 
@@ -122,7 +124,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
 
         private Task DispatchChanges(IFeedResponse<Document> response, CancellationToken cancellationToken)
         {
-            var context = new ChangeFeedObserverContext(this.settings.PartitionKeyRangeId, response, this.checkpointer);
+            IChangeFeedObserverContext context = new ChangeFeedObserverContext(this.settings.PartitionKeyRangeId, response, this.checkpointer);
             var docs = new List<Document>(response.Count);
             using (IEnumerator<Document> e = response.GetEnumerator())
             {

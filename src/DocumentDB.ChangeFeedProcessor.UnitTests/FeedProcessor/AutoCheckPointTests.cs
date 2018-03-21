@@ -19,7 +19,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
     public class AutoCheckPointTests
     {
         private readonly Processing.IChangeFeedObserver changeFeedObserver;
-        private readonly Processing.ChangeFeedObserverContext observerContext;
+        private readonly IChangeFeedObserverContext observerContext;
         private readonly CheckpointFrequency checkpointFrequency;
         private readonly AutoCheckpointer sut;
         private readonly IReadOnlyList<Document> documents;
@@ -49,7 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Setup(response => response.GetEnumerator())
                 .Returns(documents.GetEnumerator());
 
-            observerContext = Mock.Of<Processing.ChangeFeedObserverContext>();
+            observerContext = Mock.Of<IChangeFeedObserverContext>();
             Mock.Get(observerContext)
                 .Setup(context => context.CheckpointAsync())
                 .Returns(partitionCheckpointer.CheckpointPartitionAsync("token"));
@@ -87,7 +87,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         {
             checkpointFrequency.TimeInterval = TimeSpan.Zero;
 
-            var observerContext = Mock.Of<Processing.ChangeFeedObserverContext>();
+            var observerContext = Mock.Of<IChangeFeedObserverContext>();
             Mock.Get(observerContext).Setup(abs => abs.CheckpointAsync()).Throws(new LeaseLostException());
 
             Exception ex = await Record.ExceptionAsync(() => sut.ProcessChangesAsync(observerContext, documents, CancellationToken.None));
