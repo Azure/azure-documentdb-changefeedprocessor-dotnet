@@ -2,8 +2,6 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 {
     using System;
@@ -17,6 +15,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 
     internal class PartitionSynchronizer : IPartitionSynchronizer
     {

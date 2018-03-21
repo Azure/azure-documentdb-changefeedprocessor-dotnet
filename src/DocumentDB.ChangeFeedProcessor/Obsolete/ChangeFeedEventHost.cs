@@ -136,11 +136,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             DocumentCollectionInfo feedCollectionLocation,
             DocumentCollectionInfo leaseCollectionLocation,
             ChangeFeedOptions changeFeedOptions,
-            ChangeFeedHostOptions changeFeedHostOptions,
-            IChangeFeedDocumentClient feedClient = null,
-            IChangeFeedDocumentClient leaseClient = null,
-            string databaseResourceId = null,
-            string collectionResourceId = null)
+            ChangeFeedHostOptions changeFeedHostOptions)
         {
             if (string.IsNullOrEmpty(hostName))
                 throw new ArgumentNullException(nameof(hostName));
@@ -159,11 +155,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 .WithChangeFeedHostOptions(changeFeedHostOptions)
                 .WithChangeFeedOptions(changeFeedOptions)
                 .WithLeaseCollection(leaseCollectionLocation);
-
-            if (leaseClient != null) this.builder.WithLeaseDocumentClient(leaseClient);
-            if (feedClient != null) this.builder.WithFeedDocumentClient(feedClient);
-            if (!string.IsNullOrEmpty(collectionResourceId)) this.builder.WithCollectionResourceId(collectionResourceId);
-            if (!string.IsNullOrEmpty(databaseResourceId)) this.builder.WithDatabaseResourceId(databaseResourceId);
         }
 
         /// <summary>Asynchronously registers the observer interface implementation with the host.

@@ -2,14 +2,14 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.Client;
-using Microsoft.Azure.Documents.Linq;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.Documents.Linq;
+
     public class ChangeFeedDocumentClient : IChangeFeedDocumentClient
     {
         private readonly DocumentClient documentClient;
