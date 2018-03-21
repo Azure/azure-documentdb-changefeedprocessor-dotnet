@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Moq;
@@ -24,7 +25,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         private readonly IChangeFeedDocumentClient docClient;
         private readonly IChangeFeedDocumentQuery<Document> documentQuery;
         private readonly IFeedResponse<Document> feedResponse;
-        private readonly Processing.IChangeFeedObserver observer;
+        private readonly FeedProcessing.IChangeFeedObserver observer;
         private readonly List<Document> documents;
 
         public PartitionProcessorTests()
@@ -67,7 +68,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(processorSettings.CollectionSelfLink, It.IsAny<ChangeFeedOptions>()))
                 .Returns(documentQuery);
 
-            observer = Mock.Of<Processing.IChangeFeedObserver>();
+            observer = Mock.Of<FeedProcessing.IChangeFeedObserver>();
             var checkPointer = new Mock<IPartitionCheckpointer>();
             sut = new PartitionProcessor(observer, docClient, processorSettings, checkPointer.Object);
         }
@@ -239,7 +240,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
                         .ProcessChangesAsync(
-                            It.Is<Processing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<FeedProcessing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
                             It.Is<IReadOnlyList<Document>>(
                                 list => list.Count == 1 ? list.SequenceEqual(documents) :
                                         list.Count == 2 ? list.SequenceEqual(documents2) :

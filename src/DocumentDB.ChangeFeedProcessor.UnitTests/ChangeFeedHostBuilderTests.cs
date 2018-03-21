@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         public async Task WithFeedDocumentClient()
         {
             var documentClient = new DocumentClient(new Uri("https://localhost:12345/"), string.Empty);
-            var observerFactory = Mock.Of<Processing.IChangeFeedObserverFactory>();
+            var observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
 
             this.builder
                 .WithFeedDocumentClient(documentClient)
@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         public async Task WithLeaseDocumentClient()
         {
             var documentClient = new DocumentClient(new Uri("https://localhost:12345/"), string.Empty);
-            var observerFactory = Mock.Of<Processing.IChangeFeedObserverFactory>();
+            var observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
 
             this.builder
                 .WithLeaseDocumentClient(documentClient)

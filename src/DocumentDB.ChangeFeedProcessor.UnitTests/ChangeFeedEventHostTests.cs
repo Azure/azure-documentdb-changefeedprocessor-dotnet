@@ -35,8 +35,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         };
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-        private readonly Processing.IChangeFeedObserver observer;
-        private readonly Processing.IChangeFeedObserverFactory observerFactory;
+        private readonly FeedProcessing.IChangeFeedObserver observer;
+        private readonly FeedProcessing.IChangeFeedObserverFactory observerFactory;
         private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
 
         public ChangeFeedEventHostTests()
@@ -114,17 +114,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithLeaseCollection(collectionInfo)
                 .WithLeaseDocumentClient(leaseDocumentClient);
 
-            this.observer = Mock.Of<Processing.IChangeFeedObserver>();
+            this.observer = Mock.Of<FeedProcessing.IChangeFeedObserver>();
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
-                    .ProcessChangesAsync(It.IsAny<Processing.ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
+                    .ProcessChangesAsync(It.IsAny<FeedProcessing.ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(false))
                 .Callback(cancellationTokenSource.Cancel);
             Mock.Get(observer)
-                .Setup(observer => observer.OpenAsync(It.IsAny<Processing.ChangeFeedObserverContext>()))
+                .Setup(observer => observer.OpenAsync(It.IsAny<FeedProcessing.ChangeFeedObserverContext>()))
                 .Returns(Task.FromResult(false));
 
-            this.observerFactory = Mock.Of<Processing.IChangeFeedObserverFactory>();
+            this.observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
             Mock.Get(observerFactory)
                 .Setup(observer => observer.CreateObserver())
                 .Returns(observer);
