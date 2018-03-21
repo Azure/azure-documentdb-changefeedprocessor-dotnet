@@ -18,7 +18,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
         {
             try
             {
-                return await client.ReadDocumentAsync(documentUri).ConfigureAwait(false);
+                IResourceResponse<Document> response = await client.ReadDocumentAsync(documentUri).ConfigureAwait(false);
+                return response.Resource;
             }
             catch (DocumentClientException ex)
             {
@@ -49,11 +50,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             return false;
         }
 
-        public static async Task<DocumentCollection> GetDocumentCollectionAsync(this IChangeFeedDocumentClient client, DocumentCollectionInfo collectionInfo)
+        public static async Task<DocumentCollection> GetDocumentCollectionAsync(this IChangeFeedDocumentClient client,
+            DocumentCollectionInfo collectionInfo)
         {
-            Uri collectionUri = UriFactory.CreateDocumentCollectionUri(collectionInfo.DatabaseName, collectionInfo.CollectionName);
-            DocumentCollection collection = await client.ReadDocumentCollectionAsync(collectionUri, new RequestOptions()).ConfigureAwait(false);
-            return collection;
+            Uri collectionUri =
+                UriFactory.CreateDocumentCollectionUri(collectionInfo.DatabaseName, collectionInfo.CollectionName);
+            IResourceResponse<DocumentCollection> response =
+                await client.ReadDocumentCollectionAsync(collectionUri, new RequestOptions()).ConfigureAwait(false);
+            return response.Resource;
         }
     }
 }

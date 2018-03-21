@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
             this.documentClient = documentClient;
         }
 
-        public async Task<FeedResponse<PartitionKeyRange>> ReadPartitionKeyRangeFeedAsync(string partitionKeyRangesOrCollectionLink, FeedOptions options)
+        public async Task<IFeedResponse<PartitionKeyRange>> ReadPartitionKeyRangeFeedAsync(string partitionKeyRangesOrCollectionLink, FeedOptions options)
         {
             return await this.documentClient.ReadPartitionKeyRangeFeedAsync(partitionKeyRangesOrCollectionLink, options).ConfigureAwait(false);
         }
@@ -31,32 +31,32 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
             return new ChangeFeedDocumentQuery<Document>(query);
         }
 
-        public async Task<ResourceResponse<Database>> ReadDatabaseAsync(Uri databaseUri, RequestOptions options)
+        public async Task<IResourceResponse<Database>> ReadDatabaseAsync(Uri databaseUri, RequestOptions options)
         {
             return await this.documentClient.ReadDatabaseAsync(databaseUri, options).ConfigureAwait(false);
         }
 
-        public async Task<ResourceResponse<DocumentCollection>> ReadDocumentCollectionAsync(Uri documentCollectionUri, RequestOptions options)
+        public async Task<IResourceResponse<DocumentCollection>> ReadDocumentCollectionAsync(Uri documentCollectionUri, RequestOptions options)
         {
             return await this.documentClient.ReadDocumentCollectionAsync(documentCollectionUri, options).ConfigureAwait(false);
         }
 
-        public async Task<ResourceResponse<Document>> CreateDocumentAsync(string documentsFeedOrDatabaseLink, object document)
+        public async Task<IResourceResponse<Document>> CreateDocumentAsync(string documentsFeedOrDatabaseLink, object document)
         {
             return await this.documentClient.CreateDocumentAsync(documentsFeedOrDatabaseLink, document).ConfigureAwait(false);
         }
 
-        public async Task<ResourceResponse<Document>> DeleteDocumentAsync(Uri documentUri)
+        public async Task<IResourceResponse<Document>> DeleteDocumentAsync(Uri documentUri)
         {
             return await this.documentClient.DeleteDocumentAsync(documentUri).ConfigureAwait(false);
         }
 
-        public async Task<ResourceResponse<Document>> ReplaceDocumentAsync(Uri documentUri, object document, RequestOptions options)
+        public async Task<IResourceResponse<Document>> ReplaceDocumentAsync(Uri documentUri, object document, RequestOptions options)
         {
             return await this.documentClient.ReplaceDocumentAsync(documentUri, document, options).ConfigureAwait(false);
         }
 
-        public async Task<ResourceResponse<Document>> ReadDocumentAsync(Uri documentUri)
+        public async Task<IResourceResponse<Document>> ReadDocumentAsync(Uri documentUri)
         {
             return await this.documentClient.ReadDocumentAsync(documentUri).ConfigureAwait(false);
         }

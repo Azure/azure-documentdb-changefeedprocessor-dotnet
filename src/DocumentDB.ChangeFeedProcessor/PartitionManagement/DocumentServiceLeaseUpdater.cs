@@ -48,7 +48,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 Document document;
                 try
                 {
-                    document = await this.client.ReadDocumentAsync(documentUri).ConfigureAwait(false);
+                    IResourceResponse<Document> response = await this.client.ReadDocumentAsync(documentUri).ConfigureAwait(false);
+                    document = response.Resource;
                 }
                 catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
                 {
@@ -75,7 +76,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             try
             {
-                return await this.client.ReplaceDocumentAsync(leaseUri, lease, this.CreateIfMatchOptions(lease)).ConfigureAwait(false);
+                IResourceResponse<Document> response = await this.client.ReplaceDocumentAsync(leaseUri, lease, this.CreateIfMatchOptions(lease)).ConfigureAwait(false);
+                return response.Resource;
             }
             catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.PreconditionFailed)
             {

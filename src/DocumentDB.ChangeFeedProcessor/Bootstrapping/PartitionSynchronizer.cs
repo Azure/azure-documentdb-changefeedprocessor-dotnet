@@ -81,7 +81,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         {
             string partitionKeyRangesPath = string.Format(CultureInfo.InvariantCulture, "{0}/pkranges", this.collectionSelfLink);
 
-            FeedResponse<PartitionKeyRange> response = null;
+            IFeedResponse<PartitionKeyRange> response = null;
             var partitionKeyRanges = new List<PartitionKeyRange>();
             do
             {
@@ -91,7 +91,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
                     RequestContinuation = response?.ResponseContinuation,
                 };
                 response = await this.documentClient.ReadPartitionKeyRangeFeedAsync(partitionKeyRangesPath, feedOptions).ConfigureAwait(false);
-                partitionKeyRanges.AddRange(response);
+                IEnumerator<PartitionKeyRange> enumerator = response.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    partitionKeyRanges.Add(enumerator.Current);
+                }
             }
             while (!string.IsNullOrEmpty(response.ResponseContinuation));
 

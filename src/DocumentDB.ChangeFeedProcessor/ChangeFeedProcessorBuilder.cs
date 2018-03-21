@@ -185,8 +185,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             Logger.InfoFormat("Reading database: '{0}'", collectionLocation.DatabaseName);
             Uri databaseUri = UriFactory.CreateDatabaseUri(collectionLocation.DatabaseName);
-            Database database = await documentClient.ReadDatabaseAsync(databaseUri, null).ConfigureAwait(false);
-            return database.ResourceId;
+            var response = await documentClient.ReadDatabaseAsync(databaseUri, null).ConfigureAwait(false);
+            return response.Resource.ResourceId;
         }
 
         private static async Task<string> GetCollectionResourceIdAsync(IChangeFeedDocumentClient documentClient, DocumentCollectionInfo collectionLocation)
