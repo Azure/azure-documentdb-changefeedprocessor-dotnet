@@ -6,17 +6,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
 
-    internal class AutoCheckpointer : IChangeFeedObserver
+    internal class AutoCheckpointer : IObserver
     {
         private readonly CheckpointFrequency checkpointFrequency;
-        private readonly IChangeFeedObserver observer;
+        private readonly IObserver observer;
         private int processedDocCount;
         private DateTime lastCheckpointTime = DateTime.UtcNow;
 
-        public AutoCheckpointer(CheckpointFrequency checkpointFrequency, IChangeFeedObserver observer)
+        public AutoCheckpointer(CheckpointFrequency checkpointFrequency, IObserver observer)
         {
             if (checkpointFrequency == null)
                 throw new ArgumentNullException(nameof(checkpointFrequency));
@@ -37,9 +38,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
             return this.observer.CloseAsync(context, reason);
         }
 
-        public async Task ProcessChangesAsync(ChangeFeedObserverContext context, IReadOnlyList<Document> docs)
+        public async Task ProcessChangesAsync(ChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
-            await this.observer.ProcessChangesAsync(context, docs).ConfigureAwait(false);
+            await this.observer.ProcessChangesAsync(context, docs, cancellationToken).ConfigureAwait(false);
             this.processedDocCount += docs.Count;
 
             if (this.IsCheckpointNeeded())

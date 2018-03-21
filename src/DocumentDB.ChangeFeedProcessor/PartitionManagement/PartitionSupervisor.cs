@@ -14,13 +14,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     internal class PartitionSupervisor : IPartitionSupervisor
     {
         private readonly ILease lease;
-        private readonly IChangeFeedObserver observer;
+        private readonly IObserver observer;
         private readonly IPartitionProcessor processor;
         private readonly ILeaseRenewer renewer;
         private readonly CancellationTokenSource renewerCancellation = new CancellationTokenSource();
         private CancellationTokenSource processorCancellation;
 
-        public PartitionSupervisor(ILease lease, IChangeFeedObserver observer, IPartitionProcessor processor, ILeaseRenewer renewer)
+        public PartitionSupervisor(ILease lease, IObserver observer, IPartitionProcessor processor, ILeaseRenewer renewer)
         {
             this.lease = lease;
             this.observer = observer;
