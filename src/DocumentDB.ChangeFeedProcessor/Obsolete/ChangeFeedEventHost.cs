@@ -80,7 +80,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// ]]>
     /// </code>
     /// </example>
-    [Obsolete]
+    [Obsolete("Switch to ChangeFeedHostBuilder for building the change feed processor host or estimator and get better extensibility of the change feed processing system.")]
     public class ChangeFeedEventHost
     {
         /// <summary>
