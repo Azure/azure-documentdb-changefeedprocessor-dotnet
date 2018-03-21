@@ -3,7 +3,7 @@
 //----------------------------------------------------------------
 
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
@@ -12,7 +12,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
     internal class PartitionSupervisorFactory : IPartitionSupervisorFactory
     {
-        private readonly Processing.IChangeFeedObserverFactory observerFactory;
+        private readonly FeedProcessing.IChangeFeedObserverFactory observerFactory;
         private readonly IChangeFeedDocumentClient documentClient;
         private readonly string collectionSelfLink;
         private readonly ILeaseManager leaseManager;
@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private readonly ChangeFeedOptions changeFeedOptions;
 
         public PartitionSupervisorFactory(
-            Processing.IChangeFeedObserverFactory observerFactory,
+            FeedProcessing.IChangeFeedObserverFactory observerFactory,
             IChangeFeedDocumentClient documentClient,
             string collectionSelfLink,
             ILeaseManager leaseManager,
@@ -60,7 +60,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             };
 
             var checkpointer = new PartitionCheckpointer(leaseManager, lease);
-            Processing.IChangeFeedObserver changeFeedObserver = observerFactory.CreateObserver();
+            FeedProcessing.IChangeFeedObserver changeFeedObserver = observerFactory.CreateObserver();
             var processor = new PartitionProcessor(changeFeedObserver, documentClient, processorSettings, checkpointer);
             var renewer = new LeaseRenewer(lease, leaseManager, changeFeedHostOptions.LeaseRenewInterval);
 

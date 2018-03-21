@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Azure.Documents.Client;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     public interface IChangeFeedObserverContext
     {

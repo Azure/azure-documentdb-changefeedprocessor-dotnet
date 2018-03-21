@@ -3,7 +3,7 @@
 //----------------------------------------------------------------
 
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private ChangeFeedHostOptions changeFeedHostOptions;
         private ChangeFeedOptions changeFeedOptions;
         private IChangeFeedDocumentClient feedDocumentClient;
-        private Processing.IChangeFeedObserverFactory observerFactory;
+        private FeedProcessing.IChangeFeedObserverFactory observerFactory;
         private string databaseResourceId;
         private string collectionResourceId;
         private DocumentCollectionInfo leaseCollectionLocation;
@@ -78,7 +78,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        public ChangeFeedHostBuilder WithObserverFactory(Processing.IChangeFeedObserverFactory observerFactory)
+        public ChangeFeedHostBuilder WithObserverFactory(FeedProcessing.IChangeFeedObserverFactory observerFactory)
         {
             if (observerFactory == null) throw new ArgumentNullException(nameof(observerFactory));
             this.observerFactory = observerFactory;
@@ -86,7 +86,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         public ChangeFeedHostBuilder WithObserver<T>()
-            where T : Processing.IChangeFeedObserver, new()
+            where T : FeedProcessing.IChangeFeedObserver, new()
         {
             this.observerFactory = new ChangeFeedObserverFactory<T>();
             return this;

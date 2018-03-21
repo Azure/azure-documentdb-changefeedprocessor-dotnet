@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal class ChangeFeedObserverAdapter<T> : Processing.IChangeFeedObserver where T : IChangeFeedObserver, new()
+    internal class ChangeFeedObserverAdapter<T> : FeedProcessing.IChangeFeedObserver where T : IChangeFeedObserver, new()
     {
         private T observer;
 
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
     }
 
-    internal class ChangeFeedObserverAdapter : Processing.IChangeFeedObserver
+    internal class ChangeFeedObserverAdapter : FeedProcessing.IChangeFeedObserver
     {
         private IChangeFeedObserver observer;
 

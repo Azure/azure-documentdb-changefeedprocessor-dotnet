@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {

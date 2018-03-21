@@ -12,7 +12,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 using Microsoft.Azure.Documents.Client;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     internal class PartitionProcessor : IPartitionProcessor
     {

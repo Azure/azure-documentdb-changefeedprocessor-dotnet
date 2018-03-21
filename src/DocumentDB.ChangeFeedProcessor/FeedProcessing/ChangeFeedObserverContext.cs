@@ -5,7 +5,7 @@
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.Client;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     /// <summary>
     /// The context passed to <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/> events.

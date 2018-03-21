@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     internal class ChangeFeedObserverFactory<T> : IChangeFeedObserverFactory
         where T : IChangeFeedObserver, new()

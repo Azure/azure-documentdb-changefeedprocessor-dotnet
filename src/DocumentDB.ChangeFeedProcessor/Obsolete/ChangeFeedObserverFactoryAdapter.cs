@@ -1,8 +1,6 @@
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
-    internal class ChangeFeedObserverFactoryAdapter : Processing.IChangeFeedObserverFactory
+    internal class ChangeFeedObserverFactoryAdapter : FeedProcessing.IChangeFeedObserverFactory
     {
         private IChangeFeedObserverFactory factory;
 
@@ -11,7 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             this.factory = factory;
         }
 
-        public Processing.IChangeFeedObserver CreateObserver()
+        public FeedProcessing.IChangeFeedObserver CreateObserver()
         {
             IChangeFeedObserver observer = this.factory.CreateObserver();
             return new ChangeFeedObserverAdapter(observer);

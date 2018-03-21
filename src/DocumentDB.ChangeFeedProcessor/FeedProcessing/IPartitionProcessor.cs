@@ -5,7 +5,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     internal interface IPartitionProcessor
     {

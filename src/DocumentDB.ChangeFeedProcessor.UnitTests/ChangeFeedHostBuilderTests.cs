@@ -1,5 +1,4 @@
 ﻿using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 {

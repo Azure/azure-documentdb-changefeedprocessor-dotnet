@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 using Microsoft.Azure.Documents.Client;
 using Xunit;
 

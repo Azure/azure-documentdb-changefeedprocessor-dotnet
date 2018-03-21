@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Processing;
 using Moq;
 using Xunit;
 

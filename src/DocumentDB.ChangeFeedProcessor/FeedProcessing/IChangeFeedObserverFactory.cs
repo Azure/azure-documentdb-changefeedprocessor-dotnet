@@ -1,4 +1,4 @@
-﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
+﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     public interface IChangeFeedObserverFactory
     {

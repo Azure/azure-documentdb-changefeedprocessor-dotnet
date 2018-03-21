@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Processing
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     /// <summary>
     /// Factory class used to create instance(s) of <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/>.
