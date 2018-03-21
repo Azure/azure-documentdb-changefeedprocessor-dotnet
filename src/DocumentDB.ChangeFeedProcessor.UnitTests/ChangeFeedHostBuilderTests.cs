@@ -25,7 +25,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         private static readonly DocumentCollection collection = new DocumentCollection { ResourceId = "someResource" };
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
-        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+        private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
 
         public ChangeFeedHostBuilderTests()
         {
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithLeaseDocumentClient(CreateMockDocumentClient())
                 .WithObserverFactory(observerFactory);
 
-            await Assert.ThrowsAsync<HttpRequestException>(async () => await this.builder.BuildProcessorAsync());
+            await Assert.ThrowsAsync<HttpRequestException>(async () => await this.builder.BuildAsync());
         }
 
         [Fact]
@@ -60,7 +60,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithFeedDocumentClient(CreateMockDocumentClient())
                 .WithObserverFactory(observerFactory);
 
-            await Assert.ThrowsAsync<HttpRequestException>(async () => await this.builder.BuildProcessorAsync());
+            await Assert.ThrowsAsync<HttpRequestException>(async () => await this.builder.BuildAsync());
         }
 
         private IChangeFeedDocumentClient CreateMockDocumentClient()

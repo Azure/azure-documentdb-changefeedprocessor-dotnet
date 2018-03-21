@@ -86,7 +86,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <summary>
         /// Default builder for the <see cref="ChangeFeedEventHost"/>
         /// </summary>
-        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+        private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
         private IChangeFeedProcessor processor;
         private IRemainingWorkEstimator remainingWorkEstimator;
 
@@ -210,7 +210,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             if (this.processor != null) throw new Exception("Host was already initialized.");
 
-            this.processor = await this.builder.BuildProcessorAsync().ConfigureAwait(false);
+            this.processor = await this.builder.BuildAsync().ConfigureAwait(false);
         }
     }
 }

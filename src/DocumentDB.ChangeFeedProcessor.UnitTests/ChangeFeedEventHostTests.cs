@@ -37,7 +37,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly FeedProcessing.IChangeFeedObserver observer;
         private readonly FeedProcessing.IChangeFeedObserverFactory observerFactory;
-        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+        private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
 
         public ChangeFeedEventHostTests()
         {
@@ -134,7 +134,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         public async Task RegisterObserver_Then_Estimate()
         {
             this.builder.WithObserverFactory(this.observerFactory);
-            var processor = await this.builder.BuildProcessorAsync();
+            var processor = await this.builder.BuildAsync();
             await processor.StartAsync();
             var remainingWorkEstimator = await this.builder.BuildEstimatorAsync();
             await remainingWorkEstimator.GetEstimatedRemainingWork();
@@ -146,7 +146,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             var remainingWorkEstimator = await this.builder.BuildEstimatorAsync();
             await remainingWorkEstimator.GetEstimatedRemainingWork();
             this.builder.WithObserverFactory(this.observerFactory);
-            var processor = await this.builder.BuildProcessorAsync();
+            var processor = await this.builder.BuildAsync();
             await processor.StartAsync();
         }
     }
