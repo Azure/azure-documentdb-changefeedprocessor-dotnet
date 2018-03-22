@@ -83,6 +83,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     [Obsolete("Switch to ChangeFeedHostBuilder for building the change feed processor host or estimator and get better extensibility of the change feed processing system.")]
     public class ChangeFeedEventHost
     {
+        private static readonly TraceLogProvider traceLogProvider;
+
         /// <summary>
         /// Default builder for the <see cref="ChangeFeedEventHost"/>
         /// </summary>
@@ -92,8 +94,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         static ChangeFeedEventHost()
         {
-            var traceLogProvider = new Tuple<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(() => true, () => new TraceLogProvider());
-            LogProvider.LogProviderResolvers.Add(traceLogProvider);
+            ChangeFeedEventHost.traceLogProvider = new TraceLogProvider();
+            var logProviderEntry = new Tuple<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
+                () => true,
+                () => ChangeFeedEventHost.traceLogProvider);
+            LogProvider.LogProviderResolvers.Add(logProviderEntry);
         }
 
         /// <summary>
@@ -148,6 +153,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new ArgumentNullException(nameof(changeFeedOptions));
             if (changeFeedHostOptions == null)
                 throw new ArgumentNullException(nameof(changeFeedHostOptions));
+
+            ChangeFeedEventHost.traceLogProvider.OpenNestedContext(hostName);
 
             this.builder
                 .WithHostName(hostName)
