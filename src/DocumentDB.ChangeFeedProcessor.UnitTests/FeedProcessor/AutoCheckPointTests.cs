@@ -5,9 +5,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 using Microsoft.Azure.Documents.Client;
 using Moq;
 using Xunit;
@@ -17,8 +18,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
     [Trait("Category", "Gated")]
     public class AutoCheckPointTests
     {
-        private readonly IChangeFeedObserver changeFeedObserver;
-        private readonly ChangeFeedObserverContext observerContext;
+        private readonly FeedProcessing.IChangeFeedObserver changeFeedObserver;
+        private readonly IChangeFeedObserverContext observerContext;
         private readonly CheckpointFrequency checkpointFrequency;
         private readonly AutoCheckpointer sut;
         private readonly IReadOnlyList<Document> documents;
@@ -27,7 +28,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 
         public AutoCheckPointTests()
         {
-            changeFeedObserver = Mock.Of<IChangeFeedObserver>();
+            changeFeedObserver = Mock.Of<FeedProcessing.IChangeFeedObserver>();
             partitionCheckpointer = Mock.Of<IPartitionCheckpointer>();
             Mock.Get(partitionCheckpointer)
                 .Setup(checkPointer => checkPointer.CheckpointPartitionAsync(It.IsAny<string>()))
@@ -48,7 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Setup(response => response.GetEnumerator())
                 .Returns(documents.GetEnumerator());
 
-            observerContext = Mock.Of<ChangeFeedObserverContext>();
+            observerContext = Mock.Of<IChangeFeedObserverContext>();
             Mock.Get(observerContext)
                 .Setup(context => context.CheckpointAsync())
                 .Returns(partitionCheckpointer.CheckpointPartitionAsync("token"));
@@ -75,10 +76,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         [Fact]
         public async Task ProcessChanges_WhenCalled_ShouldPassTheBatch()
         {
-            await sut.ProcessChangesAsync(observerContext, documents);
+            await sut.ProcessChangesAsync(observerContext, documents, CancellationToken.None);
 
             Mock.Get(changeFeedObserver)
-                .Verify(observer => observer.ProcessChangesAsync(observerContext, documents), Times.Once);
+                .Verify(observer => observer.ProcessChangesAsync(observerContext, documents, CancellationToken.None), Times.Once);
         }
 
         [Fact]
@@ -86,10 +87,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         {
             checkpointFrequency.TimeInterval = TimeSpan.Zero;
 
-            var observerContext = Mock.Of<ChangeFeedObserverContext>();
+            var observerContext = Mock.Of<IChangeFeedObserverContext>();
             Mock.Get(observerContext).Setup(abs => abs.CheckpointAsync()).Throws(new LeaseLostException());
 
-            Exception ex = await Record.ExceptionAsync(() => sut.ProcessChangesAsync(observerContext, documents));
+            Exception ex = await Record.ExceptionAsync(() => sut.ProcessChangesAsync(observerContext, documents, CancellationToken.None));
             Assert.IsType<LeaseLostException>(ex);
         }
 
@@ -98,14 +99,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             checkpointFrequency.TimeInterval = TimeSpan.FromHours(1);
-            await sut.ProcessChangesAsync(observerContext, documents);
+            await sut.ProcessChangesAsync(observerContext, documents, CancellationToken.None);
             Mock.Get(observerContext)
                 .Verify(context => context.CheckpointAsync(), Times.Never);
 
             await Task.Delay(TimeSpan.FromSeconds(1));
 
             checkpointFrequency.TimeInterval = stopwatch.Elapsed;
-            await sut.ProcessChangesAsync(observerContext, documents);
+            await sut.ProcessChangesAsync(observerContext, documents, CancellationToken.None);
             Mock.Get(observerContext)
                 .Verify(context => context.CheckpointAsync(), Times.Once);
         }
@@ -119,19 +120,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 
             checkpointFrequency.ProcessedDocumentCount = 2;
 
-            await sut.ProcessChangesAsync(observerContext, documents);
+            await sut.ProcessChangesAsync(observerContext, documents, CancellationToken.None);
             Mock.Get(observerContext)
                 .Verify(context => context.CheckpointAsync(), Times.Never);
 
-            await sut.ProcessChangesAsync(observerContext, documents);
+            await sut.ProcessChangesAsync(observerContext, documents, CancellationToken.None);
             Mock.Get(observerContext)
                 .Verify(context => context.CheckpointAsync(), Times.Once);
 
-            await sut.ProcessChangesAsync(observerContext, documents);
+            await sut.ProcessChangesAsync(observerContext, documents, CancellationToken.None);
             Mock.Get(observerContext)
                 .Verify(context => context.CheckpointAsync(), Times.Once);
 
-            await sut.ProcessChangesAsync(observerContext, documents);
+            await sut.ProcessChangesAsync(observerContext, documents, CancellationToken.None);
             Mock.Get(observerContext)
                 .Verify(context => context.CheckpointAsync(), Times.Exactly(2));
         }

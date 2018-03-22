@@ -2,15 +2,18 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
+    using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
 
     /// <summary>
     /// This interface is used to deliver change events to document feed observers.
     /// </summary>
+    [Obsolete("Switch to ChangeFeedHostBuilder for building the change feed processor host and use new interface with cancellation token support")]
     public interface IChangeFeedObserver
     {
         /// <summary>

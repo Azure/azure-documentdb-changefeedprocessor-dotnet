@@ -1,13 +1,13 @@
-﻿//----------------------------------------------------------------
+//----------------------------------------------------------------
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents;
 
     internal class AutoCheckpointer : IChangeFeedObserver
     {
@@ -27,19 +27,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
             this.observer = observer;
         }
 
-        public Task OpenAsync(ChangeFeedObserverContext context)
+        public Task OpenAsync(IChangeFeedObserverContext context)
         {
             return this.observer.OpenAsync(context);
         }
 
-        public Task CloseAsync(ChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
+        public Task CloseAsync(IChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
         {
             return this.observer.CloseAsync(context, reason);
         }
 
-        public async Task ProcessChangesAsync(ChangeFeedObserverContext context, IReadOnlyList<Document> docs)
+        public async Task ProcessChangesAsync(IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
-            await this.observer.ProcessChangesAsync(context, docs).ConfigureAwait(false);
+            await this.observer.ProcessChangesAsync(context, docs, cancellationToken).ConfigureAwait(false);
             this.processedDocCount += docs.Count;
 
             if (this.IsCheckpointNeeded())

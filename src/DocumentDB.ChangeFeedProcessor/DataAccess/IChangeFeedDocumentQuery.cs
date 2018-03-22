@@ -2,14 +2,17 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
 {
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.Documents.Linq;
 
-    public interface IDocumentQueryEx<T> : IDocumentQuery
+    /// <summary>
+    /// Provides methods to support change feed query pagination and asynchronous execution
+    /// </summary>
+    public interface IChangeFeedDocumentQuery<T> : IDocumentQuery
     {
         /// <summary>
         /// Gets a value indicating whether there are potentially additional results that can be

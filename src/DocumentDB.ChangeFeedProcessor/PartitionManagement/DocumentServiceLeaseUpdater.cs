@@ -2,13 +2,14 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
     using System.Net;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.Client;
@@ -17,9 +18,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     {
         private const int RetryCountOnConflict = 5;
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
-        private readonly IDocumentClientEx client;
+        private readonly IChangeFeedDocumentClient client;
 
-        public DocumentServiceLeaseUpdater(IDocumentClientEx client)
+        public DocumentServiceLeaseUpdater(IChangeFeedDocumentClient client)
         {
             if (client == null) throw new ArgumentNullException(nameof(client));
             this.client = client;
@@ -47,7 +48,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 Document document;
                 try
                 {
-                    document = await this.client.ReadDocumentAsync(documentUri).ConfigureAwait(false);
+                    IResourceResponse<Document> response = await this.client.ReadDocumentAsync(documentUri).ConfigureAwait(false);
+                    document = response.Resource;
                 }
                 catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
                 {
@@ -74,7 +76,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             try
             {
-                return await this.client.ReplaceDocumentAsync(leaseUri, lease, this.CreateIfMatchOptions(lease)).ConfigureAwait(false);
+                IResourceResponse<Document> response = await this.client.ReplaceDocumentAsync(leaseUri, lease, this.CreateIfMatchOptions(lease)).ConfigureAwait(false);
+                return response.Resource;
             }
             catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.PreconditionFailed)
             {

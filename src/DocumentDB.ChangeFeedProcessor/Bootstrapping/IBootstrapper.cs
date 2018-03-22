@@ -6,7 +6,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 {
     using System.Threading.Tasks;
 
-    public interface IBootstrapper
+    internal interface IBootstrapper
     {
         Task InitializeAsync();
     }

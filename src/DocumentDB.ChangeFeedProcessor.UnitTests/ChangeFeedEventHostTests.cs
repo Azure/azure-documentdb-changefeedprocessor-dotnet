@@ -7,8 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.Documents.Linq;
@@ -35,16 +34,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             ResourceId = "someResource"
         };
 
-        private readonly ChangeFeedEventHost changeFeedEventHost;
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-        private readonly IChangeFeedObserver observer;
-        private readonly IChangeFeedObserverFactory observerFactory;
-        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+        private readonly FeedProcessing.IChangeFeedObserver observer;
+        private readonly FeedProcessing.IChangeFeedObserverFactory observerFactory;
+        private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
 
         public ChangeFeedEventHostTests()
         {
             var leaseQueryMock = new Mock<IDocumentQuery<Document>>();
-            var leaseDocumentClient = Mock.Of<IDocumentClientEx>();
+            var leaseDocumentClient = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(leaseDocumentClient)
                 .Setup(c => c.CreateDocumentQuery<Document>(collectionLink,
                     It.Is<SqlQuerySpec>(spec => spec.QueryText == "SELECT * FROM c WHERE STARTSWITH(c.id, @PartitionLeasePrefix)" &&
@@ -65,17 +63,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Mock.Get(leaseDocumentClient)
                 .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>()))
                 .ReturnsAsync(new ResourceResponse<Document>(new Document()));
-            
 
             var documents = new List<Document> { };
-            var feedResponse = Mock.Of<IFeedResponse<Document>>();            
+            var feedResponse = Mock.Of<IFeedResponse<Document>>();
             Mock.Get(feedResponse)
                 .Setup(response => response.Count)
                 .Returns(documents.Count);
             Mock.Get(feedResponse)
                 .Setup(response => response.GetEnumerator())
                 .Returns(documents.GetEnumerator());
-            var documentQuery = Mock.Of<IDocumentQueryEx<Document>>();
+            var documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
             Mock.Get(documentQuery)
                 .Setup(query => query.HasMoreResults)
                 .Returns(false);
@@ -83,7 +80,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(query => query.ExecuteNextAsync<Document>(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => feedResponse)
                 .Callback(() => cancellationTokenSource.Cancel());
-            var documentClient = Mock.Of<IDocumentClientEx>();
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(documentClient)
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(collectionLink, It.IsAny<ChangeFeedOptions>()))
                 .Returns(documentQuery);
@@ -117,17 +114,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithLeaseCollection(collectionInfo)
                 .WithLeaseDocumentClient(leaseDocumentClient);
 
-            this.observer = Mock.Of<IChangeFeedObserver>();
+            this.observer = Mock.Of<FeedProcessing.IChangeFeedObserver>();
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
-                    .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>()))
+                    .ProcessChangesAsync(It.IsAny<FeedProcessing.ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(false))
                 .Callback(cancellationTokenSource.Cancel);
             Mock.Get(observer)
-                .Setup(observer => observer.OpenAsync(It.IsAny<ChangeFeedObserverContext>()))
+                .Setup(observer => observer.OpenAsync(It.IsAny<FeedProcessing.ChangeFeedObserverContext>()))
                 .Returns(Task.FromResult(false));
 
-            this.observerFactory = Mock.Of<IChangeFeedObserverFactory>();
+            this.observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
             Mock.Get(observerFactory)
                 .Setup(observer => observer.CreateObserver())
                 .Returns(observer);
@@ -137,7 +134,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         public async Task RegisterObserver_Then_Estimate()
         {
             this.builder.WithObserverFactory(this.observerFactory);
-            var processor = await this.builder.BuildProcessorAsync();
+            var processor = await this.builder.BuildAsync();
             await processor.StartAsync();
             var remainingWorkEstimator = await this.builder.BuildEstimatorAsync();
             await remainingWorkEstimator.GetEstimatedRemainingWork();
@@ -149,7 +146,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             var remainingWorkEstimator = await this.builder.BuildEstimatorAsync();
             await remainingWorkEstimator.GetEstimatedRemainingWork();
             this.builder.WithObserverFactory(this.observerFactory);
-            var processor = await this.builder.BuildProcessorAsync();
+            var processor = await this.builder.BuildAsync();
             await processor.StartAsync();
         }
     }

@@ -4,13 +4,14 @@
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
+    using System;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>
     /// The context passed to <see cref="IChangeFeedObserver"/> events.
     /// </summary>
+    [Obsolete("Switch to ChangeFeedHostBuilder for building the change feed processor host, this class is replaced with interface IChangeFeedObserverContext")]
     public abstract class ChangeFeedObserverContext
     {
         /// <summary>

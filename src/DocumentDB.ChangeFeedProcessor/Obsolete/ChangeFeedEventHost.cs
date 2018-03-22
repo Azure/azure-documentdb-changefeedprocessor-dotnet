@@ -1,16 +1,16 @@
 ﻿//----------------------------------------------------------------
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters;
 
     /// <summary>
     /// Simple host for distributing change feed events across observers and thus allowing these observers scale.
@@ -77,27 +77,33 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// ]]>
     /// </code>
     /// </example>
+    [Obsolete("Switch to ChangeFeedHostBuilder for building the change feed processor host or estimator and get better extensibility of the change feed processing system.")]
     public class ChangeFeedEventHost
     {
+        private static readonly TraceLogProvider traceLogProvider;
+
         /// <summary>
         /// Default builder for the <see cref="ChangeFeedEventHost"/>
         /// </summary>
-        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+        private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
         private IChangeFeedProcessor processor;
         private IRemainingWorkEstimator remainingWorkEstimator;
 
         static ChangeFeedEventHost()
         {
-            var traceLogProvider = new Tuple<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(() => true, () => new TraceLogProvider());
-            LogProvider.LogProviderResolvers.Add(traceLogProvider);
+            ChangeFeedEventHost.traceLogProvider = new TraceLogProvider();
+            var logProviderEntry = new Tuple<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
+                () => true,
+                () => ChangeFeedEventHost.traceLogProvider);
+            LogProvider.LogProviderResolvers.Add(logProviderEntry);
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedEventHost"/> class.
+        /// Initializes a new instance of the <see cref="ChangeFeedEventHost"/> class.
         /// </summary>
         /// <param name="hostName">Unique name for this host.</param>
         /// <param name="documentCollectionLocation">Specifies location of the DocumentDB collection to monitor changes for.</param>
-        /// <param name="leaseCollectionLocation ">Specifies location of auxiliary data for load-balancing instances of <see cref="Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedEventHost" />.</param>
+        /// <param name="leaseCollectionLocation ">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
         public ChangeFeedEventHost(string hostName, DocumentCollectionInfo documentCollectionLocation, DocumentCollectionInfo leaseCollectionLocation)
             : this(hostName, documentCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), new ChangeFeedHostOptions())
         {
@@ -145,6 +151,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             if (changeFeedHostOptions == null)
                 throw new ArgumentNullException(nameof(changeFeedHostOptions));
 
+            ChangeFeedEventHost.traceLogProvider.OpenNestedContext(hostName);
+
             this.builder
                 .WithHostName(hostName)
                 .WithFeedCollection(feedCollectionLocation)
@@ -160,7 +168,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public async Task RegisterObserverAsync<T>()
             where T : IChangeFeedObserver, new()
         {
-            this.builder.WithObserver<T>();
+            this.builder.WithObserver<ChangeFeedObserverAdapter<T>>();
             await this.CreateHost().ConfigureAwait(false);
             await this.processor.StartAsync().ConfigureAwait(false);
         }
@@ -173,7 +181,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>A task indicating that the <see cref="ChangeFeedEventHost" /> instance has started.</returns>
         public async Task RegisterObserverFactoryAsync(IChangeFeedObserverFactory factory)
         {
-            this.builder.WithObserverFactory(factory);
+            this.builder.WithObserverFactory(new ChangeFeedObserverFactoryAdapter(factory));
             await this.CreateHost().ConfigureAwait(false);
             await this.processor.StartAsync().ConfigureAwait(false);
         }
@@ -206,7 +214,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             if (this.processor != null) throw new Exception("Host was already initialized.");
 
-            this.processor = await this.builder.BuildProcessorAsync().ConfigureAwait(false);
+            this.processor = await this.builder.BuildAsync().ConfigureAwait(false);
         }
     }
 }

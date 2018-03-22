@@ -2,13 +2,14 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.Client;
 
@@ -16,11 +17,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     {
         private const string LSNPropertyName = "_lsn";
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
-        private readonly IDocumentClientEx feedDocumentClient;
+        private readonly IChangeFeedDocumentClient feedDocumentClient;
         private readonly ILeaseManager leaseManager;
         private readonly string collectionSelfLink;
 
-        public RemainingWorkEstimator(ILeaseManager leaseManager, IDocumentClientEx feedDocumentClient, string collectionSelfLink)
+        public RemainingWorkEstimator(ILeaseManager leaseManager, IChangeFeedDocumentClient feedDocumentClient, string collectionSelfLink)
         {
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
 
@@ -39,7 +40,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             ChangeFeedOptions options = new ChangeFeedOptions
             {
-                MaxItemCount = 1
+                MaxItemCount = 1,
             };
 
             foreach (ILease existingLease in await this.leaseManager.ListLeasesAsync())
@@ -47,7 +48,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 options.PartitionKeyRangeId = existingLease.PartitionId;
                 options.RequestContinuation = existingLease.ContinuationToken;
 
-                IDocumentQueryEx<Document> query = this.feedDocumentClient.CreateDocumentChangeFeedQuery(this.collectionSelfLink, options);
+                IChangeFeedDocumentQuery<Document> query = this.feedDocumentClient.CreateDocumentChangeFeedQuery(this.collectionSelfLink, options);
                 IFeedResponse<Document> response = null;
 
                 try

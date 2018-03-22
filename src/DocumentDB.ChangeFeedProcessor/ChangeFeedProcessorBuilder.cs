@@ -2,21 +2,22 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
     using System.Globalization;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 
-    public class ChangeFeedHostBuilder
+    public class ChangeFeedProcessorBuilder
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly TimeSpan sleepTime = TimeSpan.FromSeconds(15);
@@ -25,98 +26,112 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private DocumentCollectionInfo feedCollectionLocation;
         private ChangeFeedHostOptions changeFeedHostOptions;
         private ChangeFeedOptions changeFeedOptions;
-        private IDocumentClientEx feedDocumentClient;
-        private IChangeFeedObserverFactory observerFactory;
+        private IChangeFeedDocumentClient feedDocumentClient;
+        private FeedProcessing.IChangeFeedObserverFactory observerFactory;
         private string databaseResourceId;
         private string collectionResourceId;
         private DocumentCollectionInfo leaseCollectionLocation;
-        private IDocumentClientEx leaseDocumentClient;
+        private IChangeFeedDocumentClient leaseDocumentClient;
         private ILeaseManager leaseManager;
 
-        public ChangeFeedHostBuilder WithHostName(string hostName)
+        public ChangeFeedProcessorBuilder WithHostName(string hostName)
         {
             this.hostName = hostName;
             return this;
         }
 
-        public ChangeFeedHostBuilder WithFeedCollection(DocumentCollectionInfo feedCollectionLocation)
+        public ChangeFeedProcessorBuilder WithFeedCollection(DocumentCollectionInfo feedCollectionLocation)
         {
             if (feedCollectionLocation == null) throw new ArgumentNullException(nameof(feedCollectionLocation));
             this.feedCollectionLocation = feedCollectionLocation.Canonicalize();
             return this;
         }
 
-        public ChangeFeedHostBuilder WithFeedDocumentClient(IDocumentClientEx feedDocumentClient)
+        public ChangeFeedProcessorBuilder WithFeedDocumentClient(DocumentClient feedDocumentClient)
+        {
+            if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
+            this.feedDocumentClient = new ChangeFeedDocumentClient(feedDocumentClient);
+            return this;
+        }
+
+        public ChangeFeedProcessorBuilder WithFeedDocumentClient(IChangeFeedDocumentClient feedDocumentClient)
         {
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
             this.feedDocumentClient = feedDocumentClient;
             return this;
         }
 
-        public ChangeFeedHostBuilder WithChangeFeedHostOptions(ChangeFeedHostOptions changeFeedHostOptions)
+        public ChangeFeedProcessorBuilder WithChangeFeedHostOptions(ChangeFeedHostOptions changeFeedHostOptions)
         {
             if (changeFeedHostOptions == null) throw new ArgumentNullException(nameof(changeFeedHostOptions));
             this.changeFeedHostOptions = changeFeedHostOptions;
             return this;
         }
 
-        public ChangeFeedHostBuilder WithChangeFeedOptions(ChangeFeedOptions changeFeedOptions)
+        public ChangeFeedProcessorBuilder WithChangeFeedOptions(ChangeFeedOptions changeFeedOptions)
         {
             if (changeFeedOptions == null) throw new ArgumentNullException(nameof(changeFeedOptions));
             this.changeFeedOptions = changeFeedOptions;
             return this;
         }
 
-        public ChangeFeedHostBuilder WithObserverFactory(IChangeFeedObserverFactory observerFactory)
+        public ChangeFeedProcessorBuilder WithObserverFactory(FeedProcessing.IChangeFeedObserverFactory observerFactory)
         {
             if (observerFactory == null) throw new ArgumentNullException(nameof(observerFactory));
             this.observerFactory = observerFactory;
             return this;
         }
 
-        public ChangeFeedHostBuilder WithObserver<T>()
-            where T : IChangeFeedObserver, new()
+        public ChangeFeedProcessorBuilder WithObserver<T>()
+            where T : FeedProcessing.IChangeFeedObserver, new()
         {
             this.observerFactory = new ChangeFeedObserverFactory<T>();
             return this;
         }
 
-        public ChangeFeedHostBuilder WithDatabaseResourceId(string databaseResourceId)
+        public ChangeFeedProcessorBuilder WithDatabaseResourceId(string databaseResourceId)
         {
             if (databaseResourceId == null) throw new ArgumentNullException(nameof(databaseResourceId));
             this.databaseResourceId = databaseResourceId;
             return this;
         }
 
-        public ChangeFeedHostBuilder WithCollectionResourceId(string collectionResourceId)
+        public ChangeFeedProcessorBuilder WithCollectionResourceId(string collectionResourceId)
         {
             if (collectionResourceId == null) throw new ArgumentNullException(nameof(collectionResourceId));
             this.collectionResourceId = collectionResourceId;
             return this;
         }
 
-        public ChangeFeedHostBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation)
+        public ChangeFeedProcessorBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation)
         {
             if (leaseCollectionLocation == null) throw new ArgumentNullException(nameof(leaseCollectionLocation));
             this.leaseCollectionLocation = leaseCollectionLocation.Canonicalize();
             return this;
         }
 
-        public ChangeFeedHostBuilder WithLeaseDocumentClient(IDocumentClientEx leaseDocumentClient)
+        public ChangeFeedProcessorBuilder WithLeaseDocumentClient(DocumentClient leaseDocumentClient)
+        {
+            if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
+            this.leaseDocumentClient = new ChangeFeedDocumentClient(leaseDocumentClient);
+            return this;
+        }
+
+        public ChangeFeedProcessorBuilder WithLeaseDocumentClient(IChangeFeedDocumentClient leaseDocumentClient)
         {
             if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
             this.leaseDocumentClient = leaseDocumentClient;
             return this;
         }
 
-        public ChangeFeedHostBuilder WithLeaseManager(ILeaseManager leaseManager)
+        internal ChangeFeedProcessorBuilder WithLeaseManager(ILeaseManager leaseManager)
         {
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
             this.leaseManager = leaseManager;
             return this;
         }
 
-        public async Task<IChangeFeedProcessor> BuildProcessorAsync()
+        public async Task<IChangeFeedProcessor> BuildAsync()
         {
             if (this.hostName == null)
             {
@@ -166,15 +181,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return new ChangeFeedEstimateHost(remainingWorkEstimator);
         }
 
-        private static async Task<string> GetDatabaseResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
+        private static async Task<string> GetDatabaseResourceIdAsync(IChangeFeedDocumentClient documentClient, DocumentCollectionInfo collectionLocation)
         {
             Logger.InfoFormat("Reading database: '{0}'", collectionLocation.DatabaseName);
             Uri databaseUri = UriFactory.CreateDatabaseUri(collectionLocation.DatabaseName);
-            Database database = await documentClient.ReadDatabaseAsync(databaseUri, null).ConfigureAwait(false);
-            return database.ResourceId;
+            var response = await documentClient.ReadDatabaseAsync(databaseUri, null).ConfigureAwait(false);
+            return response.Resource.ResourceId;
         }
 
-        private static async Task<string> GetCollectionResourceIdAsync(IDocumentClientEx documentClient, DocumentCollectionInfo collectionLocation)
+        private static async Task<string> GetCollectionResourceIdAsync(IChangeFeedDocumentClient documentClient, DocumentCollectionInfo collectionLocation)
         {
             Logger.InfoFormat("Reading collection: '{0}'", collectionLocation.CollectionName);
             DocumentCollection documentCollection = await documentClient.GetDocumentCollectionAsync(collectionLocation).ConfigureAwait(false);
@@ -185,11 +200,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
 
-            DocumentCollection documentCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
-            string leaseStoreCollectionLink = documentCollection.SelfLink;
+            DocumentCollection leaseCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
+            string leaseStoreCollectionLink = leaseCollection.SelfLink;
 
             string collectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
-            IChangeFeedObserverFactory factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions.CheckpointFrequency);
+            var factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions.CheckpointFrequency);
             var synchronizer = new PartitionSynchronizer(this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions.DegreeOfParallelism, this.changeFeedHostOptions.QueryPartitionsMaxBatchSize);
             var leaseStore = new LeaseStore(this.leaseDocumentClient, this.leaseCollectionLocation, this.GetLeasePrefix(), leaseStoreCollectionLink);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);
@@ -208,6 +223,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 var leaseManagerBuilder = new LeaseManagerBuilder()
                     .WithLeasePrefix(leasePrefix)
                     .WithLeaseCollection(this.leaseCollectionLocation);
+
+                if (this.leaseDocumentClient != null)
+                {
+                    leaseManagerBuilder = leaseManagerBuilder.WithLeaseDocumentClient(this.leaseDocumentClient);
+                }
+
                 this.leaseManager = await leaseManagerBuilder.BuildAsync().ConfigureAwait(false);
             }
 

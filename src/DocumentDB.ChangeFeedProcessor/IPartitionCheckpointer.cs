@@ -6,7 +6,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System.Threading.Tasks;
 
-    public interface IPartitionCheckpointer
+    internal interface IPartitionCheckpointer
     {
         /// <summary>
         /// Checkpoint the given partition up to the given continuation token.

@@ -8,6 +8,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 
     internal class PartitionLoadBalancer : IPartitionLoadBalancer
@@ -60,12 +61,26 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             {
                 while (true)
                 {
-                    IEnumerable<ILease> allLeases = await this.leaseManager.ListLeasesAsync().ConfigureAwait(false);
-                    IEnumerable<ILease> leasesToTake = this.loadBalancingStrategy.CalculateLeasesToTake(allLeases);
-
-                    foreach (ILease lease in leasesToTake)
+                    try
                     {
-                        await this.partitionController.AddLeaseAsync(lease).ConfigureAwait(false);
+                        IEnumerable<ILease> allLeases = await this.leaseManager.ListLeasesAsync().ConfigureAwait(false);
+                        IEnumerable<ILease> leasesToTake = this.loadBalancingStrategy.CalculateLeasesToTake(allLeases);
+
+                        foreach (ILease lease in leasesToTake)
+                        {
+                            try
+                            {
+                                await this.partitionController.AddLeaseAsync(lease).ConfigureAwait(false);
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.ErrorException("Partition load balancer lease add/update iteration failed", e);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.ErrorException("Partition load balancer iteration failed", e);
                     }
 
                     await Task.Delay(this.leaseAcquireInterval, this.cancellationTokenSource.Token).ConfigureAwait(false);
@@ -74,11 +89,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             catch (OperationCanceledException)
             {
                 Logger.Info("Partition load balancer task stopped.");
-            }
-            catch (Exception ex)
-            {
-                Logger.FatalException("Partition load balancer loop failed", ex);
-                throw;
             }
         }
     }

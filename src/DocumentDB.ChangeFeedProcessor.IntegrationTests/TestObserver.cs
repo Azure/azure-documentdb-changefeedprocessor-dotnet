@@ -5,7 +5,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {

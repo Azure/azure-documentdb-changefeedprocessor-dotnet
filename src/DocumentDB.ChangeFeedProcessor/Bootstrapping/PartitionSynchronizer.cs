@@ -11,22 +11,22 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 
     internal class PartitionSynchronizer : IPartitionSynchronizer
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
-        private readonly IDocumentClientEx documentClient;
+        private readonly IChangeFeedDocumentClient documentClient;
         private readonly string collectionSelfLink;
         private readonly ILeaseManager leaseManager;
         private readonly int degreeOfParallelism;
         private readonly int maxBatchSize;
 
-        public PartitionSynchronizer(IDocumentClientEx documentClient, string collectionSelfLink, ILeaseManager leaseManager, int degreeOfParallelism, int maxBatchSize)
+        public PartitionSynchronizer(IChangeFeedDocumentClient documentClient, string collectionSelfLink, ILeaseManager leaseManager, int degreeOfParallelism, int maxBatchSize)
         {
             this.documentClient = documentClient;
             this.collectionSelfLink = collectionSelfLink;
@@ -81,7 +81,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         {
             string partitionKeyRangesPath = string.Format(CultureInfo.InvariantCulture, "{0}/pkranges", this.collectionSelfLink);
 
-            FeedResponse<PartitionKeyRange> response = null;
+            IFeedResponse<PartitionKeyRange> response = null;
             var partitionKeyRanges = new List<PartitionKeyRange>();
             do
             {
@@ -91,7 +91,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
                     RequestContinuation = response?.ResponseContinuation,
                 };
                 response = await this.documentClient.ReadPartitionKeyRangeFeedAsync(partitionKeyRangesPath, feedOptions).ConfigureAwait(false);
-                partitionKeyRanges.AddRange(response);
+                IEnumerator<PartitionKeyRange> enumerator = response.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    partitionKeyRanges.Add(enumerator.Current);
+                }
             }
             while (!string.IsNullOrEmpty(response.ResponseContinuation));
 

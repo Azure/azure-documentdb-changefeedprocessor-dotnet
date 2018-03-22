@@ -7,8 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Moq;
@@ -22,10 +22,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         private readonly ProcessorSettings processorSettings;
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly PartitionProcessor sut;
-        private readonly IDocumentClientEx docClient;
-        private readonly IDocumentQueryEx<Document> documentQuery;
+        private readonly IChangeFeedDocumentClient docClient;
+        private readonly IChangeFeedDocumentQuery<Document> documentQuery;
         private readonly IFeedResponse<Document> feedResponse;
-        private readonly IChangeFeedObserver observer;
+        private readonly FeedProcessing.IChangeFeedObserver observer;
         private readonly List<Document> documents;
 
         public PartitionProcessorTests()
@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Setup(response => response.GetEnumerator())
                 .Returns(documents.GetEnumerator());
 
-            documentQuery = Mock.Of<IDocumentQueryEx<Document>>();
+            documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
             Mock.Get(documentQuery)
                 .Setup(query => query.HasMoreResults)
                 .Returns(false);
@@ -63,12 +63,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .ReturnsAsync(() => feedResponse)
                 .Callback(() => cancellationTokenSource.Cancel());
 
-            docClient = Mock.Of<IDocumentClientEx>();
+            docClient = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(docClient)
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(processorSettings.CollectionSelfLink, It.IsAny<ChangeFeedOptions>()))
                 .Returns(documentQuery);
 
-            observer = Mock.Of<IChangeFeedObserver>();
+            observer = Mock.Of<FeedProcessing.IChangeFeedObserver>();
             var checkPointer = new Mock<IPartitionCheckpointer>();
             sut = new PartitionProcessor(observer, docClient, processorSettings, checkPointer.Object);
         }
@@ -87,8 +87,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
                         .ProcessChangesAsync(
-                            It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
-                            It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents))),
+                            It.Is<IChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents)), 
+                            It.IsAny<CancellationToken>()),
                     Times.Once);
         }
 
@@ -128,7 +129,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
-                    .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>()))
+                    .ProcessChangesAsync(It.IsAny<IChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(false))
                 .Callback(cancellationTokenSource.Cancel);
 
@@ -137,8 +138,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
                         .ProcessChangesAsync(
-                            It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
-                            It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents))),
+                            It.Is<IChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents)),
+                            It.IsAny<CancellationToken>()),
                     Times.Once);
         }
 
@@ -155,7 +157,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
-                    .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>()))
+                    .ProcessChangesAsync(It.IsAny<IChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(false))
                 .Callback(cancellationTokenSource.Cancel);
 
@@ -167,8 +169,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
                         .ProcessChangesAsync(
-                            It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
-                            It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents))),
+                            It.Is<IChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents)),
+                            It.IsAny<CancellationToken>()),
                     Times.Once);
         }
 
@@ -221,9 +224,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             int observerCallCount = 0;
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
-                    .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>()))
+                    .ProcessChangesAsync(It.IsAny<IChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(),It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(false))
-                .Callback<ChangeFeedObserverContext, IReadOnlyList<Document>>((context, docs) => 
+                .Callback<IChangeFeedObserverContext, IReadOnlyList<Document>, CancellationToken>((context, docs, token) => 
                 {
                     accumulator += context.FeedResponse.ResponseContinuation + ".";
                     if (++observerCallCount == 3) cancellationTokenSource.Cancel();
@@ -237,11 +240,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
                         .ProcessChangesAsync(
-                            It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<FeedProcessing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
                             It.Is<IReadOnlyList<Document>>(
                                 list => list.Count == 1 ? list.SequenceEqual(documents) :
                                         list.Count == 2 ? list.SequenceEqual(documents2) :
-                                        list.SequenceEqual(documents3))),
+                                        list.SequenceEqual(documents3)),
+                            It.IsAny<CancellationToken>()),
                     Times.Exactly(3));
 
             Assert.Equal("token.token2.token3.", accumulator);

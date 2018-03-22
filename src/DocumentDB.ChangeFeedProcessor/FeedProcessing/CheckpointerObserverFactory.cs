@@ -2,14 +2,14 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
-{
-    using System;
+using System;
 
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
+{
     /// <summary>
-    /// Factory class used to create instance(s) of <see cref="IChangeFeedObserver"/>.
+    /// Factory class used to create instance(s) of <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/>.
     /// </summary>
-    public class CheckpointerObserverFactory : IChangeFeedObserverFactory
+    internal class CheckpointerObserverFactory : IChangeFeedObserverFactory
     {
         private readonly IChangeFeedObserverFactory observerFactory;
         private readonly CheckpointFrequency checkpointFrequency;
@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         /// Initializes a new instance of the <see cref="CheckpointerObserverFactory"/> class.
         /// </summary>
         /// <param name="observerFactory">Instance of Observer Factory</param>
-        /// <param name="checkpointFrequency">Defined checkpoint frequency</param>
+        /// <param name="checkpointFrequency">Defined <see cref="CheckpointFrequency"/></param>
         public CheckpointerObserverFactory(IChangeFeedObserverFactory observerFactory, CheckpointFrequency checkpointFrequency)
         {
             if (observerFactory == null)
@@ -31,9 +31,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor
         }
 
         /// <summary>
-        /// Creates a new instance of <see cref="IChangeFeedObserver"/>.
+        /// Creates a new instance of <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/>.
         /// </summary>
-        /// <returns>Created instance of <see cref="IChangeFeedObserver"/>.</returns>
+        /// <returns>Created instance of <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/>.</returns>
         public IChangeFeedObserver CreateObserver()
         {
             IChangeFeedObserver observer = this.observerFactory.CreateObserver();

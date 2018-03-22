@@ -7,7 +7,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Threading;
     using System.Threading.Tasks;
 
-    public interface ILeaseRenewer
+    internal interface ILeaseRenewer
     {
         /// <summary>
         /// Starts the lease renewer

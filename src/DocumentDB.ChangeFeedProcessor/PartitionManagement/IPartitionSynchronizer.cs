@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     /// <summary>
     /// Read DocDB partitions and create leases if they do not exist
     /// </summary>
-    public interface IPartitionSynchronizer
+    internal interface IPartitionSynchronizer
     {
         Task CreateMissingLeasesAsync();
 

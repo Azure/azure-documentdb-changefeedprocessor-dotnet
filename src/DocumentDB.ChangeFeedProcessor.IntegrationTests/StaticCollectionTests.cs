@@ -202,10 +202,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         {
             using (var client = new DocumentClient(this.ClassData.monitoredCollectionInfo.Uri, this.ClassData.monitoredCollectionInfo.MasterKey, this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
             {
-                await IntegrationTestsHelper.CreateDocumentsAsync(
-                    client,
-                    UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName),
-                    documentCount);
+                var collectionUri = UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName);
+                await IntegrationTestsHelper.CreateDocumentsAsync(client, collectionUri, documentCount);
             }
         }
     }

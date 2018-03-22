@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Microsoft.Azure.Documents.Client;
 using Moq;
@@ -19,8 +19,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         private const string collectionSelfLink = "selfLink";
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly ILease lease;
-        private readonly IDocumentClientEx docClient;
-        private readonly IDocumentQueryEx<Document> documentQuery;
+        private readonly IChangeFeedDocumentClient docClient;
+        private readonly IChangeFeedDocumentQuery<Document> documentQuery;
         private readonly RemainingWorkEstimator remainingWorkEstimator;
         private readonly ILeaseManager leaseManager;
         private IFeedResponse<Document> feedResponse;
@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(manager => manager.ListLeasesAsync())
                 .ReturnsAsync(new List<ILease>() { lease });
             
-            documentQuery = Mock.Of<IDocumentQueryEx<Document>>();
+            documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
             Mock.Get(documentQuery)
                 .Setup(query => query.HasMoreResults)
                 .Returns(false);
@@ -65,7 +65,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .ReturnsAsync(() => feedResponse)
                 .Callback(() => cancellationTokenSource.Cancel());
 
-            docClient = Mock.Of<IDocumentClientEx>();
+            docClient = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(docClient)
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(collectionSelfLink, It.IsAny<ChangeFeedOptions>()))
                 .Returns(documentQuery);
