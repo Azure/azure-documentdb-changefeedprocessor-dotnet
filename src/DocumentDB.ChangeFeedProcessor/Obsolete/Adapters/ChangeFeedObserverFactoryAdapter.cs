@@ -1,4 +1,6 @@
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor
+using System;
+
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
 {
     internal class ChangeFeedObserverFactoryAdapter : FeedProcessing.IChangeFeedObserverFactory
     {
@@ -6,7 +8,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         internal ChangeFeedObserverFactoryAdapter(IChangeFeedObserverFactory factory)
         {
-            this.factory = factory;
+            this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
         }
 
         public FeedProcessing.IChangeFeedObserver CreateObserver()

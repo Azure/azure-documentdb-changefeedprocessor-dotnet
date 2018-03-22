@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         /// In case of automatic checkpointing this is method throws.
         /// </summary>
         /// <exception cref="Exceptions.LeaseLostException">Thrown if other host acquired the lease or the lease was deleted</exception>
-        public Task CheckpointAsync()
+        public virtual Task CheckpointAsync()
         {
             return this.checkpointer.CheckpointPartitionAsync(this.FeedResponse.ResponseContinuation);
         }

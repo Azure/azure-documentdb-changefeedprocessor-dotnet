@@ -1,8 +1,9 @@
-﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor
+﻿using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
 {
     using System;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 
     internal class ChangeFeedObserverContextAdapter : ChangeFeedObserverContext
     {

@@ -2,10 +2,11 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
+    using System;
+
     internal class ProcessorSettings
     {
         public string CollectionSelfLink { get; set; }

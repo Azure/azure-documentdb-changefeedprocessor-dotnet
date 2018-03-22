@@ -1,11 +1,6 @@
 ﻿//----------------------------------------------------------------
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
-
-using System.Collections.Generic;
-using System.Threading;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
@@ -14,6 +9,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters;
 
     /// <summary>
     /// Simple host for distributing change feed events across observers and thus allowing these observers scale.
