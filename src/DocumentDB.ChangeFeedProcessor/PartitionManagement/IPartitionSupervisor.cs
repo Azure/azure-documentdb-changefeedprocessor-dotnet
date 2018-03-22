@@ -8,12 +8,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Threading;
     using System.Threading.Tasks;
 
-#if PRIVATE_API
-    public
-#else
-    internal
-#endif
-    interface IPartitionSupervisor : IDisposable
+    internal interface IPartitionSupervisor : IDisposable
     {
         Task RunAsync(CancellationToken shutdownToken);
     }

@@ -5,7 +5,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Moq;
 using Xunit;
@@ -19,7 +19,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         private readonly ILeaseManager leaseManager;
         private readonly IPartitionProcessor partitionProcessor;
         private readonly ILeaseRenewer leaseRenewer;
-        private readonly IChangeFeedObserver observer;
+        private readonly FeedProcessing.IChangeFeedObserver observer;
         private readonly IPartitionSynchronizer synchronizer;
         private readonly PartitionController sut;
         private readonly IPartitionSupervisorFactory partitionSupervisorFactory;
@@ -263,9 +263,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             return mock.Object;
         }
 
-        private static IChangeFeedObserver MockObserver()
+        private static FeedProcessing.IChangeFeedObserver MockObserver()
         {
-            var mock = new Mock<IChangeFeedObserver>();
+            var mock = new Mock<FeedProcessing.IChangeFeedObserver>();
             return mock.Object;
         }
 

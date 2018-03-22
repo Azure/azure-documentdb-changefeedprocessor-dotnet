@@ -1,26 +1,28 @@
-﻿//----------------------------------------------------------------
+//----------------------------------------------------------------
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor
-{
-    using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessor;
-    using Microsoft.Azure.Documents.Client;
+using System.Threading.Tasks;
+using Microsoft.Azure.Documents.Client;
 
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
+{
     /// <summary>
-    /// The context passed to <see cref="IChangeFeedObserver"/> events.
+    /// The context passed to <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/> events.
     /// </summary>
-    internal class ChangeFeedObserverContextInternal : ChangeFeedObserverContext
+    internal class ChangeFeedObserverContext : IChangeFeedObserverContext
     {
+        public string PartitionKeyRangeId { get; }
+        public IFeedResponse<Document> FeedResponse { get; }
+
         private readonly IPartitionCheckpointer checkpointer;
 
-        internal ChangeFeedObserverContextInternal(string partitionId)
+        internal ChangeFeedObserverContext(string partitionId)
         {
             this.PartitionKeyRangeId = partitionId;
         }
 
-        internal ChangeFeedObserverContextInternal(string partitionId, IFeedResponse<Document> feedResponse, IPartitionCheckpointer checkpointer)
+        internal ChangeFeedObserverContext(string partitionId, IFeedResponse<Document> feedResponse, IPartitionCheckpointer checkpointer)
         {
             this.PartitionKeyRangeId = partitionId;
             this.FeedResponse = feedResponse;
@@ -34,7 +36,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// In case of automatic checkpointing this is method throws.
         /// </summary>
         /// <exception cref="Exceptions.LeaseLostException">Thrown if other host acquired the lease or the lease was deleted</exception>
-        public override Task CheckpointAsync()
+        public virtual Task CheckpointAsync()
         {
             return this.checkpointer.CheckpointPartitionAsync(this.FeedResponse.ResponseContinuation);
         }

@@ -4,12 +4,7 @@
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
-#if PRIVATE_API
-    public
-#else
-    internal
-#endif
-    interface IPartitionSupervisorFactory
+    internal interface IPartitionSupervisorFactory
     {
         IPartitionSupervisor Create(ILease lease);
     }

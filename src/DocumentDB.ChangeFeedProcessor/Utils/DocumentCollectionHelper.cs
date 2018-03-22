@@ -2,9 +2,10 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
     using Microsoft.Azure.Documents.Client;
 
     internal static class DocumentCollectionHelper
@@ -25,10 +26,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             return result;
         }
 
-        internal static IDocumentClientEx CreateDocumentClient(this DocumentCollectionInfo collectionInfo)
+        internal static IChangeFeedDocumentClient CreateDocumentClient(this DocumentCollectionInfo collectionInfo)
         {
             var internalClient = new DocumentClient(collectionInfo.Uri, collectionInfo.MasterKey, collectionInfo.ConnectionPolicy);
-            return new DocumentClientEx(internalClient);
+            return new ChangeFeedDocumentClient(internalClient);
         }
 
         internal static string GetCollectionSelfLink(this DocumentCollectionInfo collectionInfo)

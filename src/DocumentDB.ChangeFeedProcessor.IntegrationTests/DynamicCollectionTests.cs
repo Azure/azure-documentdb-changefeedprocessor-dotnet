@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 using Microsoft.Azure.Documents.Client;
 using Newtonsoft.Json;
 using Xunit;
@@ -21,8 +22,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     public class DynamicCollectionTests : IntegrationTest
     {
         const int documentCount = 513;
-        
-        public DynamicCollectionTests(IntegrationTestFixture fixture): base(fixture, typeof(DynamicCollectionTests))
+
+        public DynamicCollectionTests(IntegrationTestFixture fixture) : base(fixture, typeof(DynamicCollectionTests))
         {
         }
 

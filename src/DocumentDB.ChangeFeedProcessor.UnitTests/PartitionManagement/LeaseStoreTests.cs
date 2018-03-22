@@ -4,8 +4,8 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Moq;
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task IsInitializedAsync_ShouldReturnTrue_IfDocumentExist()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
                 .Setup(c => c.ReadDocumentAsync(It.Is<Uri>(uri => uri.ToString().EndsWith(storeMarker))))
                 .ReturnsAsync(CreateResponse());
@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task IsInitializedAsync_ShouldReturnFalse_IfNoDocument()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
                 .Setup(c => c.ReadDocumentAsync(It.Is<Uri>(uri => uri.ToString().EndsWith(storeMarker))))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException());
@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task LockInitializationAsync_ShouldReturnTrue_IfLockSucceeds()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             var leaseStore = new LeaseStore(client, collectionInfo, containerNamePrefix, leaseStoreCollectionLink);
             bool isLocked = await leaseStore.LockInitializationAsync(lockTime);
             Assert.True(isLocked);
@@ -70,7 +70,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task LockInitializationAsync_ShouldReturnFalse_IfLockConflicts()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
                 .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>()))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException());
@@ -88,7 +88,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task LockInitializationAsync_ShouldThrow_IfLockThrows()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
                 .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>()))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateRequestRateTooLargeException());
@@ -101,7 +101,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task MarkInitializedAsync_ShouldSucceed_IfMarkerCreated()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             var leaseStore = new LeaseStore(client, collectionInfo, containerNamePrefix, leaseStoreCollectionLink);
             await leaseStore.MarkInitializedAsync();
 
@@ -114,7 +114,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task MarkInitializedAsync_ShouldSucceed_IfMarkerConflicts()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
                 .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>()))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException());
@@ -131,7 +131,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task MarkInitializedAsync_ShouldThrow_IfMarkerThrows()
         {
-            var client = Mock.Of<IDocumentClientEx>();
+            var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
                 .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>()))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateRequestRateTooLargeException());

@@ -7,12 +7,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
     using System;
     using System.Threading.Tasks;
 
-#if PRIVATE_API
-    public
-#else
-    internal
-#endif
-    interface ILeaseStore
+    internal interface ILeaseStore
     {
         /// <summary>
         /// Checks if the lease store is initialized

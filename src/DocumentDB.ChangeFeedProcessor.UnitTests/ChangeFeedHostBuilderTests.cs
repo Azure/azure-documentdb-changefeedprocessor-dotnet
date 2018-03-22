@@ -1,7 +1,8 @@
-﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
+﻿using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 {
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Adapters;
-    using Microsoft.Azure.Documents.Client;
+        using Microsoft.Azure.Documents.Client;
     using Moq;
     using System;
     using System.Collections.Generic;
@@ -24,7 +25,7 @@
         private static readonly DocumentCollection collection = new DocumentCollection { ResourceId = "someResource" };
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
-        private readonly ChangeFeedHostBuilder builder = new ChangeFeedHostBuilder();
+        private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
 
         public ChangeFeedHostBuilderTests()
         {
@@ -38,31 +39,31 @@
         public async Task WithFeedDocumentClient()
         {
             var documentClient = new DocumentClient(new Uri("https://localhost:12345/"), string.Empty);
-            var observerFactory = Mock.Of<IChangeFeedObserverFactory>();
+            var observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
 
             this.builder
                 .WithFeedDocumentClient(documentClient)
                 .WithLeaseDocumentClient(CreateMockDocumentClient())
                 .WithObserverFactory(observerFactory);
 
-            await Assert.ThrowsAsync<HttpRequestException>(async () => await this.builder.BuildProcessorAsync());
+            await Assert.ThrowsAsync<HttpRequestException>(async () => await this.builder.BuildAsync());
         }
 
         [Fact]
         public async Task WithLeaseDocumentClient()
         {
             var documentClient = new DocumentClient(new Uri("https://localhost:12345/"), string.Empty);
-            var observerFactory = Mock.Of<IChangeFeedObserverFactory>();
+            var observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
 
             this.builder
                 .WithLeaseDocumentClient(documentClient)
                 .WithFeedDocumentClient(CreateMockDocumentClient())
                 .WithObserverFactory(observerFactory);
 
-            await Assert.ThrowsAsync<HttpRequestException>(async () => await this.builder.BuildProcessorAsync());
+            await Assert.ThrowsAsync<HttpRequestException>(async () => await this.builder.BuildAsync());
         }
 
-        private IDocumentClientEx CreateMockDocumentClient()
+        private IChangeFeedDocumentClient CreateMockDocumentClient()
         {
             var documents = new List<Document>();
             var feedResponse = Mock.Of<IFeedResponse<Document>>();
@@ -73,7 +74,7 @@
                 .Setup(response => response.GetEnumerator())
                 .Returns(documents.GetEnumerator());
 
-            var documentQuery = Mock.Of<IDocumentQueryEx<Document>>();
+            var documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
             Mock.Get(documentQuery)
                 .Setup(query => query.HasMoreResults)
                 .Returns(false);
@@ -82,7 +83,7 @@
                 .ReturnsAsync(() => feedResponse)
                 .Callback(() => cancellationTokenSource.Cancel());
 
-            var documentClient = Mock.Of<IDocumentClientEx>();
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(documentClient)
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(collectionLink, It.IsAny<ChangeFeedOptions>()))
                 .Returns(documentQuery);
