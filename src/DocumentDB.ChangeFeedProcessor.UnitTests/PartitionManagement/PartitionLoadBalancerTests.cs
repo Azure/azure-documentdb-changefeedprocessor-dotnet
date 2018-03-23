@@ -58,12 +58,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             public Task InitializeAsync()
             {
-                return Task.FromResult(false);
+                return Task.CompletedTask;
             }
 
             public Task ShutdownAsync()
             {
-                return Task.FromResult(false);
+                return Task.CompletedTask;
             }
         }
     }
