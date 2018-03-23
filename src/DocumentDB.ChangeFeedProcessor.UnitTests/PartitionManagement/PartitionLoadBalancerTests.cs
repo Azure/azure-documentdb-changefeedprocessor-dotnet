@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             public int HitCount { get; private set; }
 
-            public Task AddLeaseAsync(ILease lease)
+            public Task AddOrUpdateLeaseAsync(ILease lease)
             {
                 this.HitCount++;
                 throw new ArgumentException();

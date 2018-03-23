@@ -5,9 +5,11 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
+    using System.Collections.Generic;
     using System.Globalization;
     using Microsoft.Azure.Documents;
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
 
     internal class DocumentServiceLease : ILease
     {
@@ -15,6 +17,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public DocumentServiceLease()
         {
+            this.Properties = new Dictionary<string, string>();
         }
 
         public DocumentServiceLease(DocumentServiceLease other)
@@ -26,6 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             this.ETag = other.ETag;
             this.TS = other.TS;
             this.ExplicitTimestamp = other.ExplicitTimestamp;
+            this.Properties = other.Properties;
         }
 
         [JsonProperty("id")]
@@ -55,6 +59,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         [JsonIgnore]
         public string ConcurrencyToken => this.ETag;
+
+        [JsonProperty("properties")]
+        public Dictionary<string, string> Properties { get; set; }
 
         [JsonProperty("timestamp")]
         private DateTime? ExplicitTimestamp { get; set; }

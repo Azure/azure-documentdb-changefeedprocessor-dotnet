@@ -39,12 +39,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             await this.LoadLeasesAsync().ConfigureAwait(false);
         }
 
-        public async Task AddLeaseAsync(ILease lease)
+        public async Task AddOrUpdateLeaseAsync(ILease lease)
         {
             var tcs = new TaskCompletionSource<bool>();
+
             if (!this.currentlyOwnedPartitions.TryAdd(lease.PartitionId, tcs))
             {
-                Logger.InfoFormat("cannot add partition {0} to owned as it is already owned", lease.PartitionId);
+                await this.leaseManager.UpdatePropertiesAsync(lease).ConfigureAwait(false);
+                Logger.DebugFormat("partition {0}: updated", lease.PartitionId);
                 return;
             }
 
@@ -81,7 +83,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 if (string.Compare(lease.Owner, this.hostName, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     Logger.InfoFormat("Acquired lease for PartitionId '{0}' on startup.", lease.PartitionId);
-                    addLeaseTasks.Add(this.AddLeaseAsync(lease));
+                    addLeaseTasks.Add(this.AddOrUpdateLeaseAsync(lease));
                 }
             }
 
@@ -139,7 +141,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             try
             {
                 IEnumerable<ILease> addedLeases = await this.synchronizer.SplitPartitionAsync(lease).ConfigureAwait(false);
-                Task[] addLeaseTasks = addedLeases.Select(this.AddLeaseAsync).ToArray();
+                Task[] addLeaseTasks = addedLeases.Select(this.AddOrUpdateLeaseAsync).ToArray();
                 await this.leaseManager.DeleteAsync(lease).ConfigureAwait(false);
                 await Task.WhenAll(addLeaseTasks).ConfigureAwait(false);
             }

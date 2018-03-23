@@ -126,6 +126,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                         throw new LeaseLostException(lease);
                     }
                     serverLease.Owner = owner;
+                    serverLease.Properties = lease.Properties;
                     return serverLease;
                 }).ConfigureAwait(false);
         }
@@ -200,6 +201,27 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 // Ignore - document was already deleted
             }
         }
+
+        public async Task<ILease> UpdatePropertiesAsync(ILease lease)
+        {
+            if (lease == null)
+                throw new ArgumentNullException(nameof(lease));
+
+            return await this.leaseUpdater.UpdateLeaseAsync(
+                lease,
+                this.CreateDocumentUri(lease.Id),
+                serverLease =>
+                    {
+                        if (serverLease.Owner != lease.Owner)
+                        {
+                            Logger.InfoFormat("Partition '{0}' lease was taken over by owner '{1}'", lease.PartitionId, serverLease.Owner);
+                            throw new LeaseLostException(lease);
+                        }
+                        serverLease.Properties = lease.Properties;
+                        return serverLease;
+                    }).ConfigureAwait(false);
+        }
+
 
         private async Task<DocumentServiceLease> TryGetLeaseAsync(ILease lease)
         {

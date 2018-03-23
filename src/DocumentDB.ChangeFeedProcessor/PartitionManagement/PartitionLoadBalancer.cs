@@ -70,7 +70,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                         {
                             try
                             {
-                                await this.partitionController.AddLeaseAsync(lease).ConfigureAwait(false);
+                                await this.partitionController.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
                             }
                             catch (Exception e)
                             {
