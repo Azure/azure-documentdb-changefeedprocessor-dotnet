@@ -58,6 +58,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private DocumentCollectionInfo leaseCollectionLocation;
         private IChangeFeedDocumentClient leaseDocumentClient;
         private ILeaseManager leaseManager;
+        private ILoadBalancingStrategy loadBalancingStrategy;
 
         /// <summary>
         /// Sets the Host name.
@@ -215,6 +216,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
+        /// Sets the <see cref="ILoadBalancingStrategy"/> to be used for partition load balancing
+        /// </summary>
+        /// <param name="strategy">The instance of <see cref="ILoadBalancingStrategy"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
+        public ChangeFeedProcessorBuilder WithLoadBalancingStrategy(ILoadBalancingStrategy strategy)
+        {
+            if (strategy == null) throw new ArgumentNullException(nameof(strategy));
+            this.loadBalancingStrategy = strategy;
+            return this;
+        }
+
+        /// <summary>
         /// Builds a new instance of the <see cref="IChangeFeedProcessor"/> with the specified configuration.
         /// </summary>
         /// <returns>An instance of <see cref="IChangeFeedProcessor"/>.</returns>
@@ -308,8 +321,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);
             var partitionObserverFactory = new PartitionSupervisorFactory(factory, this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions, this.changeFeedOptions);
             var partitionController = new PartitionController(this.hostName, leaseManager, partitionObserverFactory, synchronizer);
-            var loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.hostName, this.changeFeedHostOptions.MinPartitionCount, this.changeFeedHostOptions.MaxPartitionCount, this.changeFeedHostOptions.LeaseExpirationInterval);
-            var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, loadBalancingStrategy, this.changeFeedHostOptions.LeaseAcquireInterval);
+
+            if (this.loadBalancingStrategy == null)
+            {
+                this.loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.hostName, this.changeFeedHostOptions.MinPartitionCount, this.changeFeedHostOptions.MaxPartitionCount, this.changeFeedHostOptions.LeaseExpirationInterval);
+            }
+
+            var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedHostOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }
 

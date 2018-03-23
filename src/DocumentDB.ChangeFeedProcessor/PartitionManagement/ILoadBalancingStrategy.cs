@@ -6,7 +6,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System.Collections.Generic;
 
-    internal interface ILoadBalancingStrategy
+    public interface ILoadBalancingStrategy
     {
         IEnumerable<ILease> CalculateLeasesToTake(IEnumerable<ILease> allLeases);
     }

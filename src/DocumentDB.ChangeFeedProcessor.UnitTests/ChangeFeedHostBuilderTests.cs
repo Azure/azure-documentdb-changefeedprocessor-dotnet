@@ -1,20 +1,23 @@
-﻿using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
+﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 {
-        using Microsoft.Azure.Documents.Client;
-    using Moq;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.Documents.Linq;
+    using Moq;
     using Xunit;
 
     [Trait("Category", "Gated")]
     public class ChangeFeedHostBuilderTests
     {
         private const string collectionLink = "collectionLink";
+        private const string storeNamePrefix = "Name prefix";
         private static readonly DocumentCollectionInfo CollectionInfo = new DocumentCollectionInfo
         {
             DatabaseName = "DatabaseName",
@@ -83,6 +86,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .ReturnsAsync(() => feedResponse)
                 .Callback(() => cancellationTokenSource.Cancel());
 
+            var leaseQueryMock = new Mock<IDocumentQuery<Document>>();
+            leaseQueryMock
+                .Setup(q => q.HasMoreResults)
+                .Returns(false);
+
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(documentClient)
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(collectionLink, It.IsAny<ChangeFeedOptions>()))
@@ -93,8 +101,48 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Mock.Get(documentClient)
                 .Setup(ex => ex.ReadDocumentCollectionAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>()))
                 .ReturnsAsync(new ResourceResponse<DocumentCollection>(collection));
+            Mock.Get(documentClient)
+                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>()))
+                .ReturnsAsync(new ResourceResponse<Document>(new Document()));
+            Mock.Get(documentClient)
+                .Setup(c => c.CreateDocumentQuery<Document>(collectionLink,
+                    It.Is<SqlQuerySpec>(spec => spec.QueryText == "SELECT * FROM c WHERE STARTSWITH(c.id, @PartitionLeasePrefix)" &&
+                                                spec.Parameters.Count == 1 &&
+                                                spec.Parameters[0].Name == "@PartitionLeasePrefix" &&
+                                                (string)spec.Parameters[0].Value == storeNamePrefix + ".."
+                    )))
+                .Returns(leaseQueryMock.As<IQueryable<Document>>().Object);
+
 
             return documentClient;
+        }
+
+        [Fact]
+        public async Task UseCustomLoadBalancingStrategy()
+        {
+            var leaseManager = Mock.Of<ILeaseManager>();
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.AcquireAsync(It.IsAny<ILease>(), "host"))
+                .ReturnsAsync(Mock.Of<ILease>());
+
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.ReleaseAsync(It.IsAny<ILease>()))
+                .Returns(Task.FromResult(false));
+
+            this.builder
+                .WithChangeFeedHostOptions(new ChangeFeedHostOptions())
+                .WithFeedDocumentClient(CreateMockDocumentClient())
+                .WithLeaseDocumentClient(CreateMockDocumentClient())
+                .WithObserverFactory(Mock.Of<FeedProcessing.IChangeFeedObserverFactory>())
+                .WithLeaseManager(leaseManager);
+
+            var strategy = new Mock<ILoadBalancingStrategy>();
+            this.builder.WithLoadBalancingStrategy(strategy.Object);
+            var processor = await this.builder.BuildAsync();
+            await processor.StartAsync();
+
+            strategy.Verify(s => s.CalculateLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.AtLeastOnce);
+            await processor.StopAsync();
         }
     }
 }
