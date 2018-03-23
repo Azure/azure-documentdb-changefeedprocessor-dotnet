@@ -141,7 +141,7 @@
             var processor = await this.builder.BuildAsync();
             await processor.StartAsync();
 
-            strategy.Verify(s => s.CalculateLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.AtLeastOnce);
+            strategy.Verify(s => s.SelectLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.AtLeastOnce);
             await processor.StopAsync();
         }
     }

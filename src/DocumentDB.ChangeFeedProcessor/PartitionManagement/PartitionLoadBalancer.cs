@@ -64,7 +64,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                     try
                     {
                         IEnumerable<ILease> allLeases = await this.leaseManager.ListLeasesAsync().ConfigureAwait(false);
-                        IEnumerable<ILease> leasesToTake = this.loadBalancingStrategy.CalculateLeasesToTake(allLeases);
+                        IEnumerable<ILease> leasesToTake = this.loadBalancingStrategy.SelectLeasesToTake(allLeases);
 
                         foreach (ILease lease in leasesToTake)
                         {

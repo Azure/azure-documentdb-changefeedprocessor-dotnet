@@ -8,6 +8,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
     public interface ILoadBalancingStrategy
     {
-        IEnumerable<ILease> CalculateLeasesToTake(IEnumerable<ILease> allLeases);
+        IEnumerable<ILease> SelectLeasesToTake(IEnumerable<ILease> allLeases);
     }
 }

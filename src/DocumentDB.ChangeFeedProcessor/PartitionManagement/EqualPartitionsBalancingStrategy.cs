@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             this.leaseExpirationInterval = leaseExpirationInterval;
         }
 
-        public IEnumerable<ILease> CalculateLeasesToTake(IEnumerable<ILease> allLeases)
+        public IEnumerable<ILease> SelectLeasesToTake(IEnumerable<ILease> allLeases)
         {
             var workerToPartitionCount = new Dictionary<string, int>();
             var expiredLeases = new List<ILease>();
