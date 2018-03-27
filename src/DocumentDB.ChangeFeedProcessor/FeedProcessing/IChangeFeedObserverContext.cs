@@ -1,17 +1,24 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Azure.Documents.Client;
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.Client;
+
+    /// <summary>
+    /// Interface to implement to handle the IFeedResponse from the Change Feed./>
+    /// </summary>
     public interface IChangeFeedObserverContext
     {
         /// <summary>
-        /// Gets or sets the id of the partition for current event.
+        /// Gets the id of the partition for current event.
         /// </summary>
         string PartitionKeyRangeId { get; }
 
         /// <summary>
-        /// Gets or sets the response from the underlying <see cref="Microsoft.Azure.Documents.Linq.IDocumentQuery&lt;T&gt;.ExecuteNextAsync"/> call.
+        /// Gets the response from the underlying <see cref="Microsoft.Azure.Documents.Linq.IDocumentQuery&lt;T&gt;.ExecuteNextAsync"/> call.
         /// </summary>
         IFeedResponse<Document> FeedResponse { get; }
 

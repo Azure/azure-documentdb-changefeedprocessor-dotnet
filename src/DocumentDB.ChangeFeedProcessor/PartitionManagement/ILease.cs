@@ -6,18 +6,39 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
 
+    /// <summary>
+    /// Represents a lease.
+    /// </summary>
     public interface ILease
     {
+        /// <summary>
+        /// Gets the partition associated with the lease.
+        /// </summary>
         string PartitionId { get; }
 
+        /// <summary>
+        /// Gets or sets the host name owner of the lease.
+        /// </summary>
         string Owner { get; set; }
 
+        /// <summary>
+        /// Gets or sets the Timestamp of the lease.
+        /// </summary>
         DateTime Timestamp { get; set; }
 
+        /// <summary>
+        /// Gets or sets the Continuation Token.
+        /// </summary>
         string ContinuationToken { get; set; }
 
+        /// <summary>
+        /// Gets the lease Id.
+        /// </summary>
         string Id { get; }
 
+        /// <summary>
+        /// Gets the Concurrency Token.
+        /// </summary>
         string ConcurrencyToken { get; }
     }
 }
