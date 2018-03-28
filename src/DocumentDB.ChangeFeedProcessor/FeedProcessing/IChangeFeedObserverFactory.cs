@@ -5,7 +5,7 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     /// <summary>
-    /// Factory implementation to create Observers.
+    /// Factory class used to create instance(s) of <see cref="IChangeFeedObserver"/>
     /// </summary>
     public interface IChangeFeedObserverFactory
     {

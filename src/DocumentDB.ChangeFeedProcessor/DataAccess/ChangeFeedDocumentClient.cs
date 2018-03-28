@@ -11,7 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
     using Microsoft.Azure.Documents.Linq;
 
     /// <summary>
-    /// DocumentClient used for Change Feed interaction.
+    /// Adaps <see cref="DocumentClient"/> to <see cref="IChangeFeedDocumentClient"/>.
     /// </summary>
     public class ChangeFeedDocumentClient : IChangeFeedDocumentClient
     {

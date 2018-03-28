@@ -8,7 +8,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>
-    /// Interface to implement to handle the IFeedResponse from the Change Feed./>
+    /// Represents the context passed to <see cref="IChangeFeedObserver"/> events.
     /// </summary>
     public interface IChangeFeedObserverContext
     {
