@@ -49,7 +49,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             return false;
         }
 
-        public static async Task<DocumentCollection> GetDocumentCollectionAsync(this IChangeFeedDocumentClient client, DocumentCollectionInfo collectionInfo)
+        public static async Task<DocumentCollection> GetDocumentCollectionAsync(
+            this IChangeFeedDocumentClient client,
+            DocumentCollectionInfo collectionInfo)
         {
             Uri collectionUri =
                 UriFactory.CreateDocumentCollectionUri(collectionInfo.DatabaseName, collectionInfo.CollectionName);

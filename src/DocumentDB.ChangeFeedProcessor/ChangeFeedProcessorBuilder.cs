@@ -17,7 +17,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>
-    /// Builder used to create an instance of <see cref="IChangeFeedProcessor"/>.
+    /// Provides a flexible way to to create an instance of <see cref="IChangeFeedProcessor"/> with custom set of parameters.
     /// </summary>
     public class ChangeFeedProcessorBuilder
     {
@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <summary>
         /// Sets the Host name.
         /// </summary>
-        /// <param name="hostName">Name to be used for the host.</param>
+        /// <param name="hostName">Name to be used for the host. When using multilple hosts, each host must have a unique name.</param>
         /// <returns>An instance of <see cref="ChangeFeedProcessorBuilder"/>.</returns>
         public ChangeFeedProcessorBuilder WithHostName(string hostName)
         {
@@ -84,9 +84,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Sets the <see cref="ChangeFeedHostOptions"/> to be used by the Host.
+        /// Sets the <see cref="ChangeFeedHostOptions"/> to be used by this instance of <see cref="IChangeFeedProcessor"/>.
         /// </summary>
-        /// <param name="changeFeedHostOptions">An instance of <see cref="ChangeFeedHostOptions"/>.</param>
+        /// <param name="changeFeedHostOptions">The instance of <see cref="ChangeFeedHostOptions"/> to use.</param>
         /// <returns>An instance of <see cref="ChangeFeedProcessorBuilder"/>.</returns>
         public ChangeFeedProcessorBuilder WithChangeFeedHostOptions(ChangeFeedHostOptions changeFeedHostOptions)
         {

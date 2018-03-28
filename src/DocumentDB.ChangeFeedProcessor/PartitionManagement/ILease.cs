@@ -7,7 +7,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System;
 
     /// <summary>
-    /// Represents a lease.
+    /// A lease is used to keep track of the Change Feed Processor's progress for a particular Partition Key Range.
+    /// The Owner keeps track which <see cref="IChangeFeedProcessor"/> is currently processing that Partition Key Range and the Continuation Token is used to know what was the last processed point of the Change Feed.
     /// </summary>
     public interface ILease
     {

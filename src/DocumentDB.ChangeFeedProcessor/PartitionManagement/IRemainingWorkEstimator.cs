@@ -8,13 +8,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
     /// <summary>
     /// Estimates pending work to be read in the Change Feed.
+    /// Calculates the sum of pending work based on the difference between the latest status of the feed and the status of each existing lease.
     /// </summary>
     public interface IRemainingWorkEstimator
     {
         /// <summary>
-        /// Calculates an estimate of the pending work remaining to read.
+        /// Calculates an estimate of the pending work remaining to read in the Change Feed in amount of documents.
         /// </summary>
-        /// <returns>Returns an estimation of pending work.</returns>
+        /// <returns>An estimation of pending work in amount of documents.</returns>
         Task<long> GetEstimatedRemainingWork();
     }
 }

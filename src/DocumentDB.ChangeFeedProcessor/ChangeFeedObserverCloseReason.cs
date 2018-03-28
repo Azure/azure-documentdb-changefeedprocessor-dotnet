@@ -5,7 +5,7 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     /// <summary>
-    /// Reason for the <see cref="IChangeFeedObserver"/> to close.
+    /// The reason for the <see cref="IChangeFeedObserver"/> to close.
     /// </summary>
     public enum ChangeFeedObserverCloseReason
     {

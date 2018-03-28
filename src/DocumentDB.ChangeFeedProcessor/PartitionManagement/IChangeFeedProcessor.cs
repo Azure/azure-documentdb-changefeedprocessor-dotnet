@@ -7,7 +7,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Listens for changes in a monitored collection and acts upon them.
+    /// Provides an API to start and stop a <see cref="ChangeFeedProcessor"/> instance created by <see cref="ChangeFeedProcessorBuilder.BuildAsync"/>.
     /// </summary>
     public interface IChangeFeedProcessor
     {
