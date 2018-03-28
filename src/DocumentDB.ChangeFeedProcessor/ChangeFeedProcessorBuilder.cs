@@ -18,6 +18,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
     /// <summary>
     /// Provides a flexible way to to create an instance of <see cref="IChangeFeedProcessor"/> with custom set of parameters.
+    /// </summary>
+    /// <remarks>
     /// Example:
     /// ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
     /// DocumentCollectionInfo CollectionInfo = new DocumentCollectionInfo()
@@ -39,7 +41,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     ///     .WithObserverFactory(ChangeFeedObserverFactory);
     /// IChangeFeedProcessor processor = await builder.BuildAsync();
     /// await processor.StartAsync();
-    /// </summary>
+    /// </remarks>
     public class ChangeFeedProcessorBuilder
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
@@ -60,7 +62,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <summary>
         /// Sets the Host name.
         /// </summary>
-        /// <param name="hostName">Name to be used for the host. When using multilple hosts, each host must have a unique name.</param>
+        /// <param name="hostName">Name to be used for the host. When using multiple hosts, each host must have a unique name.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithHostName(string hostName)
         {
@@ -189,7 +191,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Sets an existing <see cref="DocumentClient"/> to be used to read from the leases collection
+        /// Sets an existing <see cref="DocumentClient"/> to be used to read from the leases collection.
         /// </summary>
         /// <param name="leaseDocumentClient">The instance of <see cref="DocumentClient"/> to use.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>

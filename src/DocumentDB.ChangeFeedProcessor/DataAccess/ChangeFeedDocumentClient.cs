@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         }
 
         /// <summary>
-        /// Deletes the document
+        /// Deletes the document.
         /// </summary>
         /// <param name="documentUri">Document Uri.</param>
         /// <returns>A response containing a <see cref="Document"/>.</returns>
@@ -106,7 +106,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         }
 
         /// <summary>
-        /// Reads a single Document.
+        /// Reads a single document.
         /// </summary>
         /// <param name="documentUri">Document Uri to read.</param>
         /// <returns>A response containing a <see cref="Document"/>.</returns>
@@ -120,7 +120,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         /// </summary>
         /// <typeparam name="T">Document type.</typeparam>
         /// <param name="documentCollectionUri">Collection Uri.</param>
-        /// <param name="querySpec">Instace of <see cref="SqlQuerySpec"/> to execute.</param>
+        /// <param name="querySpec">Instance of <see cref="SqlQuerySpec"/> to execute.</param>
         /// <returns>An <see cref="IQueryable"/>.</returns>
         public IQueryable<T> CreateDocumentQuery<T>(string documentCollectionUri, SqlQuerySpec querySpec)
         {

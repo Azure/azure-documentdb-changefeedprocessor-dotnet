@@ -13,7 +13,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     public interface IChangeFeedObserverContext
     {
         /// <summary>
-        /// Gets the id of the partition for current event.
+        /// Gets the id of the partition for the current event.
         /// </summary>
         string PartitionKeyRangeId { get; }
 
