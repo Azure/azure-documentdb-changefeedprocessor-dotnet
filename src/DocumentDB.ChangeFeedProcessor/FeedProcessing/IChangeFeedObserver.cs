@@ -1,4 +1,8 @@
-﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     using System.Collections.Generic;
     using System.Threading;

@@ -6,11 +6,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using System;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters;
 
     /// <summary>
     /// Simple host for distributing change feed events across observers and thus allowing these observers scale.
@@ -80,7 +79,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     [Obsolete("Switch to ChangeFeedHostBuilder for building the change feed processor host or estimator and get better extensibility of the change feed processing system.")]
     public class ChangeFeedEventHost
     {
-        private static readonly TraceLogProvider traceLogProvider;
+        private static readonly TraceLogProvider TraceLogProvider;
 
         /// <summary>
         /// Default builder for the <see cref="ChangeFeedEventHost"/>
@@ -91,10 +90,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         static ChangeFeedEventHost()
         {
-            ChangeFeedEventHost.traceLogProvider = new TraceLogProvider();
+            ChangeFeedEventHost.TraceLogProvider = new TraceLogProvider();
             var logProviderEntry = new Tuple<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
                 () => true,
-                () => ChangeFeedEventHost.traceLogProvider);
+                () => ChangeFeedEventHost.TraceLogProvider);
             LogProvider.LogProviderResolvers.Add(logProviderEntry);
         }
 
@@ -131,7 +130,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <param name="hostName">Unique name for this host.</param>
         /// <param name="feedCollectionLocation">Specifies location of the Cosmos DB collection to monitor changes for.</param>
         /// <param name="leaseCollectionLocation">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
-        /// <param name="changeFeedOptions">Options to pass to the <see cref="DocumentClient.CreateDocumentChangeFeedQuery" /> API.</param>
+        /// <param name="changeFeedOptions">Options to pass to the DocumentClient.CreateDocumentChangeFeedQuery API.</param>
         /// <param name="changeFeedHostOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
         public ChangeFeedEventHost(
             string hostName,
@@ -151,7 +150,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             if (changeFeedHostOptions == null)
                 throw new ArgumentNullException(nameof(changeFeedHostOptions));
 
-            ChangeFeedEventHost.traceLogProvider.OpenNestedContext(hostName);
+            ChangeFeedEventHost.TraceLogProvider.OpenNestedContext(hostName);
 
             this.builder
                 .WithHostName(hostName)

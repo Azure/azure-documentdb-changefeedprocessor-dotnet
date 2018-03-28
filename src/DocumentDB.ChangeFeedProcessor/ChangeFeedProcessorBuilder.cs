@@ -2,7 +2,6 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
@@ -10,13 +9,39 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 
+    /// <summary>
+    /// Provides a flexible way to to create an instance of <see cref="IChangeFeedProcessor"/> with custom set of parameters.
+    /// </summary>
+    /// <remarks>
+    /// Example:
+    /// ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
+    /// DocumentCollectionInfo CollectionInfo = new DocumentCollectionInfo()
+    ///     {
+    ///         DatabaseName = "DatabaseName",
+    ///         CollectionName = "CollectionName",
+    ///         Uri = new Uri("https://someservice.documents.azure.com:443/")
+    ///     };
+    /// DocumentCollectionInfo LeaseCollectionInfo = new DocumentCollectionInfo()
+    ///     {
+    ///         DatabaseName = "DatabaseName",
+    ///         CollectionName = "Leases",
+    ///         Uri = new Uri("https://someservice.documents.azure.com:443/")
+    ///     };
+    /// builder
+    ///     .WithHostName("someHost")
+    ///     .WithFeedCollection(CollectionInfo)
+    ///     .WithLeaseCollection(LeaseCollectionInfo)
+    ///     .WithObserverFactory(ChangeFeedObserverFactory);
+    /// IChangeFeedProcessor processor = await builder.BuildAsync();
+    /// await processor.StartAsync();
+    /// </remarks>
     public class ChangeFeedProcessorBuilder
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
@@ -34,12 +59,22 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private IChangeFeedDocumentClient leaseDocumentClient;
         private ILeaseManager leaseManager;
 
+        /// <summary>
+        /// Sets the Host name.
+        /// </summary>
+        /// <param name="hostName">Name to be used for the host. When using multiple hosts, each host must have a unique name.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithHostName(string hostName)
         {
             this.hostName = hostName;
             return this;
         }
 
+        /// <summary>
+        /// Sets the <see cref="DocumentCollectionInfo"/> of the collection to listen for changes.
+        /// </summary>
+        /// <param name="feedCollectionLocation"><see cref="DocumentCollectionInfo"/> of the collection to listen for changes</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithFeedCollection(DocumentCollectionInfo feedCollectionLocation)
         {
             if (feedCollectionLocation == null) throw new ArgumentNullException(nameof(feedCollectionLocation));
@@ -47,6 +82,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets an existing <see cref="DocumentClient"/> to be used to read from the monitored collection.
+        /// </summary>
+        /// <param name="feedDocumentClient">The instance of <see cref="DocumentClient"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithFeedDocumentClient(DocumentClient feedDocumentClient)
         {
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
@@ -54,6 +94,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets an existing <see cref="IChangeFeedDocumentClient"/> to be used to read from the monitored collection.
+        /// </summary>
+        /// <param name="feedDocumentClient">The instance of <see cref="IChangeFeedDocumentClient"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithFeedDocumentClient(IChangeFeedDocumentClient feedDocumentClient)
         {
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
@@ -61,6 +106,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets the <see cref="ChangeFeedHostOptions"/> to be used by this instance of <see cref="IChangeFeedProcessor"/>.
+        /// </summary>
+        /// <param name="changeFeedHostOptions">The instance of <see cref="ChangeFeedHostOptions"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithChangeFeedHostOptions(ChangeFeedHostOptions changeFeedHostOptions)
         {
             if (changeFeedHostOptions == null) throw new ArgumentNullException(nameof(changeFeedHostOptions));
@@ -68,6 +118,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets the <see cref="ChangeFeedOptions"/> to be used when interacting with the Change Feed.
+        /// </summary>
+        /// <param name="changeFeedOptions">The instance of <see cref="ChangeFeedOptions"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithChangeFeedOptions(ChangeFeedOptions changeFeedOptions)
         {
             if (changeFeedOptions == null) throw new ArgumentNullException(nameof(changeFeedOptions));
@@ -75,6 +130,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets the <see cref="FeedProcessing.IChangeFeedObserverFactory"/> to be used to generate <see cref="IChangeFeedObserver"/>
+        /// </summary>
+        /// <param name="observerFactory">The instance of <see cref="FeedProcessing.IChangeFeedObserverFactory"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithObserverFactory(FeedProcessing.IChangeFeedObserverFactory observerFactory)
         {
             if (observerFactory == null) throw new ArgumentNullException(nameof(observerFactory));
@@ -82,6 +142,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets an existing <see cref="IChangeFeedObserver"/> type to be used by a <see cref="FeedProcessing.IChangeFeedObserverFactory"/> to process changes.
+        /// </summary>
+        /// <typeparam name="T">Type of the <see cref="IChangeFeedObserver"/>.</typeparam>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithObserver<T>()
             where T : FeedProcessing.IChangeFeedObserver, new()
         {
@@ -89,6 +154,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets the Database Resource Id of the monitored collection.
+        /// </summary>
+        /// <param name="databaseResourceId">Database Resource Id.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithDatabaseResourceId(string databaseResourceId)
         {
             if (databaseResourceId == null) throw new ArgumentNullException(nameof(databaseResourceId));
@@ -96,6 +166,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets the Collection Resource Id of the monitored collection.
+        /// </summary>
+        /// <param name="collectionResourceId">Collection Resource Id.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithCollectionResourceId(string collectionResourceId)
         {
             if (collectionResourceId == null) throw new ArgumentNullException(nameof(collectionResourceId));
@@ -103,6 +178,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets the <see cref="DocumentCollectionInfo"/> of the collection to use for leases.
+        /// </summary>
+        /// <param name="leaseCollectionLocation">The instance of a <see cref="DocumentCollectionInfo"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation)
         {
             if (leaseCollectionLocation == null) throw new ArgumentNullException(nameof(leaseCollectionLocation));
@@ -110,6 +190,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets an existing <see cref="DocumentClient"/> to be used to read from the leases collection.
+        /// </summary>
+        /// <param name="leaseDocumentClient">The instance of <see cref="DocumentClient"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithLeaseDocumentClient(DocumentClient leaseDocumentClient)
         {
             if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
@@ -117,6 +202,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
+        /// <summary>
+        /// Sets an existing <see cref="IChangeFeedDocumentClient"/> to be used to read from the leases collection.
+        /// </summary>
+        /// <param name="leaseDocumentClient">The instance of <see cref="IChangeFeedDocumentClient"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithLeaseDocumentClient(IChangeFeedDocumentClient leaseDocumentClient)
         {
             if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
@@ -124,13 +214,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return this;
         }
 
-        internal ChangeFeedProcessorBuilder WithLeaseManager(ILeaseManager leaseManager)
-        {
-            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
-            this.leaseManager = leaseManager;
-            return this;
-        }
-
+        /// <summary>
+        /// Builds a new instance of the <see cref="IChangeFeedProcessor"/> with the specified configuration.
+        /// </summary>
+        /// <returns>An instance of <see cref="IChangeFeedProcessor"/>.</returns>
         public async Task<IChangeFeedProcessor> BuildAsync()
         {
             if (this.hostName == null)
@@ -161,6 +248,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return new ChangeFeedProcessor(partitionManager);
         }
 
+        /// <summary>
+        /// Builds a new instance of the <see cref="IRemainingWorkEstimator"/> to estimate pending work with the specified configuration.
+        /// </summary>
+        /// <returns>An instance of <see cref="IRemainingWorkEstimator"/>.</returns>
         public async Task<IRemainingWorkEstimator> BuildEstimatorAsync()
         {
             if (this.feedCollectionLocation == null)
@@ -179,6 +270,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink());
             return new ChangeFeedEstimateHost(remainingWorkEstimator);
+        }
+
+        internal ChangeFeedProcessorBuilder WithLeaseManager(ILeaseManager leaseManager)
+        {
+            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
+            this.leaseManager = leaseManager;
+            return this;
         }
 
         private static async Task<string> GetDatabaseResourceIdAsync(IChangeFeedDocumentClient documentClient, DocumentCollectionInfo collectionLocation)

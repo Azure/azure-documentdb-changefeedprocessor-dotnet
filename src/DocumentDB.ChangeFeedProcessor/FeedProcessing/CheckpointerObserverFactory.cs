@@ -2,10 +2,10 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
+    using System;
+
     /// <summary>
     /// Factory class used to create instance(s) of <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/>.
     /// </summary>

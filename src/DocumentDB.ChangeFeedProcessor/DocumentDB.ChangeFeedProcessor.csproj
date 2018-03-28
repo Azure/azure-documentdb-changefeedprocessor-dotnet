@@ -37,6 +37,14 @@
     <DefineConstants>TRACE;DEBUG</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <!--CS1587:XML comment is not placed on a valid language element 
+    LibLog files have misplaced comments, but we cannot touch them.-->
+    <NoWarn>1587</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <AdditionalFiles Include="stylecop.json" />
   </ItemGroup>

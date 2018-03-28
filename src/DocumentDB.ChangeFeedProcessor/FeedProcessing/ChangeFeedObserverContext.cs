@@ -2,19 +2,16 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.Client;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.Client;
+
     /// <summary>
     /// The context passed to <see cref="Documents.ChangeFeedProcessor.IChangeFeedObserver"/> events.
     /// </summary>
     internal class ChangeFeedObserverContext : IChangeFeedObserverContext
     {
-        public string PartitionKeyRangeId { get; }
-        public IFeedResponse<Document> FeedResponse { get; }
-
         private readonly IPartitionCheckpointer checkpointer;
 
         internal ChangeFeedObserverContext(string partitionId)
@@ -28,6 +25,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             this.FeedResponse = feedResponse;
             this.checkpointer = checkpointer;
         }
+
+        public string PartitionKeyRangeId { get; }
+
+        public IFeedResponse<Document> FeedResponse { get; }
 
         /// <summary>
         /// Checkpoints progress of a stream. This method is valid only if manual checkpoint was configured.

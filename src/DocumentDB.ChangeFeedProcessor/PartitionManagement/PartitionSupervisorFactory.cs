@@ -2,13 +2,12 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
     using Client;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 
     internal class PartitionSupervisorFactory : IPartitionSupervisorFactory
     {
@@ -38,7 +37,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             this.documentClient = documentClient;
             this.collectionSelfLink = collectionSelfLink;
             this.leaseManager = leaseManager;
-            changeFeedHostOptions = options;
+            this.changeFeedHostOptions = options;
             this.changeFeedOptions = changeFeedOptions;
         }
 
@@ -49,20 +48,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             var processorSettings = new ProcessorSettings
             {
-                CollectionSelfLink = collectionSelfLink,
+                CollectionSelfLink = this.collectionSelfLink,
                 RequestContinuation = lease.ContinuationToken,
                 PartitionKeyRangeId = lease.PartitionId,
-                FeedPollDelay = changeFeedHostOptions.FeedPollDelay,
-                MaxItemCount = changeFeedHostOptions.QueryPartitionsMaxBatchSize,
-                StartFromBeginning = changeFeedOptions.StartFromBeginning,
-                StartTime = changeFeedOptions.StartTime,
-                SessionToken = changeFeedOptions.SessionToken,
+                FeedPollDelay = this.changeFeedHostOptions.FeedPollDelay,
+                MaxItemCount = this.changeFeedHostOptions.QueryPartitionsMaxBatchSize,
+                StartFromBeginning = this.changeFeedOptions.StartFromBeginning,
+                StartTime = this.changeFeedOptions.StartTime,
+                SessionToken = this.changeFeedOptions.SessionToken,
             };
 
-            var checkpointer = new PartitionCheckpointer(leaseManager, lease);
-            FeedProcessing.IChangeFeedObserver changeFeedObserver = observerFactory.CreateObserver();
-            var processor = new PartitionProcessor(changeFeedObserver, documentClient, processorSettings, checkpointer);
-            var renewer = new LeaseRenewer(lease, leaseManager, changeFeedHostOptions.LeaseRenewInterval);
+            var checkpointer = new PartitionCheckpointer(this.leaseManager, lease);
+            FeedProcessing.IChangeFeedObserver changeFeedObserver = this.observerFactory.CreateObserver();
+            var processor = new PartitionProcessor(changeFeedObserver, this.documentClient, processorSettings, checkpointer);
+            var renewer = new LeaseRenewer(lease, this.leaseManager, this.changeFeedHostOptions.LeaseRenewInterval);
 
             return new PartitionSupervisor(lease, changeFeedObserver, processor, renewer);
         }

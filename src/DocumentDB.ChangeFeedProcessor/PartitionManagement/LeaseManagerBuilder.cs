@@ -2,12 +2,11 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 
     internal class LeaseManagerBuilder : ILeaseManagerBuilder
