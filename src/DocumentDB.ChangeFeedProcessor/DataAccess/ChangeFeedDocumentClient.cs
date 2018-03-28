@@ -51,7 +51,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         }
 
         /// <summary>
-        /// Reads a database.
+        /// Reads the database.
         /// </summary>
         /// <param name="databaseUri">Database Uri.</param>
         /// <param name="options">An instance of <see cref="RequestOptions"/>.</param>
@@ -62,7 +62,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         }
 
         /// <summary>
-        /// Reads a collection.
+        /// Reads the collection.
         /// </summary>
         /// <param name="documentCollectionUri">Collection Uri.</param>
         /// <param name="options">An instance of <see cref="RequestOptions"/>.</param>
@@ -73,7 +73,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         }
 
         /// <summary>
-        /// Creates a Document.
+        /// Creates the document.
         /// </summary>
         /// <param name="documentsFeedOrDatabaseLink">Collection Self Link.</param>
         /// <param name="document">Document to store.</param>

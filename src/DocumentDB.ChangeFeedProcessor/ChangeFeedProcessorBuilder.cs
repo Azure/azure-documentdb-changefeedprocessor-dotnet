@@ -18,6 +18,27 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
     /// <summary>
     /// Provides a flexible way to to create an instance of <see cref="IChangeFeedProcessor"/> with custom set of parameters.
+    /// Example:
+    /// ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
+    /// DocumentCollectionInfo CollectionInfo = new DocumentCollectionInfo()
+    ///     {
+    ///         DatabaseName = "DatabaseName",
+    ///         CollectionName = "CollectionName",
+    ///         Uri = new Uri("https://someservice.documents.azure.com:443/")
+    ///     };
+    /// DocumentCollectionInfo LeaseCollectionInfo = new DocumentCollectionInfo()
+    ///     {
+    ///         DatabaseName = "DatabaseName",
+    ///         CollectionName = "Leases",
+    ///         Uri = new Uri("https://someservice.documents.azure.com:443/")
+    ///     };
+    /// builder
+    ///     .WithHostName("someHost")
+    ///     .WithFeedCollection(CollectionInfo)
+    ///     .WithLeaseCollection(LeaseCollectionInfo)
+    ///     .WithObserverFactory(ChangeFeedObserverFactory);
+    /// IChangeFeedProcessor processor = await builder.BuildAsync();
+    /// await processor.StartAsync();
     /// </summary>
     public class ChangeFeedProcessorBuilder
     {

@@ -40,7 +40,9 @@
   <PropertyGroup>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <NoWarn>1587</NoWarn> <!--Avoid warnings coming from LibLog-->
+    <!--CS1587:XML comment is not placed on a valid language element 
+    LibLog files have misplaced comments, but we cannot touch them.-->
+    <NoWarn>1587</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

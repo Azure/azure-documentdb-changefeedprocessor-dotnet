@@ -7,8 +7,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System;
 
     /// <summary>
-    /// A lease is used to keep track of the Change Feed Processor's progress for a particular Partition Key Range.
-    /// The Owner keeps track which <see cref="IChangeFeedProcessor"/> is currently processing that Partition Key Range and the Continuation Token is used to know what was the last processed point of the Change Feed.
+    /// Represents a lease which is persisted as a document in the lease collection.
+    /// Leases are use to:
+    /// * Keep track of the <see cref="IChangeFeedProcessor"/> progress for a particular Partition Key Range.
+    /// * Distribute load between different instances of <see cref="IChangeFeedProcessor"/>.
+    /// * Ensure reliable recovery for cases when an instance of <see cref="IChangeFeedProcessor"/> gets disconnected, hangs or crashes.
     /// </summary>
     public interface ILease
     {
@@ -19,16 +22,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         /// <summary>
         /// Gets or sets the host name owner of the lease.
+        /// The Owner keeps track which <see cref="IChangeFeedProcessor"/> is currently processing that Partition Key Range.
         /// </summary>
         string Owner { get; set; }
 
         /// <summary>
         /// Gets or sets the Timestamp of the lease.
+        /// Timestamp is used to determine lease expiration.
         /// </summary>
         DateTime Timestamp { get; set; }
 
         /// <summary>
         /// Gets or sets the Continuation Token.
+        /// Continuation Token is used to know what was the last processed point of the Change Feed.
         /// </summary>
         string ContinuationToken { get; set; }
 
