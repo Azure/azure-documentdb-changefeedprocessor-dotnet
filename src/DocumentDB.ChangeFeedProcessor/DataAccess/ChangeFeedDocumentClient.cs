@@ -11,7 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
     using Microsoft.Azure.Documents.Linq;
 
     /// <summary>
-    /// Adaps <see cref="DocumentClient"/> to <see cref="IChangeFeedDocumentClient"/>.
+    /// Adapts <see cref="DocumentClient"/> to <see cref="IChangeFeedDocumentClient"/>.
     /// </summary>
     public class ChangeFeedDocumentClient : IChangeFeedDocumentClient
     {
@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         }
 
         /// <summary>
-        /// Deletes a Document
+        /// Deletes the document
         /// </summary>
         /// <param name="documentUri">Document Uri.</param>
         /// <returns>A response containing a <see cref="Document"/>.</returns>
@@ -94,7 +94,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         }
 
         /// <summary>
-        /// Updates a document.
+        /// Updates the document.
         /// </summary>
         /// <param name="documentUri">Document Uri of the document to update.</param>
         /// <param name="document">Updated document.</param>
