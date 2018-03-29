@@ -12,6 +12,8 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {
+#pragma warning disable CS0618 // Type or member is obsolete
+
     [Trait("Category", "Integration")]
     [Collection("Integration tests")]
     public class StaticCollectionTests : IntegrationTest

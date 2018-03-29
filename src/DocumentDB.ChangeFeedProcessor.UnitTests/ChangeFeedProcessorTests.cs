@@ -17,7 +17,7 @@ using Xunit;
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 {
     [Trait("Category", "Gated")]
-    public class ChangeFeedEventHostTests
+    public class ChangeFeedProcessorTests
     {
         private const string collectionLink = "Collection link";
         private const string storeNamePrefix = "Name prefix";
@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         private readonly FeedProcessing.IChangeFeedObserverFactory observerFactory;
         private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
 
-        public ChangeFeedEventHostTests()
+        public ChangeFeedProcessorTests()
         {
             var leaseQueryMock = new Mock<IDocumentQuery<Document>>();
             var leaseDocumentClient = Mock.Of<IChangeFeedDocumentClient>();
@@ -131,7 +131,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
 
         [Fact]
-        public async Task RegisterObserver_Then_Estimate()
+        public async Task Start_Then_Estimate()
         {
             this.builder.WithObserverFactory(this.observerFactory);
             var processor = await this.builder.BuildAsync();
@@ -141,7 +141,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
 
         [Fact]
-        public async Task Estimate_Then_RegisterObserver()
+        public async Task Estimate_Then_Start()
         {
             var remainingWorkEstimator = await this.builder.BuildEstimatorAsync();
             await remainingWorkEstimator.GetEstimatedRemainingWork();
