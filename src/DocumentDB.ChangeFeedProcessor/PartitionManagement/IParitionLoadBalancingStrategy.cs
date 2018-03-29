@@ -9,7 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     /// <summary>
     /// A strategy defines which leases should be taken by the current host in a certain moment
     /// </summary>
-    public interface ILoadBalancingStrategy
+    public interface IParitionLoadBalancingStrategy
     {
         /// <summary>
         /// Select leases that should be taken for processing

@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     public class PartitionLoadBalancerTests
     {
         private readonly ILeaseManager leaseManager = Mock.Of<ILeaseManager>();
-        private readonly ILoadBalancingStrategy strategy = Mock.Of<ILoadBalancingStrategy>();
+        private readonly IParitionLoadBalancingStrategy strategy = Mock.Of<IParitionLoadBalancingStrategy>();
 
         [Fact]
         public async Task AddLease_ThrowsException_LeaseAddingContinues()

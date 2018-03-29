@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Linq;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 
-    internal class EqualPartitionsBalancingStrategy : ILoadBalancingStrategy
+    internal class EqualPartitionsBalancingStrategy : IParitionLoadBalancingStrategy
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly string hostName;

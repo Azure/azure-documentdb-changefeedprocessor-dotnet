@@ -58,7 +58,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private DocumentCollectionInfo leaseCollectionLocation;
         private IChangeFeedDocumentClient leaseDocumentClient;
         private ILeaseManager leaseManager;
-        private ILoadBalancingStrategy loadBalancingStrategy;
+        private IParitionLoadBalancingStrategy loadBalancingStrategy;
 
         /// <summary>
         /// Sets the Host name.
@@ -216,11 +216,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Sets the <see cref="ILoadBalancingStrategy"/> to be used for partition load balancing
+        /// Sets the <see cref="IParitionLoadBalancingStrategy"/> to be used for partition load balancing
         /// </summary>
-        /// <param name="strategy">The instance of <see cref="ILoadBalancingStrategy"/> to use.</param>
+        /// <param name="strategy">The instance of <see cref="IParitionLoadBalancingStrategy"/> to use.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithLoadBalancingStrategy(ILoadBalancingStrategy strategy)
+        public ChangeFeedProcessorBuilder WithPartitionLoadBalancingStrategy(IParitionLoadBalancingStrategy strategy)
         {
             if (strategy == null) throw new ArgumentNullException(nameof(strategy));
             this.loadBalancingStrategy = strategy;

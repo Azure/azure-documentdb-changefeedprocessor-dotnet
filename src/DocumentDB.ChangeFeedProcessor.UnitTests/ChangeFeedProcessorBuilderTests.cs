@@ -7,6 +7,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.Documents.Linq;
@@ -14,7 +15,7 @@
     using Xunit;
 
     [Trait("Category", "Gated")]
-    public class ChangeFeedHostBuilderTests
+    public class ChangeFeedProcessorBuilderTests
     {
         private const string collectionLink = "collectionLink";
         private const string storeNamePrefix = "Name prefix";
@@ -30,7 +31,7 @@
 
         private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
 
-        public ChangeFeedHostBuilderTests()
+        public ChangeFeedProcessorBuilderTests()
         {
             this.builder
                 .WithHostName("someHost")
@@ -42,7 +43,7 @@
         public async Task WithFeedDocumentClient()
         {
             var documentClient = new DocumentClient(new Uri("https://localhost:12345/"), string.Empty);
-            var observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
+            var observerFactory = Mock.Of<IChangeFeedObserverFactory>();
 
             this.builder
                 .WithFeedDocumentClient(documentClient)
@@ -56,7 +57,7 @@
         public async Task WithLeaseDocumentClient()
         {
             var documentClient = new DocumentClient(new Uri("https://localhost:12345/"), string.Empty);
-            var observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
+            var observerFactory = Mock.Of<IChangeFeedObserverFactory>();
 
             this.builder
                 .WithLeaseDocumentClient(documentClient)
@@ -113,7 +114,6 @@
                     )))
                 .Returns(leaseQueryMock.As<IQueryable<Document>>().Object);
 
-
             return documentClient;
         }
 
@@ -129,19 +129,21 @@
                 .Setup(manager => manager.ReleaseAsync(It.IsAny<ILease>()))
                 .Returns(Task.FromResult(false));
 
+            var strategy = Mock.Of<IParitionLoadBalancingStrategy>();
+
             this.builder
-                .WithChangeFeedHostOptions(new ChangeFeedHostOptions())
-                .WithFeedDocumentClient(CreateMockDocumentClient())
-                .WithLeaseDocumentClient(CreateMockDocumentClient())
-                .WithObserverFactory(Mock.Of<FeedProcessing.IChangeFeedObserverFactory>())
+                .WithPartitionLoadBalancingStrategy(strategy)
+                .WithFeedDocumentClient(this.CreateMockDocumentClient())
+                .WithLeaseDocumentClient(this.CreateMockDocumentClient())
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>())
                 .WithLeaseManager(leaseManager);
 
-            var strategy = new Mock<ILoadBalancingStrategy>();
-            this.builder.WithLoadBalancingStrategy(strategy.Object);
             var processor = await this.builder.BuildAsync();
             await processor.StartAsync();
 
-            strategy.Verify(s => s.SelectLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.AtLeastOnce);
+            Mock.Get(strategy)
+                .Verify(s => s.SelectLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.AtLeastOnce);
+
             await processor.StopAsync();
         }
     }
