@@ -2,14 +2,13 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
     using System;
     using System.Net;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.Client;
 
     internal static class DocumentClientExtensions
@@ -50,7 +49,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             return false;
         }
 
-        public static async Task<DocumentCollection> GetDocumentCollectionAsync(this IChangeFeedDocumentClient client,
+        public static async Task<DocumentCollection> GetDocumentCollectionAsync(
+            this IChangeFeedDocumentClient client,
             DocumentCollectionInfo collectionInfo)
         {
             Uri collectionUri =

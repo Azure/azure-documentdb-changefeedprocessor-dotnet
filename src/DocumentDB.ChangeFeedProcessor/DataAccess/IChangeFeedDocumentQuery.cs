@@ -12,6 +12,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
     /// <summary>
     /// Provides methods to support change feed query pagination and asynchronous execution
     /// </summary>
+    /// <typeparam name="T">Generic type of Document</typeparam>
     public interface IChangeFeedDocumentQuery<T> : IDocumentQuery
     {
         /// <summary>

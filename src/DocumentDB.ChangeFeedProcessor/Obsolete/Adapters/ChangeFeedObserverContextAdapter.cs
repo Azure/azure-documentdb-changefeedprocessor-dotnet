@@ -1,21 +1,25 @@
-﻿using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
 {
     using System;
     using System.Threading.Tasks;
 
+#pragma warning disable CS0618 // Type or member is obsolete
     internal class ChangeFeedObserverContextAdapter : ChangeFeedObserverContext
+#pragma warning restore CS0618 // Type or member is obsolete
     {
-        private readonly IChangeFeedObserverContext inner;
+        private readonly Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserverContext inner;
 
-        public ChangeFeedObserverContextAdapter(IChangeFeedObserverContext inner)
+        public ChangeFeedObserverContextAdapter(Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserverContext inner)
         {
             if (inner == null) throw new ArgumentNullException(nameof(inner));
             this.inner = inner;
 
-            PartitionKeyRangeId = inner.PartitionKeyRangeId;
-            FeedResponse = inner.FeedResponse;
+            this.PartitionKeyRangeId = inner.PartitionKeyRangeId;
+            this.FeedResponse = inner.FeedResponse;
         }
 
         public override Task CheckpointAsync()

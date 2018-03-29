@@ -21,11 +21,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public async Task AddLease_ThrowsException_LeaseAddingContinues()
         {
             FailingPartitionController controller = new FailingPartitionController();
-            var loadBalancer = new PartitionLoadBalancer(controller, this.leaseManager, this.strategy, TimeSpan.FromHours(1));
+
+            // long acquire interval to ensure that only 1 load balancing iteration is performed in a test run
+            var leaseAcquireInterval = TimeSpan.FromHours(1);
+            var loadBalancer = new PartitionLoadBalancer(controller, this.leaseManager, this.strategy, leaseAcquireInterval);
 
             Mock.Get(this.strategy)
                 .Setup(s => s.CalculateLeasesToTake(It.IsAny<IEnumerable<ILease>>()))
                 .Returns(new[] { Mock.Of<ILease>(), Mock.Of<ILease>() });
+
+            Mock.Get(this.leaseManager)
+                .Setup(m => m.ListLeasesAsync())
+                .ReturnsAsync(new[] { Mock.Of<ILease>(), Mock.Of<ILease>() });
 
             loadBalancer.Start();
             await loadBalancer.StopAsync();
@@ -51,12 +58,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             public Task InitializeAsync()
             {
-                return Task.FromResult(false);
+                return Task.CompletedTask;
             }
 
             public Task ShutdownAsync()
             {
-                return Task.FromResult(false);
+                return Task.CompletedTask;
             }
         }
     }
