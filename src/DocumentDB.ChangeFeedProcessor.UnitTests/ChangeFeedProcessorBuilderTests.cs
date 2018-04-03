@@ -12,7 +12,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
     using Xunit;
 
     [Trait("Category", "Gated")]
-    public class ChangeFeedHostBuilderTests
+    public class ChangeFeedProcessorBuilderTests
     {
         private const string collectionLink = "collectionLink";
         private static readonly DocumentCollectionInfo CollectionInfo = new DocumentCollectionInfo
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 
         private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
 
-        public ChangeFeedHostBuilderTests()
+        public ChangeFeedProcessorBuilderTests()
         {
             this.builder
                 .WithHostName("someHost")

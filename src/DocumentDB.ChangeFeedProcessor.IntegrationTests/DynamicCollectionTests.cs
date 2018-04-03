@@ -14,6 +14,8 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {
+#pragma warning disable CS0618 // Type or member is obsolete
+
     /// <summary>
     /// The collection is modified while Change Feed Processor is running.
     /// </summary>
