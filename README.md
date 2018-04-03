@@ -36,7 +36,7 @@ For illustration, let's assume we are processign the change feed from **Monitore
 ### The workflow
 - Implement Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedProcessor and, if needed, IChangeFeedProcessorFactory.
 - Create DocumentCollectionInfo for monitored collection and lease collection.
-- Create ChangeFeedProcessorBuilder and use its .With... methods to build desired configuration, call .BuildAsync() method to build processor instance.
+- Create ChangeFeedProcessorBuilder and use its .With... methods to build desired configuration, then call .BuildAsync() method to build the processor instance.
 - Call processor.StartAsync().
 - When done, call processor.StopAsync().
 
