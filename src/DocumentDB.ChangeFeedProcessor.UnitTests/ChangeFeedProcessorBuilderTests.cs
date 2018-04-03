@@ -1,4 +1,4 @@
-﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 {
     using System;
     using System.Collections.Generic;
