@@ -1,20 +1,24 @@
-﻿using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
+﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 {
-        using Microsoft.Azure.Documents.Client;
-    using Moq;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.Documents.Linq;
+    using Moq;
     using Xunit;
 
     [Trait("Category", "Gated")]
-    public class ChangeFeedHostBuilderTests
+    public class ChangeFeedProcessorBuilderTests
     {
         private const string collectionLink = "collectionLink";
+        private const string storeNamePrefix = "Name prefix";
         private static readonly DocumentCollectionInfo CollectionInfo = new DocumentCollectionInfo
         {
             DatabaseName = "DatabaseName",
@@ -27,7 +31,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 
         private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
 
-        public ChangeFeedHostBuilderTests()
+        public ChangeFeedProcessorBuilderTests()
         {
             this.builder
                 .WithHostName("someHost")
@@ -39,7 +43,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         public async Task WithFeedDocumentClient()
         {
             var documentClient = new DocumentClient(new Uri("https://localhost:12345/"), string.Empty);
-            var observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
+            var observerFactory = Mock.Of<IChangeFeedObserverFactory>();
 
             this.builder
                 .WithFeedDocumentClient(documentClient)
@@ -53,7 +57,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         public async Task WithLeaseDocumentClient()
         {
             var documentClient = new DocumentClient(new Uri("https://localhost:12345/"), string.Empty);
-            var observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
+            var observerFactory = Mock.Of<IChangeFeedObserverFactory>();
 
             this.builder
                 .WithLeaseDocumentClient(documentClient)
@@ -83,6 +87,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .ReturnsAsync(() => feedResponse)
                 .Callback(() => cancellationTokenSource.Cancel());
 
+            var leaseQueryMock = new Mock<IDocumentQuery<Document>>();
+            leaseQueryMock
+                .Setup(q => q.HasMoreResults)
+                .Returns(false);
+
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(documentClient)
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(collectionLink, It.IsAny<ChangeFeedOptions>()))
@@ -93,8 +102,49 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Mock.Get(documentClient)
                 .Setup(ex => ex.ReadDocumentCollectionAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>()))
                 .ReturnsAsync(new ResourceResponse<DocumentCollection>(collection));
+            Mock.Get(documentClient)
+                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>()))
+                .ReturnsAsync(new ResourceResponse<Document>(new Document()));
+            Mock.Get(documentClient)
+                .Setup(c => c.CreateDocumentQuery<Document>(collectionLink,
+                    It.Is<SqlQuerySpec>(spec => spec.QueryText == "SELECT * FROM c WHERE STARTSWITH(c.id, @PartitionLeasePrefix)" &&
+                                                spec.Parameters.Count == 1 &&
+                                                spec.Parameters[0].Name == "@PartitionLeasePrefix" &&
+                                                (string)spec.Parameters[0].Value == storeNamePrefix + ".."
+                    )))
+                .Returns(leaseQueryMock.As<IQueryable<Document>>().Object);
 
             return documentClient;
+        }
+
+        [Fact]
+        public async Task UseCustomLoadBalancingStrategy()
+        {
+            var leaseManager = Mock.Of<ILeaseManager>();
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.AcquireAsync(It.IsAny<ILease>(), "host"))
+                .ReturnsAsync(Mock.Of<ILease>());
+
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.ReleaseAsync(It.IsAny<ILease>()))
+                .Returns(Task.FromResult(false));
+
+            var strategy = Mock.Of<IParitionLoadBalancingStrategy>();
+
+            this.builder
+                .WithPartitionLoadBalancingStrategy(strategy)
+                .WithFeedDocumentClient(this.CreateMockDocumentClient())
+                .WithLeaseDocumentClient(this.CreateMockDocumentClient())
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>())
+                .WithLeaseManager(leaseManager);
+
+            var processor = await this.builder.BuildAsync();
+            await processor.StartAsync();
+
+            Mock.Get(strategy)
+                .Verify(s => s.SelectLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.AtLeastOnce);
+
+            await processor.StopAsync();
         }
     }
 }
