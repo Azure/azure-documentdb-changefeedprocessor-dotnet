@@ -282,7 +282,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             ILeaseManager leaseManager = await this.GetLeaseManagerAsync().ConfigureAwait(false);
 
             IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink());
-            return new ChangeFeedEstimateHost(remainingWorkEstimator);
+            return remainingWorkEstimator;
         }
 
         internal ChangeFeedProcessorBuilder WithLeaseManager(ILeaseManager leaseManager)

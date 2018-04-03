@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {
+#pragma warning disable CS0618 // Type or member is obsolete
+
     class TestObserverFactory : IChangeFeedObserverFactory, IChangeFeedObserver
     {
         private readonly Func<ChangeFeedObserverContext, Task> openProcessor;

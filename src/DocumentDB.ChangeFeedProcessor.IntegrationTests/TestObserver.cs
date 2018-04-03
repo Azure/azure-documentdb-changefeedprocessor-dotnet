@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {
+#pragma warning disable CS0618 // Type or member is obsolete
+
     class TestObserver : IChangeFeedObserver
     {
         private readonly IChangeFeedObserver parent;

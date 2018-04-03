@@ -42,7 +42,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 MaxItemCount = 1,
             };
 
-            foreach (ILease existingLease in await this.leaseManager.ListLeasesAsync())
+            foreach (ILease existingLease in await this.leaseManager.ListLeasesAsync().ConfigureAwait(false))
             {
                 options.PartitionKeyRangeId = existingLease.PartitionId;
                 options.RequestContinuation = existingLease.ContinuationToken;
@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
                 try
                 {
-                    response = await query.ExecuteNextAsync<Document>();
+                    response = await query.ExecuteNextAsync<Document>().ConfigureAwait(false);
                     long parsedLSNFromSessionToken = TryConvertToNumber(ExtractLSNFromSessionToken(response.SessionToken));
                     long lastSequenceNumber = response.Count > 0 ?
                         TryConvertToNumber(GetFirstDocument(response).GetPropertyValue<string>(LSNPropertyName))
