@@ -41,7 +41,7 @@ For illustration, let's assume we are processign the change feed from **Monitore
 - When done, call processor.StopAsync().
 
 ### Example
-```C#
+```csharp
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.ChangeFeedProcessor;
 using System;
@@ -130,7 +130,7 @@ Just use <system.configuration> section provided below.
 
 - When using current (v2) API
 1) Add the following code to your project:
-```C#
+```csharp
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 
 var hostName = "SampleHost";
