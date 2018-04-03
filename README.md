@@ -5,7 +5,7 @@ This library helps distributing Cosmos DB change feed events in partitioned coll
 ## Design highlights
 For illustration, let's assume we are processign the change feed from **Monitored collection**, which is partitioned by **city**. The arrows in the preceding diagram indicate the current position (continuation) in the change feed.
 
-![Change Feed Processor](changefeedprocessor.png)
+![Change Feed Processor](../ChangeFeedProcessor.png)
 
 * For coordinating the processing of change feed across multiple workers, the leasing mechanism is used. To store leases, a separate collection (**Lease collection** in the diagram) is used.
     * There is one lease per partition.
@@ -52,7 +52,6 @@ using System.Threading.Tasks;
 namespace Sample
 {
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
     class SampleObserver : IChangeFeedObserver
     {
@@ -121,7 +120,10 @@ The following v1 API from v1 is is present in v2 for backward compatibility but 
 
 ## Troubleshooting
 ### How to enable tracing
-Change Feed Processor library is using [LibLog](https://github.com/damianh/LibLog) and supports a few log providers out of the box. Log provider for .Net tracing is provided by the library.
+Change Feed Processor library is using [LibLog](https://github.com/damianh/LibLog) and supports a few log providers out of the box. 
+
+Log provider for .Net tracing is provided by the library and needs to be enabled. 
+Follow steps below to enable **.Net tracing**:
 
 - When using old API
 Just use <system.configuration> section provided above.
