@@ -130,7 +130,7 @@ Just use <system.configuration> section provided above.
 
 - When using new API
 1) Add the following code to your project:
-```
+```C#
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 
 var hostName = "SampleHost";
@@ -142,7 +142,7 @@ using (tracelogProvider.OpenNestedContext(hostName))
 }
 ```
 2) Add the following <system.configuration> section in your app.config:
-```
+```xml
   <system.diagnostics>
     <sharedListeners>
       <add name="file" type="System.Diagnostics.TextWriterTraceListener" initializeData="C:\ChangeFeedProcessorTrace.log" />
