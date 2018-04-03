@@ -125,10 +125,10 @@ Change Feed Processor library is using [LibLog](https://github.com/damianh/LibLo
 Log provider for .Net tracing is provided by the library and needs to be enabled. 
 Follow steps below to enable **.Net tracing**:
 
-- When using old API<br/>
+- When using obsolete (v1) API<br/>
 Just use <system.configuration> section provided below.
 
-- When using new API
+- When using current (v2) API
 1) Add the following code to your project:
 ```C#
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
