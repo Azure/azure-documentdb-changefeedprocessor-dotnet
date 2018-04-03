@@ -5,7 +5,7 @@ This library helps distributing Cosmos DB change feed events in partitioned coll
 ## Design highlights
 For illustration, let's assume we are processign the change feed from **Monitored collection**, which is partitioned by **city**. The arrows in the preceding diagram indicate the current position (continuation) in the change feed.
 
-![Change Feed Processor](../ChangeFeedProcessor.png)
+![Change Feed Processor](ChangeFeedProcessor.png)
 
 * For coordinating the processing of change feed across multiple workers, the leasing mechanism is used. To store leases, a separate collection (**Lease collection** in the diagram) is used.
     * There is one lease per partition.
