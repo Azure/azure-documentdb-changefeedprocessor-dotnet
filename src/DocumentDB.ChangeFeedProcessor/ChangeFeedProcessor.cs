@@ -14,9 +14,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly IPartitionManager partitionManager;
 
-        public ChangeFeedProcessor(string hostName, IPartitionManager partitionManager)
+        public ChangeFeedProcessor(IPartitionManager partitionManager)
         {
-            if (string.IsNullOrEmpty(hostName)) throw new ArgumentException(nameof(hostName));
             if (partitionManager == null) throw new ArgumentNullException(nameof(partitionManager));
             this.partitionManager = partitionManager;
         }
