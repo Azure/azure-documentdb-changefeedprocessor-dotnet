@@ -17,12 +17,12 @@ For illustration, let's assume we are processign the change feed from **Monitore
         * Expiration interval: if a lease wasn't updated during this time it is considered expired and can be taken by other hosts.
 
 * Each instance of the processor (IChangeFeedProcessor) does the following:
-    * Determine how many partitions (leases) to own. This is based on how many other instances of the processor own active leases.
-    * Acquire leases: starting with available leases, then expired leases, then steals leases from other processors if needed to fill up load-balancing target.
-    * Renew leases: leases are periodically renewed. This is to make sure that lease expiration time is extended.
+    * Determines how many partitions (leases) to own. This is based on how many other instances of the processor own active leases.
+    * Acquires leases: starting with available leases, then expired leases, then steals leases from other processors if needed to fill up load-balancing target.
     * For each owned lease:
+        * Renews the lease periodically. This is to make sure that lease expiration time is extended.
         * Reads change feed from the partition the lease is associated with.
-        * Notifies consumer (observer, one per lease) with these changes.
+        * Notifies the consumer (the observer, one per lease) with these changes.
         * After successful delivery notification, checkpoints last continuation token to its lease.
         * If lease is lost or stolen, notifies the observer.
     * For concurrency safety, for each lease update, ETag (if-match condition) is used. If it fails, the processor reads the lease document and checks whether it still owns it, and if not, the lease is considered lost.
