@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Linq;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 
-    internal class EqualPartitionsBalancingStrategy : ILoadBalancingStrategy
+    internal class EqualPartitionsBalancingStrategy : IParitionLoadBalancingStrategy
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly string hostName;
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             this.leaseExpirationInterval = leaseExpirationInterval;
         }
 
-        public IEnumerable<ILease> CalculateLeasesToTake(IEnumerable<ILease> allLeases)
+        public IEnumerable<ILease> SelectLeasesToTake(IEnumerable<ILease> allLeases)
         {
             var workerToPartitionCount = new Dictionary<string, int>();
             var expiredLeases = new List<ILease>();

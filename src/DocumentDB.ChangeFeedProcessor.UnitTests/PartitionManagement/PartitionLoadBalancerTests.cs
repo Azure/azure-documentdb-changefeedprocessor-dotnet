@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     public class PartitionLoadBalancerTests
     {
         private readonly ILeaseManager leaseManager = Mock.Of<ILeaseManager>();
-        private readonly ILoadBalancingStrategy strategy = Mock.Of<ILoadBalancingStrategy>();
+        private readonly IParitionLoadBalancingStrategy strategy = Mock.Of<IParitionLoadBalancingStrategy>();
 
         [Fact]
         public async Task AddLease_ThrowsException_LeaseAddingContinues()
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var loadBalancer = new PartitionLoadBalancer(controller, this.leaseManager, this.strategy, leaseAcquireInterval);
 
             Mock.Get(this.strategy)
-                .Setup(s => s.CalculateLeasesToTake(It.IsAny<IEnumerable<ILease>>()))
+                .Setup(s => s.SelectLeasesToTake(It.IsAny<IEnumerable<ILease>>()))
                 .Returns(new[] { Mock.Of<ILease>(), Mock.Of<ILease>() });
 
             Mock.Get(this.leaseManager)
@@ -38,7 +38,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             await loadBalancer.StopAsync();
 
             Mock.Get(this.strategy)
-                .Verify(s => s.CalculateLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.Once);
+                .Verify(s => s.SelectLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.Once);
 
             Mock.Get(this.leaseManager)
                 .Verify(m => m.ListLeasesAsync(), Times.Once);

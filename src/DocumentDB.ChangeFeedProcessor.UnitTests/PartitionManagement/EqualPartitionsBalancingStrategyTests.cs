@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public void CalculateLeasesToTake_NoLeases_ReturnsEmpty()
         {
             EqualPartitionsBalancingStrategy strategy = CreateStrategy();
-            var leasesToTake = strategy.CalculateLeasesToTake(Enumerable.Empty<ILease>());
+            var leasesToTake = strategy.SelectLeasesToTake(Enumerable.Empty<ILease>());
             Assert.Empty(leasesToTake);
         }
 
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public void CalculateLeasesToTake_OwnLeasesOnly_ReturnsEmpty()
         {
             EqualPartitionsBalancingStrategy strategy = CreateStrategy();
-            var leasesToTake = strategy.CalculateLeasesToTake(new []{ CreateLease(ownerSelf, "1"), CreateLease(ownerSelf, "2") });
+            var leasesToTake = strategy.SelectLeasesToTake(new []{ CreateLease(ownerSelf, "1"), CreateLease(ownerSelf, "2") });
             Assert.Empty(leasesToTake);
         }
 
@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             EqualPartitionsBalancingStrategy strategy = CreateStrategy();
             var allLeases = new HashSet<ILease> { CreateLease(ownerNone, "1"), CreateLease(ownerNone, "2") };
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases);
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases);
             Assert.Equal(allLeases, new HashSet<ILease>(leasesToTake));
         }
 
@@ -49,7 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             EqualPartitionsBalancingStrategy strategy = CreateStrategy();
             var allLeases = new HashSet<ILease> { CreateExpiredLease(ownerSelf, "1"), CreateExpiredLease(owner1, "2") };
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases);
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases);
             Assert.Equal(allLeases, new HashSet<ILease>(leasesToTake));
         }
 
@@ -58,7 +58,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             EqualPartitionsBalancingStrategy strategy = CreateStrategy();
             var allLeases = new HashSet<ILease> { CreateLease(owner1, "1"), CreateLease(owner1, "2") };
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             Assert.Single(leasesToTake);
             Assert.Subset(allLeases, new HashSet<ILease>(leasesToTake));
         }
@@ -75,7 +75,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 CreateLease(owner1, "3"),
                 expiredLease
             };
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             Assert.Single(leasesToTake);
             Assert.Contains(expiredLease, leasesToTake);
         }
@@ -88,7 +88,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             allLeases1.Add(CreateLease(owner1, "0"));
             allLeases1.AddRange(Enumerable.Range(1, 10).Select(index => CreateExpiredLease(owner1, index.ToString())));
             var allLeases = allLeases1;
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             Assert.Equal(6, leasesToTake.Count);
         }
 
@@ -100,7 +100,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             allLeases1.Add(CreateLease(owner1, "0"));
             allLeases1.AddRange(Enumerable.Range(1, 10).Select(index => CreateExpiredLease(owner1, index.ToString())));
             var allLeases = allLeases1;
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             Assert.Equal(7, leasesToTake.Count);
         }
 
@@ -112,7 +112,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             allLeases1.Add(CreateLease(owner1, "0"));
             allLeases1.AddRange(Enumerable.Range(1, 10).Select(index => CreateExpiredLease(owner1, index.ToString())));
             var allLeases = allLeases1;
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             Assert.Equal(3, leasesToTake.Count);
         }
 
@@ -123,7 +123,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var allLeases = new List<ILease>();
             allLeases.AddRange(Enumerable.Range(1, 5).Select(index => CreateLease(owner1, "A" + index.ToString())));
             allLeases.AddRange(Enumerable.Range(1, 10).Select(index => CreateLease(owner2, "B" + index.ToString())));
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             ILease stolenLease = Assert.Single(leasesToTake);
             Assert.StartsWith("B", stolenLease.PartitionId);
         }
@@ -135,7 +135,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var allLeases = new List<ILease>();
             allLeases.AddRange(Enumerable.Range(1, 5).Select(index => CreateLease(owner1, "A" + index.ToString())));
             allLeases.AddRange(Enumerable.Range(1, 6).Select(index => CreateLease(ownerSelf, "B" + index.ToString())));
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             Assert.Empty(leasesToTake);
         }
 
@@ -146,7 +146,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var allLeases = new List<ILease>();
             allLeases.AddRange(Enumerable.Range(1, 5).Select(index => CreateLease(owner1, "A" + index.ToString())));
             allLeases.AddRange(Enumerable.Range(1, 5).Select(index => CreateLease(ownerSelf, "B" + index.ToString())));
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             Assert.Empty(leasesToTake);
         }
 
@@ -157,7 +157,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var allLeases = new List<ILease>();
             allLeases.AddRange(Enumerable.Range(1, 4).Select(index => CreateLease(owner1, "A" + index.ToString())));
             allLeases.AddRange(Enumerable.Range(1, 3).Select(index => CreateLease(ownerSelf, "B" + index.ToString())));
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             Assert.Empty(leasesToTake);
         }
 
@@ -168,7 +168,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var allLeases = new List<ILease>();
             allLeases.AddRange(Enumerable.Range(1, 4).Select(index => CreateLease(owner1, "A" + index.ToString())));
             allLeases.AddRange(Enumerable.Range(1, 2).Select(index => CreateLease(ownerSelf, "B" + index.ToString())));
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             ILease stolenLease = Assert.Single(leasesToTake);
             Assert.StartsWith("A", stolenLease.PartitionId);
         }
@@ -181,7 +181,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             allLeases.AddRange(Enumerable.Range(1, 10).Select(index => CreateLease(owner1, "A" + index.ToString())));
             allLeases.AddRange(Enumerable.Range(1, 10).Select(index => CreateLease(owner2, "B" + index.ToString())));
             allLeases.AddRange(Enumerable.Range(1, 8).Select(index => CreateLease(ownerSelf, "C" + index.ToString())));
-            var leasesToTake = strategy.CalculateLeasesToTake(allLeases).ToList();
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             Assert.Single(leasesToTake);
         }
 
