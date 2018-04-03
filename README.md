@@ -125,7 +125,7 @@ Change Feed Processor library is using [LibLog](https://github.com/damianh/LibLo
 Log provider for .Net tracing is provided by the library and needs to be enabled. 
 Follow steps below to enable **.Net tracing**:
 
-- When using old API
+- When using old API<br/>
 Just use <system.configuration> section provided above.
 
 - When using new API
