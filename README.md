@@ -126,7 +126,7 @@ Log provider for .Net tracing is provided by the library and needs to be enabled
 Follow steps below to enable **.Net tracing**:
 
 - When using old API<br/>
-Just use <system.configuration> section provided above.
+Just use <system.configuration> section provided below.
 
 - When using new API
 1) Add the following code to your project:
