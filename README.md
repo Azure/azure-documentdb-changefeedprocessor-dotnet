@@ -161,7 +161,7 @@ using (tracelogProvider.OpenNestedContext(hostName))
 ```
 
 ## See also
-* [Working with the Change Feed support in Azure DocumentDB](https://docs.microsoft.com/azure/documentdb/documentdb-change-feed)
+* [Working with the change feed support in Azure Cosmos DB](https://docs.microsoft.com/azure/cosmos-db/change-feed)
 
 # Contributing
 
