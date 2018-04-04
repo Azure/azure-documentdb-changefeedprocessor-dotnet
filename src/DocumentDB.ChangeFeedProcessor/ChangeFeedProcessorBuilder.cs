@@ -19,29 +19,84 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// <summary>
     /// Provides a flexible way to to create an instance of <see cref="IChangeFeedProcessor"/> with custom set of parameters.
     /// </summary>
-    /// <remarks>
-    /// Example:
-    /// ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
-    /// DocumentCollectionInfo CollectionInfo = new DocumentCollectionInfo()
+    /// <example>
+    /// <code language="C#">
+    /// <![CDATA[
+    /// using Microsoft.Azure.Documents;
+    /// using Microsoft.Azure.Documents.ChangeFeedProcessor;
+    /// using System;
+    /// using System.Collections.Generic;
+    /// using System.Threading;
+    /// using System.Threading.Tasks;
+    ///
+    /// namespace Sample
+    /// {
+    ///     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    ///
+    ///     class SampleObserver : IChangeFeedObserver
     ///     {
-    ///         DatabaseName = "DatabaseName",
-    ///         CollectionName = "CollectionName",
-    ///         Uri = new Uri("https://someservice.documents.azure.com:443/")
-    ///     };
-    /// DocumentCollectionInfo LeaseCollectionInfo = new DocumentCollectionInfo()
+    ///         public Task CloseAsync(IChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
+    ///         {
+    ///             return Task.CompletedTask;  ///  Note: requires targeting .Net 4.6+.
+    ///         }
+    ///
+    ///         public Task OpenAsync(IChangeFeedObserverContext context)
+    ///         {
+    ///             return Task.CompletedTask;
+    ///         }
+    ///
+    ///         public Task ProcessChangesAsync(IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
+    ///         {
+    ///             Console.WriteLine("ProcessChangesAsync: partition {0}, {1} docs", context.PartitionKeyRangeId, docs.Count);
+    ///             return Task.CompletedTask;
+    ///         }
+    ///     }
+    ///
+    ///     class ChangeFeedProcessorSample
     ///     {
-    ///         DatabaseName = "DatabaseName",
-    ///         CollectionName = "Leases",
-    ///         Uri = new Uri("https://someservice.documents.azure.com:443/")
-    ///     };
-    /// builder
-    ///     .WithHostName("someHost")
-    ///     .WithFeedCollection(CollectionInfo)
-    ///     .WithLeaseCollection(LeaseCollectionInfo)
-    ///     .WithObserverFactory(ChangeFeedObserverFactory);
-    /// IChangeFeedProcessor processor = await builder.BuildAsync();
-    /// await processor.StartAsync();
-    /// </remarks>
+    ///         public static void Run()
+    ///         {
+    ///             RunAsync().Wait();
+    ///         }
+    ///
+    ///         static async Task RunAsync()
+    ///         {
+    ///             DocumentCollectionInfo feedCollectionInfo = new DocumentCollectionInfo()
+    ///             {
+    ///                 DatabaseName = "DatabaseName",
+    ///                 CollectionName = "MonitoredCollectionName",
+    ///                 Uri = new Uri("https://sampleservice.documents.azure.com:443/"),
+    ///                 MasterKey = "-- the auth key"
+    ///             };
+    ///
+    ///             DocumentCollectionInfo leaseCollectionInfo = new DocumentCollectionInfo()
+    ///             {
+    ///                 DatabaseName = "DatabaseName",
+    ///                 CollectionName = "leases",
+    ///                 Uri = new Uri("https://sampleservice.documents.azure.com:443/"),
+    ///                 MasterKey = "-- the auth key"
+    ///             };
+    ///
+    ///             var builder = new ChangeFeedProcessorBuilder();
+    ///             var processor = await builder
+    ///                 .WithHostName("SampleHost")
+    ///                 .WithFeedCollection(feedCollectionInfo)
+    ///                 .WithLeaseCollection(leaseCollectionInfo)
+    ///                 .WithObserver<SampleObserver>()
+    ///                 .BuildAsync();
+    ///
+    ///             await processor.StartAsync();
+    ///
+    ///             Console.WriteLine("Change Feed Processor started. Press <Enter> key to stop...");
+    ///             Console.ReadLine();
+    ///
+    ///             await processor.StopAsync();
+    ///         }
+    ///     }
+    /// }
+    /// ]]>
+    /// </code>
+    /// </example>
     public class ChangeFeedProcessorBuilder
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
