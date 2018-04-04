@@ -43,31 +43,32 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging
         }
 
         /// <summary>
-        /// Gets the logger for this log provider.
+        /// Gets the logger with specified name.
         /// </summary>
-        /// <param name="name">The name of the logger.</param>
-        /// <returns>The <see cref="Logger"/> instance used by this log provier.</returns>
+        /// <param name="name">Name of the logger.
+        /// This is typically the class name for which the logger is created using <see cref="LogProvider.GetCurrentClassLogger"/>.</param>
+        /// <returns>The logger reference.</returns>
         public Logger GetLogger(string name)
         {
             return this.logProvider.GetLogger(name);
         }
 
         /// <summary>
-        /// Opens nested context.
+        /// Opens a nested diagnostics context.
         /// </summary>
-        /// <param name="message">The message to pass to the nested context.</param>
-        /// <returns>An instance of <see cref="IDisposable"/> to dispose when the context is no longer needed.</returns>
+        /// <param name="message">The message to add to the diagnostics context.</param>
+        /// <returns>A disposable that removes the message from the context when disposed.</returns>
         public IDisposable OpenNestedContext(string message)
         {
             return this.logProvider.OpenNestedContext(message);
         }
 
         /// <summary>
-        /// Opens mapped context.
+        /// Opens a mapped diagnostics context.
         /// </summary>
-        /// <param name="key">The key to pass to the nested context.</param>
-        /// <param name="value">The value to pass to the nested context.</param>
-        /// <returns>An instance of <see cref="IDisposable"/> to dispose when the context is no longer needed.</returns>
+        /// <param name="key">The key to add to the diagnostics context.</param>
+        /// <param name="value">The value to add to the diagnostics context.</param>
+        /// <returns>A disposable that removes the message from the context when disposed.</returns>
         public IDisposable OpenMappedContext(string key, string value)
         {
             return this.logProvider.OpenMappedContext(key, value);
