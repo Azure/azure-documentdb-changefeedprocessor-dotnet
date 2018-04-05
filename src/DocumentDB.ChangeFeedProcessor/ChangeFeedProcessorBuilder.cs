@@ -383,7 +383,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             var leaseStore = new LeaseStore(this.leaseDocumentClient, this.leaseCollectionLocation, this.GetLeasePrefix(), leaseStoreCollectionLink);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);
             var partitionObserverFactory = new PartitionSupervisorFactory(factory, this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions, this.changeFeedOptions);
-            var partitionController = new PartitionController(this.hostName, leaseManager, partitionObserverFactory, synchronizer);
+            var partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
 
             if (this.loadBalancingStrategy == null)
             {
@@ -401,7 +401,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 string leasePrefix = this.GetLeasePrefix();
                 var leaseManagerBuilder = new LeaseManagerBuilder()
                     .WithLeasePrefix(leasePrefix)
-                    .WithLeaseCollection(this.leaseCollectionLocation);
+                    .WithLeaseCollection(this.leaseCollectionLocation)
+                    .WithHostName(this.hostName);
 
                 if (this.leaseDocumentClient != null)
                 {

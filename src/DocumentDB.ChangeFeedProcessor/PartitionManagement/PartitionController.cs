@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
@@ -17,7 +18,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     internal class PartitionController : IPartitionController
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
-        private readonly string hostName;
 
         private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> currentlyOwnedPartitions = new ConcurrentDictionary<string, TaskCompletionSource<bool>>();
 
@@ -26,9 +26,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private readonly IPartitionSynchronizer synchronizer;
         private readonly CancellationTokenSource shutdownCts = new CancellationTokenSource();
 
-        public PartitionController(string hostName, ILeaseManager leaseManager, IPartitionSupervisorFactory partitionSupervisorFactory, IPartitionSynchronizer synchronizer)
+        public PartitionController(ILeaseManager leaseManager, IPartitionSupervisorFactory partitionSupervisorFactory, IPartitionSynchronizer synchronizer)
         {
-            this.hostName = hostName;
             this.leaseManager = leaseManager;
             this.partitionSupervisorFactory = partitionSupervisorFactory;
             this.synchronizer = synchronizer;
@@ -52,9 +51,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             try
             {
-                var updatedLease = await this.leaseManager.AcquireAsync(lease, this.hostName).ConfigureAwait(false);
+                var updatedLease = await this.leaseManager.AcquireAsync(lease).ConfigureAwait(false);
                 if (updatedLease != null) lease = updatedLease;
-
                 Logger.InfoFormat("partition {0}: acquired", lease.PartitionId);
             }
             catch (Exception)
@@ -78,13 +76,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             Logger.Debug("Starting renew leases assigned to this host on initialize.");
             var addLeaseTasks = new List<Task>();
-            foreach (ILease lease in await this.leaseManager.ListLeasesAsync().ConfigureAwait(false))
+            foreach (ILease lease in await this.leaseManager.ListOwnedLeasesAsync().ConfigureAwait(false))
             {
-                if (string.Compare(lease.Owner, this.hostName, StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    Logger.InfoFormat("Acquired lease for PartitionId '{0}' on startup.", lease.PartitionId);
-                    addLeaseTasks.Add(this.AddOrUpdateLeaseAsync(lease));
-                }
+                Logger.InfoFormat("Acquired lease for PartitionId '{0}' on startup.", lease.PartitionId);
+                addLeaseTasks.Add(this.AddOrUpdateLeaseAsync(lease));
             }
 
             await Task.WhenAll(addLeaseTasks.ToArray()).ConfigureAwait(false);

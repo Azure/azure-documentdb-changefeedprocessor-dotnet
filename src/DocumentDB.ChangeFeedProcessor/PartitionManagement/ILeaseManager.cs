@@ -24,6 +24,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         Task<IEnumerable<ILease>> ListLeasesAsync();
 
         /// <summary>
+        /// Get all the leases owned by the current host
+        /// </summary>
+        /// <returns>Enumerable of all the leases owned by the current host</returns>
+        Task<IEnumerable<ILease>> ListOwnedLeasesAsync();
+
+        /// <summary>
         /// Renew the lease
         /// </summary>
         /// <param name="lease">Lease to renew</param>
@@ -44,10 +50,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         /// Acquire lease.
         /// </summary>
         /// <param name="lease">Lease to acquire</param>
-        /// <param name="owner">Owner</param>
         /// <returns>Updated acquired lease</returns>
         /// <exception cref="LeaseLostException">Thrown if other host acquired concurrently</exception>
-        Task<ILease> AcquireAsync(ILease lease, string owner);
+        Task<ILease> AcquireAsync(ILease lease);
 
         /// <summary>
         /// Release lease.

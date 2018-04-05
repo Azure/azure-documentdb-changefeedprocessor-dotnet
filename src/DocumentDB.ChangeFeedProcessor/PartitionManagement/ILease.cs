@@ -48,6 +48,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         /// Gets the Concurrency Token.
         /// </summary>
         string ConcurrencyToken { get; }
+
+        /// <summary>
+        /// Gets or sets custom lease properties which can be managed from <see cref="IParitionLoadBalancingStrategy"/>.
+        /// </summary>
         Dictionary<string, string> Properties { get; set; }
     }
 }

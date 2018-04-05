@@ -99,7 +99,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 
             var leaseManager = Mock.Of<ILeaseManager>();
             Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(lease, "host"))
+                .Setup(manager => manager.AcquireAsync(lease))
                 .ReturnsAsync(lease);
 
             Mock.Get(leaseManager)

@@ -48,7 +48,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             leaseManager = Mock.Of<ILeaseManager>();
             Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(lease, "host"))
+                .Setup(manager => manager.AcquireAsync(lease))
                 .ReturnsAsync(lease);
 
             Mock.Get(leaseManager)
@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Returns(Task.FromResult(false));
 
             synchronizer = Mock.Of<IPartitionSynchronizer>();
-            sut = new PartitionController("host", leaseManager, partitionSupervisorFactory, synchronizer);
+            sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
         }
 
         [Fact]
@@ -71,11 +71,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Returns<ILease>(l => new PartitionSupervisor(l, MockObserver(), MockPartitionProcessor(), MockRenewer()));
 
             Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild, "host"))
+                .Setup(manager => manager.AcquireAsync(leaseChild))
                 .ReturnsAsync(leaseChild);
 
             Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild2, "host"))
+                .Setup(manager => manager.AcquireAsync(leaseChild2))
                 .ReturnsAsync(leaseChild2);
 
             Mock.Get(leaseManager)
@@ -166,7 +166,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             await sut.AddOrUpdateLeaseAsync(leaseChild2).ConfigureAwait(false);
 
             Mock.Get(leaseManager)
-                .Verify(manager => manager.AcquireAsync(leaseChild2, "host"), Times.Once);
+                .Verify(manager => manager.AcquireAsync(leaseChild2), Times.Once);
 
             Mock.Get(leaseManager)
                 .Verify(manager => manager.UpdatePropertiesAsync(leaseChild2), Times.Once);
@@ -187,11 +187,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Returns<ILease>(l => new PartitionSupervisor(l, MockObserver(), MockPartitionProcessor(), MockRenewer()));
 
             Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild, "host"))
+                .Setup(manager => manager.AcquireAsync(leaseChild))
                 .ReturnsAsync(leaseChild);
 
             Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild2, "host"))
+                .Setup(manager => manager.AcquireAsync(leaseChild2))
                 .Throws(new LeaseLostException());
 
             Mock.Get(leaseManager)
