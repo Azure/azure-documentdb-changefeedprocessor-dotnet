@@ -9,7 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// <summary>
     /// Factory class used to create instance(s) of <see cref="IChangeFeedObserver"/>.
     /// </summary>
-    [Obsolete("Switch to ChangeFeedHostBuilder for building the change feed processor host and use new interface with cancellation token support")]
+    [Obsolete("Switch to the ChangeFeedProcessorBuilder for building the change feed processor host and use new interface Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserverFactory.")]
     public interface IChangeFeedObserverFactory
     {
         /// <summary>
