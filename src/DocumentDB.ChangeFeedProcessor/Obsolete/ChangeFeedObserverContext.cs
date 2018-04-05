@@ -11,7 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// <summary>
     /// The context passed to <see cref="IChangeFeedObserver"/> events.
     /// </summary>
-    [Obsolete("Switch to ChangeFeedHostBuilder for building the change feed processor host, this class is replaced with interface IChangeFeedObserverContext")]
+    [Obsolete("Switch to ChangeFeedProcessorBuilder for building the change feed processor and use new interface Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserverContext.")]
     public abstract class ChangeFeedObserverContext
     {
         /// <summary>

@@ -13,7 +13,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// <summary>
     /// This interface is used to deliver change events to document feed observers.
     /// </summary>
-    [Obsolete("Switch to ChangeFeedHostBuilder for building the change feed processor host and use new interface with cancellation token support")]
+    [Obsolete("Switch to ChangeFeedProcessorBuilder for building the change feed processor and use new interface Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserver with cancellation token support.")]
     public interface IChangeFeedObserver
     {
         /// <summary>

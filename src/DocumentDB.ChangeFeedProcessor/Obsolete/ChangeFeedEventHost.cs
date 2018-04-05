@@ -76,7 +76,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// ]]>
     /// </code>
     /// </example>
-    [Obsolete("Switch to ChangeFeedHostBuilder for building the change feed processor host or estimator and get better extensibility of the change feed processing system.")]
+    [Obsolete("Switch to the ChangeFeedProcessorBuilder class and use the BuildAsync method for building the change feed processor host or the BuildEstimatorAsync method for building the remaining work estimator.")]
     public class ChangeFeedEventHost
     {
         private static readonly TraceLogProvider TraceLogProvider;
