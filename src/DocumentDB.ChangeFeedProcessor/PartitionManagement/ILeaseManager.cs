@@ -68,11 +68,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         Task DeleteAsync(ILease lease);
 
         /// <summary>
-        /// Update lease properties.
+        /// Update properties from the specified lease.
         /// </summary>
-        /// <param name="lease">Lease with properties to update</param>
+        /// <param name="leaseWithNewProperties">Lease containing new properties</param>
         /// <returns>Updated lease</returns>
         /// <exception cref="LeaseLostException">Thrown if other host acquired the lease</exception>
-        Task<ILease> UpdatePropertiesAsync(ILease lease);
+        Task<ILease> UpdatePropertiesAsync(ILease leaseWithNewProperties);
     }
 }

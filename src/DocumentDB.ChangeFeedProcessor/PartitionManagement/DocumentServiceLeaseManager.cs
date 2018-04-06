@@ -219,8 +219,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public async Task<ILease> UpdatePropertiesAsync(ILease lease)
         {
-            if (lease == null)
-                throw new ArgumentNullException(nameof(lease));
+            if (lease == null) throw new ArgumentNullException(nameof(lease));
 
             if (lease.Owner != this.hostName)
             {
