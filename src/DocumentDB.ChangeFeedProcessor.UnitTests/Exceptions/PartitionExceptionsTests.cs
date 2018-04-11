@@ -2,21 +2,21 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
-using Microsoft.Azure.Documents.Client;
-using Moq;
-using Xunit;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
+    using Microsoft.Azure.Documents.Client;
+    using Moq;
+    using Xunit;
+
     [Trait("Category", "Gated")]
     public class PartitionExceptionsTests
     {
@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
         private readonly IChangeFeedDocumentClient docClient;
         private readonly IChangeFeedDocumentQuery<Document> documentQuery;
         private readonly IFeedResponse<Document> feedResponse;
-        private readonly FeedProcessing.IChangeFeedObserver observer;
+        private readonly IChangeFeedObserver observer;
         private readonly List<Document> documents;
 
         public PartitionExceptionsTests()
@@ -64,10 +64,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(processorSettings.CollectionSelfLink, It.IsAny<ChangeFeedOptions>()))
                 .Returns(documentQuery);
 
-            observer = Mock.Of<FeedProcessing.IChangeFeedObserver>();
+            observer = Mock.Of<IChangeFeedObserver>();
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
-                    .ProcessChangesAsync(It.IsAny<FeedProcessing.ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
+                    .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(false))
                 .Callback(cancellationTokenSource.Cancel);
 
@@ -149,7 +149,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
                         .ProcessChangesAsync(
-                            It.Is<FeedProcessing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
                             It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents)), 
                             It.IsAny<CancellationToken>()),
                     Times.Once);

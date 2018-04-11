@@ -2,16 +2,16 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-using Moq;
-using Xunit;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Moq;
+    using Xunit;
+
     [Trait("Category", "Gated")]
     public class PartitionControllerTests : IAsyncLifetime
     {
@@ -19,7 +19,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         private readonly ILeaseManager leaseManager;
         private readonly IPartitionProcessor partitionProcessor;
         private readonly ILeaseRenewer leaseRenewer;
-        private readonly FeedProcessing.IChangeFeedObserver observer;
+        private readonly IChangeFeedObserver observer;
         private readonly IPartitionSynchronizer synchronizer;
         private readonly PartitionController sut;
         private readonly IPartitionSupervisorFactory partitionSupervisorFactory;
@@ -263,9 +263,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             return mock.Object;
         }
 
-        private static FeedProcessing.IChangeFeedObserver MockObserver()
+        private static IChangeFeedObserver MockObserver()
         {
-            var mock = new Mock<FeedProcessing.IChangeFeedObserver>();
+            var mock = new Mock<IChangeFeedObserver>();
             return mock.Object;
         }
 

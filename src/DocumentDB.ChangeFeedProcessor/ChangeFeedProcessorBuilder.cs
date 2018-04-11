@@ -22,22 +22,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// <example>
     /// <code language="C#">
     /// <![CDATA[
-    /// using Microsoft.Azure.Documents;
-    /// using Microsoft.Azure.Documents.ChangeFeedProcessor;
-    /// using System;
-    /// using System.Collections.Generic;
-    /// using System.Threading;
-    /// using System.Threading.Tasks;
-    ///
+    /// // Observer.cs
     /// namespace Sample
     /// {
+    ///     using System;
+    ///     using System.Collections.Generic;
+    ///     using System.Threading;
+    ///     using System.Threading.Tasks;
+    ///     using Microsoft.Azure.Documents;
     ///     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     ///
     ///     class SampleObserver : IChangeFeedObserver
     ///     {
     ///         public Task CloseAsync(IChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
     ///         {
-    ///             return Task.CompletedTask;  ///  Note: requires targeting .Net 4.6+.
+    ///             return Task.CompletedTask;  // Note: requires targeting .Net 4.6+.
     ///         }
     ///
     ///         public Task OpenAsync(IChangeFeedObserverContext context)
@@ -51,6 +50,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     ///             return Task.CompletedTask;
     ///         }
     ///     }
+    /// }
+    ///
+    /// // Main.cs
+    /// namespace Sample
+    /// {
+    ///     using System;
+    ///     using System.Threading.Tasks;
+    ///     using Microsoft.Azure.Documents.ChangeFeedProcessor;
+    ///     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     ///
     ///     class ChangeFeedProcessorSample
     ///     {

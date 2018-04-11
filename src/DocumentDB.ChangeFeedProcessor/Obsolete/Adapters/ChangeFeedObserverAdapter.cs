@@ -26,9 +26,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
             return this.observer.OpenAsync(new ChangeFeedObserverContextAdapter(context));
         }
 
-        public Task CloseAsync(FeedProcessing.IChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
+        public Task CloseAsync(FeedProcessing.IChangeFeedObserverContext context, FeedProcessing.ChangeFeedObserverCloseReason reason)
         {
-            return this.observer.CloseAsync(new ChangeFeedObserverContextAdapter(context), reason);
+#pragma warning disable CS0618 // Type or member is obsolete
+            return this.observer.CloseAsync(new ChangeFeedObserverContextAdapter(context), (ChangeFeedObserverCloseReason)reason);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         public Task ProcessChangesAsync(FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
@@ -55,9 +57,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
             return this.observer.OpenAsync(new ChangeFeedObserverContextAdapter(context));
         }
 
-        public Task CloseAsync(FeedProcessing.IChangeFeedObserverContext context, ChangeFeedObserverCloseReason reason)
+        public Task CloseAsync(FeedProcessing.IChangeFeedObserverContext context, FeedProcessing.ChangeFeedObserverCloseReason reason)
         {
-            return this.observer.CloseAsync(new ChangeFeedObserverContextAdapter(context), reason);
+#pragma warning disable CS0618 // Type or member is obsolete
+            return this.observer.CloseAsync(new ChangeFeedObserverContextAdapter(context), (ChangeFeedObserverCloseReason)reason);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         public Task ProcessChangesAsync(FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)

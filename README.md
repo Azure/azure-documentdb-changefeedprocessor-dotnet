@@ -42,15 +42,14 @@ For illustration, let's assume we are processing the change feed from **Monitore
 
 ### Example
 ```csharp
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.ChangeFeedProcessor;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
+// Observer.cs
 namespace Sample
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
 
     class SampleObserver : IChangeFeedObserver
@@ -62,7 +61,7 @@ namespace Sample
 
         public Task OpenAsync(IChangeFeedObserverContext context)
         {
-            return Task.CompletedTask;
+             return Task.CompletedTask;
         }
 
         public Task ProcessChangesAsync(IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
@@ -71,12 +70,26 @@ namespace Sample
             return Task.CompletedTask;
         }
     }
+}
+
+// Main.cs
+namespace Sample
+{
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 
     class ChangeFeedProcessorSample
     {
+        public static void Run()
+        {
+            RunAsync().Wait();
+        }
+
         static async Task RunAsync()
         {
-            DocumentCollectionInfo CollectionInfo = new DocumentCollectionInfo()
+            DocumentCollectionInfo feedCollectionInfo = new DocumentCollectionInfo()
             {
                 DatabaseName = "DatabaseName",
                 CollectionName = "MonitoredCollectionName",
@@ -84,10 +97,10 @@ namespace Sample
                 MasterKey = "-- the auth key"
             };
 
-            DocumentCollectionInfo LeaseCollectionInfo = new DocumentCollectionInfo()
+            DocumentCollectionInfo leaseCollectionInfo = new DocumentCollectionInfo()
             {
                 DatabaseName = "DatabaseName",
-                CollectionName = ";eases",
+                CollectionName = "leases",
                 Uri = new Uri("https://sampleservice.documents.azure.com:443/"),
                 MasterKey = "-- the auth key"
             };
@@ -95,8 +108,8 @@ namespace Sample
             var builder = new ChangeFeedProcessorBuilder();
             var processor = await builder
                 .WithHostName("SampleHost")
-                .WithFeedCollection(CollectionInfo)
-                .WithLeaseCollection(LeaseCollectionInfo)
+                .WithFeedCollection(feedCollectionInfo)
+                .WithLeaseCollection(leaseCollectionInfo)
                 .WithObserver<SampleObserver>()
                 .BuildAsync();
 
@@ -114,7 +127,8 @@ namespace Sample
 The following v1 API from v1 is is present in v2 for backward compatibility but is marked obsolete. It is recommended to use new API.
 
 - Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedEventHost.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedProcessorBuilder.
-- Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedObserverContext.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserverContext.
+- Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedObserverContext.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserverContext that has ProcessChangesAsync taking new CancellationToken parameter.
+- Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedObserverCloseReason.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.ChangeFeedObserverCloseReason.
 - Microsoft.Azure.Documents.ChangeFeedProcessor.IChangeFeedObserver.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserver.
 - Microsoft.Azure.Documents.ChangeFeedProcessor.IChangeFeedObserverFactory.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserverFactory.
 

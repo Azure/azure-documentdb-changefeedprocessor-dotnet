@@ -2,20 +2,21 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-using Microsoft.Azure.Documents.Client;
-using Microsoft.Azure.Documents.Linq;
-using Moq;
-using Xunit;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.Documents.Linq;
+    using Moq;
+    using Xunit;
+
     [Trait("Category", "Gated")]
     public class ChangeFeedProcessorTests
     {
@@ -35,8 +36,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         };
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-        private readonly FeedProcessing.IChangeFeedObserver observer;
-        private readonly FeedProcessing.IChangeFeedObserverFactory observerFactory;
+        private readonly IChangeFeedObserver observer;
+        private readonly IChangeFeedObserverFactory observerFactory;
         private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
 
         public ChangeFeedProcessorTests()
@@ -114,17 +115,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithLeaseCollection(collectionInfo)
                 .WithLeaseDocumentClient(leaseDocumentClient);
 
-            this.observer = Mock.Of<FeedProcessing.IChangeFeedObserver>();
+            this.observer = Mock.Of<IChangeFeedObserver>();
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
-                    .ProcessChangesAsync(It.IsAny<FeedProcessing.ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
+                    .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(false))
                 .Callback(cancellationTokenSource.Cancel);
             Mock.Get(observer)
-                .Setup(observer => observer.OpenAsync(It.IsAny<FeedProcessing.ChangeFeedObserverContext>()))
+                .Setup(observer => observer.OpenAsync(It.IsAny<ChangeFeedObserverContext>()))
                 .Returns(Task.FromResult(false));
 
-            this.observerFactory = Mock.Of<FeedProcessing.IChangeFeedObserverFactory>();
+            this.observerFactory = Mock.Of<IChangeFeedObserverFactory>();
             Mock.Get(observerFactory)
                 .Setup(observer => observer.CreateObserver())
                 .Returns(observer);

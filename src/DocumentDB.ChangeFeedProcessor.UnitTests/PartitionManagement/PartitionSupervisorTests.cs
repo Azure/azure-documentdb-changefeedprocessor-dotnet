@@ -2,26 +2,25 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
-using Moq;
-using Xunit;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Moq;
+    using Xunit;
+
     [Trait("Category", "Gated")]
     public class PartitionSupervisorTests : IDisposable
     {
         private readonly ILease lease;
         private readonly ILeaseRenewer leaseRenewer;
         private readonly IPartitionProcessor partitionProcessor;
-        private readonly FeedProcessing.IChangeFeedObserver observer;
+        private readonly IChangeFeedObserver observer;
         private readonly CancellationTokenSource shutdownToken = new CancellationTokenSource(TimeSpan.FromMinutes(5));
         private readonly PartitionSupervisor sut;
 
@@ -34,7 +33,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             leaseRenewer = Mock.Of<ILeaseRenewer>();
             partitionProcessor = Mock.Of<IPartitionProcessor>();
-            observer = Mock.Of<FeedProcessing.IChangeFeedObserver>();
+            observer = Mock.Of<IChangeFeedObserver>();
 
             sut = new PartitionSupervisor(lease, observer, partitionProcessor, leaseRenewer);
         }
@@ -68,7 +67,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
-                    .CloseAsync(It.Is<FeedProcessing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
+                    .CloseAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
                         ChangeFeedObserverCloseReason.Shutdown));
         }
 
@@ -90,7 +89,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
-                    .CloseAsync(It.Is<FeedProcessing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
+                    .CloseAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
                         ChangeFeedObserverCloseReason.LeaseLost));
         }
 
@@ -113,7 +112,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
-                    .CloseAsync(It.Is<FeedProcessing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
+                    .CloseAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
                         ChangeFeedObserverCloseReason.ObserverError));
         }
 
@@ -121,13 +120,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public async Task RunObserver_ShouldPassPartitionToObserver_WhenExecuted()
         {
             Mock.Get(observer)
-                .Setup(feedObserver => feedObserver.ProcessChangesAsync(It.IsAny<FeedProcessing.ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
+                .Setup(feedObserver => feedObserver.ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
                 .Callback(() => shutdownToken.Cancel());
 
             await sut.RunAsync(shutdownToken.Token).ConfigureAwait(false);
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
-                    .OpenAsync(It.Is<FeedProcessing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId)));
+                    .OpenAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId)));
         }
 
         [Fact]
