@@ -36,18 +36,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
         class MockLease : ILease
         {
-            public MockLease()
-            {
-                this.Properties = new Dictionary<string, string>();
-            }
-
             public string PartitionId { get; set; }
             public string Owner { get; set; }
             public DateTime Timestamp { get; set; }
             public string ContinuationToken { get; set; }
             public string Id { get; set; }
             public string ConcurrencyToken { get; set; }
-            public Dictionary<string, string> Properties { get; set; }
+            public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
         }
 
         [Fact]
@@ -62,7 +57,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
 
-            var leases = await leaseManager.ListLeasesAsync();
+            var leases = await leaseManager.ListAllLeasesAsync();
             Assert.Empty(leases);
         }
 
@@ -83,7 +78,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
 
-            var leases = (await leaseManager.ListLeasesAsync()).ToArray();
+            var leases = (await leaseManager.ListAllLeasesAsync()).ToArray();
 
             Assert.Single(leases);
             Assert.Same(lease, leases[0]);
@@ -111,7 +106,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
 
-            var leases = (await leaseManager.ListLeasesAsync()).ToArray();
+            var leases = (await leaseManager.ListAllLeasesAsync()).ToArray();
 
             Assert.Equal(2, leases.Length);
             Assert.Same(lease1, leases[0]);

@@ -47,7 +47,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             if (leaseStoreCollectionInfo == null) throw new ArgumentNullException(nameof(leaseStoreCollectionInfo));
             if (containerNamePrefix == null) throw new ArgumentNullException(nameof(containerNamePrefix));
             if (leaseStoreCollectionLink == null) throw new ArgumentNullException(nameof(leaseStoreCollectionLink));
-            if (hostName == null) throw new ArgumentNullException(nameof(hostName));
+            if (string.IsNullOrEmpty(hostName)) throw new ArgumentNullException(nameof(hostName));
 
             this.leaseStoreCollectionInfo = leaseStoreCollectionInfo;
             this.containerNamePrefix = containerNamePrefix;
@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             this.hostName = hostName;
         }
 
-        public async Task<IEnumerable<ILease>> ListLeasesAsync()
+        public async Task<IEnumerable<ILease>> ListAllLeasesAsync()
         {
             return await this.ListDocumentsAsync(this.GetPartitionLeasePrefix()).ConfigureAwait(false);
         }
@@ -65,7 +65,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         public async Task<IEnumerable<ILease>> ListOwnedLeasesAsync()
         {
             var ownedLeases = new List<ILease>();
-            foreach (ILease lease in await this.ListLeasesAsync().ConfigureAwait(false))
+            foreach (ILease lease in await this.ListAllLeasesAsync().ConfigureAwait(false))
             {
                 if (string.Compare(lease.Owner, this.hostName, StringComparison.OrdinalIgnoreCase) == 0)
                 {

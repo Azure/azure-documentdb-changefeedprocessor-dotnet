@@ -18,19 +18,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         Task<ILease> CreateLeaseIfNotExistAsync(string partitionId, string continuationToken);
 
         /// <summary>
-        /// Get all the leases
+        /// Get all the leases.
         /// </summary>
         /// <returns>Enumerable of all the leases</returns>
-        Task<IEnumerable<ILease>> ListLeasesAsync();
+        Task<IEnumerable<ILease>> ListAllLeasesAsync();
 
         /// <summary>
-        /// Get all the leases owned by the current host
+        /// Get all the leases owned by the current host.
         /// </summary>
         /// <returns>Enumerable of all the leases owned by the current host</returns>
         Task<IEnumerable<ILease>> ListOwnedLeasesAsync();
 
         /// <summary>
-        /// Renew the lease
+        /// Renew the lease.
         /// </summary>
         /// <param name="lease">Lease to renew</param>
         /// <returns>Updated renewed lease</returns>
@@ -38,7 +38,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         Task<ILease> RenewAsync(ILease lease);
 
         /// <summary>
-        /// Update the lease
+        /// Update the lease.
         /// </summary>
         /// <param name="lease">Lease to renew</param>
         /// <param name="continuationToken">Continuation token</param>
@@ -68,11 +68,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         Task DeleteAsync(ILease lease);
 
         /// <summary>
-        /// Update properties from the specified lease.
+        /// Replace properties from the specified lease.
         /// </summary>
-        /// <param name="leaseWithNewProperties">Lease containing new properties</param>
+        /// <param name="leaseToUpdatePropertiesFrom">Lease containing new properties</param>
         /// <returns>Updated lease</returns>
         /// <exception cref="LeaseLostException">Thrown if other host acquired the lease</exception>
-        Task<ILease> UpdatePropertiesAsync(ILease leaseWithNewProperties);
+        Task<ILease> UpdatePropertiesAsync(ILease leaseToUpdatePropertiesFrom);
     }
 }
