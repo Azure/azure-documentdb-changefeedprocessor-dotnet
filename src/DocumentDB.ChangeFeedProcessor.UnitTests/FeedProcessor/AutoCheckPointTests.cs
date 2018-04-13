@@ -2,23 +2,23 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
-using Microsoft.Azure.Documents.Client;
-using Moq;
-using Xunit;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.Client;
+    using Moq;
+    using Xunit;
+
     [Trait("Category", "Gated")]
     public class AutoCheckPointTests
     {
-        private readonly FeedProcessing.IChangeFeedObserver changeFeedObserver;
+        private readonly IChangeFeedObserver changeFeedObserver;
         private readonly IChangeFeedObserverContext observerContext;
         private readonly CheckpointFrequency checkpointFrequency;
         private readonly AutoCheckpointer sut;
@@ -28,7 +28,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 
         public AutoCheckPointTests()
         {
-            changeFeedObserver = Mock.Of<FeedProcessing.IChangeFeedObserver>();
+            changeFeedObserver = Mock.Of<IChangeFeedObserver>();
             partitionCheckpointer = Mock.Of<IPartitionCheckpointer>();
             Mock.Get(partitionCheckpointer)
                 .Setup(checkPointer => checkPointer.CheckpointPartitionAsync(It.IsAny<string>()))

@@ -2,19 +2,19 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
-using Microsoft.Azure.Documents.Client;
-using Moq;
-using Xunit;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.Client;
+    using Moq;
+    using Xunit;
+
     [Trait("Category", "Gated")]
     public class PartitionChainingTests
     {
@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         private readonly IChangeFeedDocumentClient docClient;
         private readonly IChangeFeedDocumentQuery<Document> documentQuery;
         private readonly IFeedResponse<Document> feedResponse1, feedResponse2;
-        private readonly FeedProcessing.IChangeFeedObserver observer;
+        private readonly IChangeFeedObserver observer;
         private readonly List<Document> batch1, batch2;
 
         public PartitionChainingTests()
@@ -82,14 +82,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(processorSettings.CollectionSelfLink, It.IsAny<ChangeFeedOptions>()))
                 .Returns(documentQuery);
 
-            observer = Mock.Of<FeedProcessing.IChangeFeedObserver>();
+            observer = Mock.Of<IChangeFeedObserver>();
             var checkPointer = new Mock<IPartitionCheckpointer>();
             partitionProcessor = new PartitionProcessor(observer, docClient, processorSettings, checkPointer.Object);
 
             var i = 0;
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
-                    .ProcessChangesAsync(It.IsAny<FeedProcessing.ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
+                    .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(false))
                 .Callback(() =>
                 {
@@ -109,7 +109,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
                         .ProcessChangesAsync(
-                            It.Is<FeedProcessing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
                             It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(batch1)),
                             It.IsAny<CancellationToken>()),
                     Times.Once);
@@ -117,14 +117,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
                         .ProcessChangesAsync(
-                            It.Is<FeedProcessing.ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
                             It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(batch2)),
                             It.IsAny<CancellationToken>()),
                     Times.Once);
 
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
-                        .ProcessChangesAsync(It.IsAny<FeedProcessing.ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()),
+                        .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()),
                     Times.Exactly(2));
         }
     }

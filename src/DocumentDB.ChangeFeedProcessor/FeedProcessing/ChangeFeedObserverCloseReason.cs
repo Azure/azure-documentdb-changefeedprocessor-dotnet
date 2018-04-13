@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     /// <summary>
     /// The reason for the <see cref="IChangeFeedObserver"/> to close.
