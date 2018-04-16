@@ -22,13 +22,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         internal readonly SemaphoreSlim classInitializeSyncRoot = new SemaphoreSlim(1, 1);
         internal readonly object testContextSyncRoot = new object();
         internal readonly int testCount;
+        internal readonly bool partitionedCollection;
         internal volatile int executedTestCount;
         internal DocumentCollectionInfo monitoredCollectionInfo;
         internal DocumentCollectionInfo leaseCollectionInfoTemplate;
 
-        internal TestClassData(int testCount)
+        internal TestClassData(int testCount, bool partitionedCollection)
         {
             this.testCount = testCount;
+            this.partitionedCollection = partitionedCollection;
         }
     }
 
@@ -121,12 +123,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             get { return this.fixture.testClasses[this.GetType().Name]; }
         }
         
-        public IntegrationTest(IntegrationTestFixture fixture, Type testClassType)
+        public IntegrationTest(IntegrationTestFixture fixture, Type testClassType, bool partitionedCollection = true)
         {
             this.fixture = fixture;
             if (!this.fixture.testClasses.ContainsKey(testClassType.Name))
             {
-                this.fixture.testClasses[testClassType.Name] = new TestClassData(GetTestCount(testClassType));
+                this.fixture.testClasses[testClassType.Name] = new TestClassData(GetTestCount(testClassType), partitionedCollection);
             }
 
             TestInitializeAsync().Wait();
@@ -201,8 +203,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             var monitoredCollection = new DocumentCollection
             {
                 Id = test.ClassData.monitoredCollectionInfo.CollectionName,
-                PartitionKey = new PartitionKeyDefinition { Paths = new Collection<string> { "/id" } }
             };
+
+            if (test.ClassData.partitionedCollection)
+            {
+                monitoredCollection.PartitionKey = new PartitionKeyDefinition { Paths = new Collection<string> { "/id" } };
+            }
+            else
+            {
+                if(monitoredOfferThroughput > 10000)
+                {
+                    monitoredOfferThroughput = 10000;
+                }
+            }
+            
 
             using (var client = new DocumentClient(test.ClassData.monitoredCollectionInfo.Uri, test.ClassData.monitoredCollectionInfo.MasterKey, test.ClassData.monitoredCollectionInfo.ConnectionPolicy))
             {
