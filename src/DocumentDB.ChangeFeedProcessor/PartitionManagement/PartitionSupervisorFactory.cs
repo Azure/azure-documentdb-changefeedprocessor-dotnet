@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 RequestContinuation = lease.ContinuationToken,
                 PartitionKeyRangeId = lease.PartitionId,
                 FeedPollDelay = this.changeFeedHostOptions.FeedPollDelay,
-                MaxItemCount = this.changeFeedHostOptions.QueryPartitionsMaxBatchSize,
+                MaxItemCount = this.changeFeedOptions.MaxItemCount,
                 StartFromBeginning = this.changeFeedOptions.StartFromBeginning,
                 StartTime = this.changeFeedOptions.StartTime,
                 SessionToken = this.changeFeedOptions.SessionToken,
