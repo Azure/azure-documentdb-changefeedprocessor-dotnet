@@ -55,8 +55,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                     response = await query.ExecuteNextAsync<Document>().ConfigureAwait(false);
                     long parsedLSNFromSessionToken = TryConvertToNumber(ExtractLSNFromSessionToken(response.SessionToken));
                     long lastSequenceNumber = response.Count > 0 ?
-                        TryConvertToNumber(GetFirstDocument(response).GetPropertyValue<string>(LSNPropertyName))
+                        TryConvertToNumber(GetFirstDocument(response).GetPropertyValue<string>(LSNPropertyName)) - 1
                         : parsedLSNFromSessionToken;
+
                     long partitionRemainingWork = parsedLSNFromSessionToken - lastSequenceNumber;
                     remainingWork += partitionRemainingWork < 0 ? 0 : partitionRemainingWork;
                 }
