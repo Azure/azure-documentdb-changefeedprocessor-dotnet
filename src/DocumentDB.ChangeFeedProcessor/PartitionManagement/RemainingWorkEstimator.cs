@@ -54,11 +54,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 {
                     response = await query.ExecuteNextAsync<Document>().ConfigureAwait(false);
                     long parsedLSNFromSessionToken = TryConvertToNumber(ExtractLSNFromSessionToken(response.SessionToken));
-                    long lastSequenceNumber = response.Count > 0 ?
+                    long lastQueryLSN = response.Count > 0 ?
                         TryConvertToNumber(GetFirstDocument(response).GetPropertyValue<string>(LSNPropertyName)) - 1
                         : parsedLSNFromSessionToken;
+                    if (lastQueryLSN < 0)
+                    {
+                        // Could not parse LSN from document, we cannot determine the amount of changes but since the query returned 1 document, we know it's at least 1
+                        remainingWork += 1;
+                        continue;
+                    }
 
-                    long partitionRemainingWork = parsedLSNFromSessionToken - lastSequenceNumber;
+                    long partitionRemainingWork = parsedLSNFromSessionToken - lastQueryLSN;
                     remainingWork += partitionRemainingWork < 0 ? 0 : partitionRemainingWork;
                 }
                 catch (DocumentClientException clientException)
