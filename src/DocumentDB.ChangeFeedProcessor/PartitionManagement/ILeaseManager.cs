@@ -8,7 +8,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 
-    internal interface ILeaseManager
+    /// <summary>
+    /// The ILeaseManager defines a way to perform operations with <see cref="ILease"/>.
+    /// </summary>
+    public interface ILeaseManager
     {
         /// <summary>
         /// Checks whether lease exists and creates if does not exist.

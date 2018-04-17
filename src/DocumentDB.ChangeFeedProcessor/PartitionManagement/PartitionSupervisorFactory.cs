@@ -17,12 +17,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private readonly ILeaseManager leaseManager;
         private readonly ChangeFeedHostOptions changeFeedHostOptions;
         private readonly ChangeFeedOptions changeFeedOptions;
+        private readonly IPartitionProcessorFactory partitionProcessorFactory;
 
         public PartitionSupervisorFactory(
             IChangeFeedObserverFactory observerFactory,
             IChangeFeedDocumentClient documentClient,
             string collectionSelfLink,
             ILeaseManager leaseManager,
+            IPartitionProcessorFactory partitionProcessorFactory,
             ChangeFeedHostOptions options,
             ChangeFeedOptions changeFeedOptions)
         {
@@ -32,6 +34,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
             if (options == null) throw new ArgumentNullException(nameof(options));
             if (changeFeedOptions == null) throw new ArgumentNullException(nameof(changeFeedOptions));
+            if (partitionProcessorFactory == null) throw new ArgumentNullException(nameof(partitionProcessorFactory));
 
             this.observerFactory = observerFactory;
             this.documentClient = documentClient;
@@ -39,6 +42,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             this.leaseManager = leaseManager;
             this.changeFeedHostOptions = options;
             this.changeFeedOptions = changeFeedOptions;
+            this.partitionProcessorFactory = partitionProcessorFactory;
         }
 
         public IPartitionSupervisor Create(ILease lease)
@@ -46,21 +50,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             if (lease == null)
                 throw new ArgumentNullException(nameof(lease));
 
-            var processorSettings = new ProcessorSettings
-            {
-                CollectionSelfLink = this.collectionSelfLink,
-                RequestContinuation = lease.ContinuationToken,
-                PartitionKeyRangeId = lease.PartitionId,
-                FeedPollDelay = this.changeFeedHostOptions.FeedPollDelay,
-                MaxItemCount = this.changeFeedOptions.MaxItemCount,
-                StartFromBeginning = this.changeFeedOptions.StartFromBeginning,
-                StartTime = this.changeFeedOptions.StartTime,
-                SessionToken = this.changeFeedOptions.SessionToken,
-            };
-
-            var checkpointer = new PartitionCheckpointer(this.leaseManager, lease);
             IChangeFeedObserver changeFeedObserver = this.observerFactory.CreateObserver();
-            var processor = new PartitionProcessor(changeFeedObserver, this.documentClient, processorSettings, checkpointer);
+            var processor = this.partitionProcessorFactory.Create(changeFeedObserver, lease);
             var renewer = new LeaseRenewer(lease, this.leaseManager, this.changeFeedHostOptions.LeaseRenewInterval);
 
             return new PartitionSupervisor(lease, changeFeedObserver, processor, renewer);
