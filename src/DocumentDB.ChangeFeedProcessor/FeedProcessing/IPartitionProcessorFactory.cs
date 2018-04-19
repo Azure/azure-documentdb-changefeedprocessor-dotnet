@@ -14,9 +14,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         /// <summary>
         /// Creates an instance of a <see cref="IPartitionProcessor"/>.
         /// </summary>
-        /// <param name="observer">Observer to be used</param>
         /// <param name="lease">Lease to be used for partition processing</param>
+        /// <param name="observer">Observer to be used</param>
         /// <returns>An instance of a <see cref="IPartitionProcessor"/>.</returns>
-        IPartitionProcessor Create(IChangeFeedObserver observer, ILease lease);
+        IPartitionProcessor Create(ILease lease, IChangeFeedObserver observer);
     }
 }

@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             this.changeFeedOptions = changeFeedOptions;
         }
 
-        public IPartitionProcessor Create(IChangeFeedObserver observer, ILease lease)
+        public IPartitionProcessor Create(ILease lease, IChangeFeedObserver observer)
         {
             if (observer == null) throw new ArgumentNullException(nameof(observer));
             if (lease == null) throw new ArgumentNullException(nameof(lease));

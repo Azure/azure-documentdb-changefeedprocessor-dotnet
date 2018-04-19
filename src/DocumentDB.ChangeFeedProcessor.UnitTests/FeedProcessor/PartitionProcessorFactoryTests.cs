@@ -26,7 +26,7 @@
                 .Setup(ex => ex.CreateDocumentChangeFeedQuery(this.collectionSelfLink, It.IsAny<ChangeFeedOptions>()))
                 .Returns(Mock.Of<IChangeFeedDocumentQuery<Document>>());
 
-            observer = Mock.Of<IChangeFeedObserver>();
+            this.observer = Mock.Of<IChangeFeedObserver>();
         }
 
         [Fact]
@@ -51,7 +51,7 @@
                 .Returns(leaseContinuationToken);
 
             PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, feedOptions, leaseManager, this.collectionSelfLink);
-            var processor = sut.Create(this.observer, lease);
+            var processor = sut.Create(lease, this.observer);
 
             Mock.Get(this.docClient)
                 .Verify(d => d.CreateDocumentChangeFeedQuery(
@@ -64,6 +64,5 @@
                             options.RequestContinuation == leaseContinuationToken)),
                     Times.Once);
         }
-
     }
 }

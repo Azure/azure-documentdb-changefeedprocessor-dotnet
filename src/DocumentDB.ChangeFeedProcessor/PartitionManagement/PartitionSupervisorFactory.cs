@@ -51,7 +51,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 throw new ArgumentNullException(nameof(lease));
 
             IChangeFeedObserver changeFeedObserver = this.observerFactory.CreateObserver();
-            var processor = this.partitionProcessorFactory.Create(changeFeedObserver, lease);
+            var processor = this.partitionProcessorFactory.Create(lease, changeFeedObserver);
             var renewer = new LeaseRenewer(lease, this.leaseManager, this.changeFeedHostOptions.LeaseRenewInterval);
 
             return new PartitionSupervisor(lease, changeFeedObserver, processor, renewer);
