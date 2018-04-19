@@ -55,13 +55,13 @@
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta004" PrivateAssets="All" />
   </ItemGroup>
-  
+
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.5.1" />
+    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.9.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net451'">
-    <PackageReference Include="Microsoft.Azure.DocumentDB" Version="1.19.0" />
+    <PackageReference Include="Microsoft.Azure.DocumentDB" Version="1.21.1" />
   </ItemGroup>
 
   <ItemGroup>
