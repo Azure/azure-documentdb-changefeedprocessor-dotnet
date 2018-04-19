@@ -401,12 +401,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);
             var partitionObserverFactory = new PartitionSupervisorFactory(
                 factory,
-                this.feedDocumentClient,
-                collectionSelfLink,
                 leaseManager,
                 this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedHostOptions, this.changeFeedOptions, leaseManager, collectionSelfLink),
-                this.changeFeedHostOptions,
-                this.changeFeedOptions);
+                this.changeFeedHostOptions);
 
             var partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
             if (this.loadBalancingStrategy == null)
