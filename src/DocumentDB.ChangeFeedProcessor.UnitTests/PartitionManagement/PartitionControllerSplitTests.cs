@@ -5,6 +5,7 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
@@ -95,6 +96,55 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .ReturnsAsync(new[] { leaseChild, leaseChild2 });
 
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task Controller_ShouldCopyParentLeaseProperties_IfObserverThrowsPartitionSplitException()
+        {
+            Mock.Get(partitionSupervisorFactory)
+                .Setup(f => f.Create(leaseChild))
+                .Returns(new PartitionSupervisor(leaseChild, MockObserver(), MockPartitionProcessor(), MockRenewer()));
+
+            Mock.Get(partitionSupervisorFactory)
+                .Setup(f => f.Create(leaseChild2))
+                .Returns<ILease>(l => new PartitionSupervisor(l, MockObserver(), MockPartitionProcessor(), MockRenewer()));
+
+            var customProperties = new Dictionary<string, string> { {"key", "value"} };
+            Mock.Get(lease)
+                .Setup(l => l.Properties)
+                .Returns(customProperties);
+
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.AcquireAsync(leaseChild))
+                .ReturnsAsync(leaseChild);
+
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.AcquireAsync(leaseChild2))
+                .ReturnsAsync(leaseChild2);
+
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.DeleteAsync(lease))
+                .Returns(Task.FromResult(false));
+
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.ReleaseAsync(leaseChild))
+                .Returns(Task.FromResult(false));
+
+            Mock.Get(leaseManager)
+                .Setup(manager => manager.ReleaseAsync(leaseChild2))
+                .Returns(Task.FromResult(false));
+
+            Mock.Get(synchronizer)
+                .Setup(s => s.SplitPartitionAsync(lease))
+                .ReturnsAsync(new[] { leaseChild, leaseChild2 });
+
+            await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
+
+            Mock.Get(leaseChild)
+                .VerifySet(l => l.Properties = customProperties, Times.Once);
+
+            Mock.Get(leaseChild2)
+                .VerifySet(l => l.Properties = customProperties, Times.Once);
         }
 
         // TODO: update the test
