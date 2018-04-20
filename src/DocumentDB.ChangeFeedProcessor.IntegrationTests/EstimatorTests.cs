@@ -98,11 +98,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
                 // Create a new host to process pending changes
                 var newHost = new ChangeFeedEventHost(
-                hostName,
-                this.ClassData.monitoredCollectionInfo,
-                this.LeaseCollectionInfo,
-                new ChangeFeedOptions { StartFromBeginning = false },
-                new ChangeFeedHostOptions());
+                    hostName,
+                    this.ClassData.monitoredCollectionInfo,
+                    this.LeaseCollectionInfo,
+                    new ChangeFeedOptions { StartFromBeginning = false },
+                    new ChangeFeedHostOptions());
 
                 openedCount = 0;
                 processedCount = 0;

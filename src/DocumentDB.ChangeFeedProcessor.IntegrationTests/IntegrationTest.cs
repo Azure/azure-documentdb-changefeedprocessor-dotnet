@@ -22,15 +22,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         internal readonly SemaphoreSlim classInitializeSyncRoot = new SemaphoreSlim(1, 1);
         internal readonly object testContextSyncRoot = new object();
         internal readonly int testCount;
-        internal readonly bool partitionedCollection;
+        internal readonly bool isPartitionedCollection;
         internal volatile int executedTestCount;
         internal DocumentCollectionInfo monitoredCollectionInfo;
         internal DocumentCollectionInfo leaseCollectionInfoTemplate;
 
-        internal TestClassData(int testCount, bool partitionedCollection)
+        internal TestClassData(int testCount, bool isPartitionedCollection)
         {
             this.testCount = testCount;
-            this.partitionedCollection = partitionedCollection;
+            this.isPartitionedCollection = isPartitionedCollection;
         }
     }
 
@@ -123,12 +123,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             get { return this.fixture.testClasses[this.GetType().Name]; }
         }
         
-        public IntegrationTest(IntegrationTestFixture fixture, Type testClassType, bool partitionedCollection = true)
+        public IntegrationTest(IntegrationTestFixture fixture, Type testClassType, bool isPartitionedCollection = true)
         {
             this.fixture = fixture;
             if (!this.fixture.testClasses.ContainsKey(testClassType.Name))
             {
-                this.fixture.testClasses[testClassType.Name] = new TestClassData(GetTestCount(testClassType), partitionedCollection);
+                this.fixture.testClasses[testClassType.Name] = new TestClassData(GetTestCount(testClassType), isPartitionedCollection);
             }
 
             TestInitializeAsync().Wait();
@@ -205,18 +205,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 Id = test.ClassData.monitoredCollectionInfo.CollectionName,
             };
 
-            if (test.ClassData.partitionedCollection)
+            if (test.ClassData.isPartitionedCollection)
             {
                 monitoredCollection.PartitionKey = new PartitionKeyDefinition { Paths = new Collection<string> { "/id" } };
             }
             else
             {
-                if(monitoredOfferThroughput > 10000)
+                if (monitoredOfferThroughput > 10000)
                 {
                     monitoredOfferThroughput = 10000;
                 }
             }
-            
 
             using (var client = new DocumentClient(test.ClassData.monitoredCollectionInfo.Uri, test.ClassData.monitoredCollectionInfo.MasterKey, test.ClassData.monitoredCollectionInfo.ConnectionPolicy))
             {
