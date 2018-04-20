@@ -77,7 +77,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public async Task Estimate_ShouldReturnPendingWork()
         {
             long pendingWork = await remainingWorkEstimator.GetEstimatedRemainingWork();
-            Assert.Equal(5, pendingWork);
+            Assert.Equal(6, pendingWork);
         }
 
         [Fact]
@@ -85,30 +85,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var document = new Document();
             documents = new List<Document> { };
-
-            feedResponse = Mock.Of<IFeedResponse<Document>>();
-            Mock.Get(feedResponse)
-                .Setup(response => response.SessionToken)
-                .Returns("0:15");
-
-            Mock.Get(feedResponse)
-                .Setup(response => response.Count)
-                .Returns(documents.Count);
-
-            Mock.Get(feedResponse)
-                .Setup(response => response.GetEnumerator())
-                .Returns(documents.GetEnumerator());
-
-            long pendingWork = await remainingWorkEstimator.GetEstimatedRemainingWork();
-            Assert.Equal(0, pendingWork);
-        }
-
-        [Fact]
-        public async Task Estimate_ShouldReturnZero_WhenAtTheEnd()
-        {
-            var document = new Document();
-            document.SetPropertyValue("_lsn", "15");
-            documents = new List<Document> { document };
 
             feedResponse = Mock.Of<IFeedResponse<Document>>();
             Mock.Get(feedResponse)
