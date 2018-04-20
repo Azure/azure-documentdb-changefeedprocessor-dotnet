@@ -190,6 +190,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public ChangeFeedProcessorBuilder WithChangeFeedOptions(ChangeFeedOptions changeFeedOptions)
         {
             if (changeFeedOptions == null) throw new ArgumentNullException(nameof(changeFeedOptions));
+
+            if (!string.IsNullOrEmpty(changeFeedOptions.PartitionKeyRangeId))
+            {
+                throw new ArgumentException(
+                    "changeFeedOptions.PartitionKeyRangeId must be null or empty string.",
+                    nameof(changeFeedOptions.PartitionKeyRangeId));
+            }
+
+            if (changeFeedOptions.PartitionKey != null)
+            {
+                throw new ArgumentException(
+                    "changeFeedOptions.PartitionKey must be null.",
+                    nameof(changeFeedOptions.PartitionKey));
+            }
+
             this.changeFeedOptions = changeFeedOptions;
             return this;
         }
