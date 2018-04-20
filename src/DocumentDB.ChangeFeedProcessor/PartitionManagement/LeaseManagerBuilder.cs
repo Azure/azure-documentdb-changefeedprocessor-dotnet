@@ -15,6 +15,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private IChangeFeedDocumentClient leaseDocumentClient;
         private string leasePrefix;
         private string leaseStoreCollectionLink;
+        private string hostName;
 
         public LeaseManagerBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation)
         {
@@ -48,6 +49,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return this;
         }
 
+        public LeaseManagerBuilder WithHostName(string hostName)
+        {
+            if (hostName == null) throw new ArgumentNullException(nameof(hostName));
+
+            this.hostName = hostName;
+            return this;
+        }
+
         public async Task<ILeaseManager> BuildAsync()
         {
             if (this.leaseCollectionLocation == null) throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
@@ -66,7 +75,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 updater,
                 this.leaseCollectionLocation,
                 this.leasePrefix,
-                this.leaseStoreCollectionLink);
+                this.leaseStoreCollectionLink,
+                this.hostName);
             return documentServiceLeaseManager;
         }
     }

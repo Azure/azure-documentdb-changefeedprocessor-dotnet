@@ -17,7 +17,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     internal class PartitionController : IPartitionController
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
-        private readonly string hostName;
 
         private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> currentlyOwnedPartitions = new ConcurrentDictionary<string, TaskCompletionSource<bool>>();
 
@@ -26,9 +25,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private readonly IPartitionSynchronizer synchronizer;
         private readonly CancellationTokenSource shutdownCts = new CancellationTokenSource();
 
-        public PartitionController(string hostName, ILeaseManager leaseManager, IPartitionSupervisorFactory partitionSupervisorFactory, IPartitionSynchronizer synchronizer)
+        public PartitionController(ILeaseManager leaseManager, IPartitionSupervisorFactory partitionSupervisorFactory, IPartitionSynchronizer synchronizer)
         {
-            this.hostName = hostName;
             this.leaseManager = leaseManager;
             this.partitionSupervisorFactory = partitionSupervisorFactory;
             this.synchronizer = synchronizer;
@@ -39,20 +37,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             await this.LoadLeasesAsync().ConfigureAwait(false);
         }
 
-        public async Task AddLeaseAsync(ILease lease)
+        public async Task AddOrUpdateLeaseAsync(ILease lease)
         {
             var tcs = new TaskCompletionSource<bool>();
+
             if (!this.currentlyOwnedPartitions.TryAdd(lease.PartitionId, tcs))
             {
-                Logger.InfoFormat("cannot add partition {0} to owned as it is already owned", lease.PartitionId);
+                await this.leaseManager.UpdatePropertiesAsync(lease).ConfigureAwait(false);
+                Logger.DebugFormat("partition {0}: updated", lease.PartitionId);
                 return;
             }
 
             try
             {
-                var updatedLease = await this.leaseManager.AcquireAsync(lease, this.hostName).ConfigureAwait(false);
+                var updatedLease = await this.leaseManager.AcquireAsync(lease).ConfigureAwait(false);
                 if (updatedLease != null) lease = updatedLease;
-
                 Logger.InfoFormat("partition {0}: acquired", lease.PartitionId);
             }
             catch (Exception)
@@ -76,13 +75,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             Logger.Debug("Starting renew leases assigned to this host on initialize.");
             var addLeaseTasks = new List<Task>();
-            foreach (ILease lease in await this.leaseManager.ListLeasesAsync().ConfigureAwait(false))
+            foreach (ILease lease in await this.leaseManager.ListOwnedLeasesAsync().ConfigureAwait(false))
             {
-                if (string.Compare(lease.Owner, this.hostName, StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    Logger.InfoFormat("Acquired lease for PartitionId '{0}' on startup.", lease.PartitionId);
-                    addLeaseTasks.Add(this.AddLeaseAsync(lease));
-                }
+                Logger.InfoFormat("Acquired lease for PartitionId '{0}' on startup.", lease.PartitionId);
+                addLeaseTasks.Add(this.AddOrUpdateLeaseAsync(lease));
             }
 
             await Task.WhenAll(addLeaseTasks.ToArray()).ConfigureAwait(false);
@@ -139,7 +135,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             try
             {
                 IEnumerable<ILease> addedLeases = await this.synchronizer.SplitPartitionAsync(lease).ConfigureAwait(false);
-                Task[] addLeaseTasks = addedLeases.Select(this.AddLeaseAsync).ToArray();
+                Task[] addLeaseTasks = addedLeases.Select(l =>
+                    {
+                        l.Properties = lease.Properties;
+                        return this.AddOrUpdateLeaseAsync(l);
+                    }).ToArray();
+
                 await this.leaseManager.DeleteAsync(lease).ConfigureAwait(false);
                 await Task.WhenAll(addLeaseTasks).ConfigureAwait(false);
             }

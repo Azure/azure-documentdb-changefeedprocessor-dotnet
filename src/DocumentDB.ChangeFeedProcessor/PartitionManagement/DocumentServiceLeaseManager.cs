@@ -32,30 +32,48 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private readonly IChangeFeedDocumentClient client;
         private readonly IDocumentServiceLeaseUpdater leaseUpdater;
         private readonly string leaseStoreCollectionLink;
+        private readonly string hostName;
 
         public DocumentServiceLeaseManager(
             IChangeFeedDocumentClient client,
             IDocumentServiceLeaseUpdater leaseUpdater,
             DocumentCollectionInfo leaseStoreCollectionInfo,
             string containerNamePrefix,
-            string leaseStoreCollectionLink)
+            string leaseStoreCollectionLink,
+            string hostName)
         {
             if (client == null) throw new ArgumentNullException(nameof(client));
             if (leaseUpdater == null) throw new ArgumentNullException(nameof(leaseUpdater));
             if (leaseStoreCollectionInfo == null) throw new ArgumentNullException(nameof(leaseStoreCollectionInfo));
             if (containerNamePrefix == null) throw new ArgumentNullException(nameof(containerNamePrefix));
             if (leaseStoreCollectionLink == null) throw new ArgumentNullException(nameof(leaseStoreCollectionLink));
+            if (string.IsNullOrEmpty(hostName)) throw new ArgumentNullException(nameof(hostName));
 
             this.leaseStoreCollectionInfo = leaseStoreCollectionInfo;
             this.containerNamePrefix = containerNamePrefix;
             this.leaseStoreCollectionLink = leaseStoreCollectionLink;
             this.client = client;
             this.leaseUpdater = leaseUpdater;
+            this.hostName = hostName;
         }
 
-        public async Task<IEnumerable<ILease>> ListLeasesAsync()
+        public async Task<IEnumerable<ILease>> ListAllLeasesAsync()
         {
             return await this.ListDocumentsAsync(this.GetPartitionLeasePrefix()).ConfigureAwait(false);
+        }
+
+        public async Task<IEnumerable<ILease>> ListOwnedLeasesAsync()
+        {
+            var ownedLeases = new List<ILease>();
+            foreach (ILease lease in await this.ListAllLeasesAsync().ConfigureAwait(false))
+            {
+                if (string.Compare(lease.Owner, this.hostName, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    ownedLeases.Add(lease);
+                }
+            }
+
+            return ownedLeases;
         }
 
         public async Task<ILease> CreateLeaseIfNotExistAsync(string partitionId, string continuationToken)
@@ -105,13 +123,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 }).ConfigureAwait(false);
         }
 
-        public async Task<ILease> AcquireAsync(ILease lease, string owner)
+        public async Task<ILease> AcquireAsync(ILease lease)
         {
             if (lease == null)
                 throw new ArgumentNullException(nameof(lease));
-
-            if (string.IsNullOrEmpty(owner))
-                throw new ArgumentException("Owner must be non-empty string", nameof(owner));
 
             string oldOwner = lease.Owner;
 
@@ -125,7 +140,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                         Logger.InfoFormat("Partition {0} lease was taken over by owner '{1}'", lease.PartitionId, serverLease.Owner);
                         throw new LeaseLostException(lease);
                     }
-                    serverLease.Owner = owner;
+                    serverLease.Owner = this.hostName;
+                    serverLease.Properties = lease.Properties;
                     return serverLease;
                 }).ConfigureAwait(false);
         }
@@ -199,6 +215,31 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             {
                 // Ignore - document was already deleted
             }
+        }
+
+        public async Task<ILease> UpdatePropertiesAsync(ILease lease)
+        {
+            if (lease == null) throw new ArgumentNullException(nameof(lease));
+
+            if (lease.Owner != this.hostName)
+            {
+                Logger.InfoFormat("Partition '{0}' lease was taken over by owner '{1}' before lease properties update", lease.PartitionId, lease.Owner);
+                throw new LeaseLostException(lease);
+            }
+
+            return await this.leaseUpdater.UpdateLeaseAsync(
+                lease,
+                this.CreateDocumentUri(lease.Id),
+                serverLease =>
+                    {
+                        if (serverLease.Owner != lease.Owner)
+                        {
+                            Logger.InfoFormat("Partition '{0}' lease was taken over by owner '{1}'", lease.PartitionId, serverLease.Owner);
+                            throw new LeaseLostException(lease);
+                        }
+                        serverLease.Properties = lease.Properties;
+                        return serverLease;
+                    }).ConfigureAwait(false);
         }
 
         private async Task<DocumentServiceLease> TryGetLeaseAsync(ILease lease)

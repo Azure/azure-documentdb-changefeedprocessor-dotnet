@@ -18,13 +18,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         Task<ILease> CreateLeaseIfNotExistAsync(string partitionId, string continuationToken);
 
         /// <summary>
-        /// Get all the leases
+        /// Get all the leases.
         /// </summary>
         /// <returns>Enumerable of all the leases</returns>
-        Task<IEnumerable<ILease>> ListLeasesAsync();
+        Task<IEnumerable<ILease>> ListAllLeasesAsync();
 
         /// <summary>
-        /// Renew the lease
+        /// Get all the leases owned by the current host.
+        /// </summary>
+        /// <returns>Enumerable of all the leases owned by the current host</returns>
+        Task<IEnumerable<ILease>> ListOwnedLeasesAsync();
+
+        /// <summary>
+        /// Renew the lease.
         /// </summary>
         /// <param name="lease">Lease to renew</param>
         /// <returns>Updated renewed lease</returns>
@@ -32,7 +38,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         Task<ILease> RenewAsync(ILease lease);
 
         /// <summary>
-        /// Update the lease
+        /// Update the lease.
         /// </summary>
         /// <param name="lease">Lease to renew</param>
         /// <param name="continuationToken">Continuation token</param>
@@ -44,10 +50,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         /// Acquire lease.
         /// </summary>
         /// <param name="lease">Lease to acquire</param>
-        /// <param name="owner">Owner</param>
         /// <returns>Updated acquired lease</returns>
         /// <exception cref="LeaseLostException">Thrown if other host acquired concurrently</exception>
-        Task<ILease> AcquireAsync(ILease lease, string owner);
+        Task<ILease> AcquireAsync(ILease lease);
 
         /// <summary>
         /// Release lease.
@@ -61,5 +66,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         /// </summary>
         /// <param name="lease">Lease to remove</param>
         Task DeleteAsync(ILease lease);
+
+        /// <summary>
+        /// Replace properties from the specified lease.
+        /// </summary>
+        /// <param name="leaseToUpdatePropertiesFrom">Lease containing new properties</param>
+        /// <returns>Updated lease</returns>
+        /// <exception cref="LeaseLostException">Thrown if other host acquired the lease</exception>
+        Task<ILease> UpdatePropertiesAsync(ILease leaseToUpdatePropertiesFrom);
     }
 }

@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Returns(new[] { Mock.Of<ILease>(), Mock.Of<ILease>() });
 
             Mock.Get(this.leaseManager)
-                .Setup(m => m.ListLeasesAsync())
+                .Setup(m => m.ListAllLeasesAsync())
                 .ReturnsAsync(new[] { Mock.Of<ILease>(), Mock.Of<ILease>() });
 
             loadBalancer.Start();
@@ -41,7 +41,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Verify(s => s.SelectLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.Once);
 
             Mock.Get(this.leaseManager)
-                .Verify(m => m.ListLeasesAsync(), Times.Once);
+                .Verify(m => m.ListAllLeasesAsync(), Times.Once);
 
             Assert.Equal(2, controller.HitCount);
         }
@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             public int HitCount { get; private set; }
 
-            public Task AddLeaseAsync(ILease lease)
+            public Task AddOrUpdateLeaseAsync(ILease lease)
             {
                 this.HitCount++;
                 throw new ArgumentException();

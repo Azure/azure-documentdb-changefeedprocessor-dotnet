@@ -112,7 +112,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         private async Task CreateLeasesAsync(HashSet<string> partitionIds)
         {
             // Get leases after getting ranges, to make sure that no other hosts checked in continuation for split partition after we got leases.
-            IEnumerable<ILease> leases = await this.leaseManager.ListLeasesAsync().ConfigureAwait(false);
+            IEnumerable<ILease> leases = await this.leaseManager.ListAllLeasesAsync().ConfigureAwait(false);
             var existingPartitionIds = new HashSet<string>(leases.Select(lease => lease.PartitionId));
             var addedPartitionIds = new HashSet<string>(partitionIds);
             addedPartitionIds.ExceptWith(existingPartitionIds);

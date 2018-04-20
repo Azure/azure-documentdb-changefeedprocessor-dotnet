@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             leaseManager = Mock.Of<ILeaseManager>();
             Mock.Get(leaseManager)
-                .Setup(manager => manager.ListLeasesAsync())
+                .Setup(manager => manager.ListAllLeasesAsync())
                 .ReturnsAsync(new List<ILease>() { lease });
             
             documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();

@@ -63,14 +63,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 {
                     try
                     {
-                        IEnumerable<ILease> allLeases = await this.leaseManager.ListLeasesAsync().ConfigureAwait(false);
+                        IEnumerable<ILease> allLeases = await this.leaseManager.ListAllLeasesAsync().ConfigureAwait(false);
                         IEnumerable<ILease> leasesToTake = this.partitionLoadBalancingStrategy.SelectLeasesToTake(allLeases);
 
                         foreach (ILease lease in leasesToTake)
                         {
                             try
                             {
-                                await this.partitionController.AddLeaseAsync(lease).ConfigureAwait(false);
+                                await this.partitionController.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
                             }
                             catch (Exception e)
                             {

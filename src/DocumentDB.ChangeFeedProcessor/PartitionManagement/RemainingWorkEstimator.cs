@@ -42,7 +42,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 MaxItemCount = 1,
             };
 
-            foreach (ILease existingLease in await this.leaseManager.ListLeasesAsync().ConfigureAwait(false))
+            foreach (ILease existingLease in await this.leaseManager.ListAllLeasesAsync().ConfigureAwait(false))
             {
                 options.PartitionKeyRangeId = existingLease.PartitionId;
                 options.RequestContinuation = existingLease.ContinuationToken;

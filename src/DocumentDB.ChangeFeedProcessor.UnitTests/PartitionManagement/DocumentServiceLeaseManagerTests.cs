@@ -3,6 +3,7 @@
 //----------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,6 +42,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             public string ContinuationToken { get; set; }
             public string Id { get; set; }
             public string ConcurrencyToken { get; set; }
+            public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
         }
 
         [Fact]
@@ -53,9 +55,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(q => q.HasMoreResults)
                 .Returns(false);
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
 
-            var leases = (await leaseManager.ListLeasesAsync());
+            var leases = await leaseManager.ListAllLeasesAsync();
             Assert.Empty(leases);
         }
 
@@ -74,10 +76,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(q => q.ExecuteNextAsync<DocumentServiceLease>(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FeedResponse<DocumentServiceLease>(new[] { lease }));
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
-            ;
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
 
-            var leases = (await leaseManager.ListLeasesAsync()).ToArray();
+            var leases = (await leaseManager.ListAllLeasesAsync()).ToArray();
 
             Assert.Single(leases);
             Assert.Same(lease, leases[0]);
@@ -103,10 +104,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .ReturnsAsync(new FeedResponse<DocumentServiceLease>(new DocumentServiceLease[0]))
                 .ReturnsAsync(new FeedResponse<DocumentServiceLease>(new[] { lease2 }));
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
-            ;
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
 
-            var leases = (await leaseManager.ListLeasesAsync()).ToArray();
+            var leases = (await leaseManager.ListAllLeasesAsync()).ToArray();
 
             Assert.Equal(2, leases.Length);
             Assert.Same(lease1, leases[0]);
@@ -126,11 +126,76 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
+        public async Task ListOwnedLeasesAsync_ShouldReturnEmpty_WhenLeaseQueryReturnsNothing()
+        {
+            var queryMock = new Mock<IDocumentQuery<Document>>();
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            SetupQuery(documentClient, queryMock);
+            queryMock
+                .Setup(q => q.HasMoreResults)
+                .Returns(false);
+            var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
+
+            var leases = await leaseManager.ListOwnedLeasesAsync();
+            Assert.Empty(leases);
+        }
+
+        [Fact]
+        public async Task ListOwnedLeasesAsync_ShouldReturnEmpty_WhenLeasesNotOwnedByHost()
+        {
+            var queryMock = new Mock<IDocumentQuery<Document>>();
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            SetupQuery(documentClient, queryMock);
+            queryMock
+                .SetupSequence(q => q.HasMoreResults)
+                .Returns(true)
+                .Returns(false);
+            var notOwnedLease = new DocumentServiceLease();
+            var ownedByOther = new DocumentServiceLease { Owner = "new owner" };
+            queryMock
+                .Setup(q => q.ExecuteNextAsync<DocumentServiceLease>(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FeedResponse<DocumentServiceLease>(new[] { notOwnedLease, ownedByOther }));
+            var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
+
+            var leases = (await leaseManager.ListOwnedLeasesAsync()).ToArray();
+
+            Assert.Empty(leases);
+        }
+
+        [Fact]
+        public async Task ListOwnedLeasesAsync_ShouldReturnLeases_WhenLeasesOwnedByHost()
+        {
+            var queryMock = new Mock<IDocumentQuery<Document>>();
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            SetupQuery(documentClient, queryMock);
+            queryMock
+                .SetupSequence(q => q.HasMoreResults)
+                .Returns(true)
+                .Returns(false);
+            var notOwnedLease = new DocumentServiceLease();
+            var ownedByOther = new DocumentServiceLease { Owner = "new owner" };
+            var ownedByHost = new DocumentServiceLease { Owner = owner };
+            queryMock
+                .Setup(q => q.ExecuteNextAsync<DocumentServiceLease>(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FeedResponse<DocumentServiceLease>(new[] { notOwnedLease, ownedByOther, ownedByHost, ownedByHost }));
+            var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
+
+            var leases = (await leaseManager.ListOwnedLeasesAsync()).ToArray();
+
+            Assert.Equal(2, leases.Length);
+            Assert.Same(ownedByHost, leases[0]);
+            Assert.Same(ownedByHost, leases[1]);
+        }
+
+        [Fact]
         public async Task CreateLeaseIfNotExistAsync_ReturnsLease_WhenDocumentCreated()
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
                 .Setup(c => c.CreateDocumentAsync(collectionLink, It.Is<DocumentServiceLease>(d =>
                     d.PartitionId == partitionId &&
@@ -154,7 +219,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
                 .Setup(c => c.CreateDocumentAsync(collectionLink, It.Is<DocumentServiceLease>(d =>
                     d.PartitionId == partitionId &&
@@ -174,7 +239,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
                 .Setup(c => c.CreateDocumentAsync(collectionLink, It.Is<DocumentServiceLease>(d =>
                     d.PartitionId == partitionId &&
@@ -193,7 +258,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
             IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             const string newToken = "newToken";
 
             var lease = await leaseManager.CheckpointAsync(cachedLease, newToken);
@@ -208,7 +273,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease("new owner");
             IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             const string newToken = "newToken";
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.CheckpointAsync(cachedLease, newToken));
@@ -221,14 +286,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
+            cachedLease.Properties["key"] = "value";
             IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
             const string newOwner = "new owner";
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, newOwner);
 
-            var lease = await leaseManager.AcquireAsync(cachedLease, newOwner);
+            var lease = await leaseManager.AcquireAsync(cachedLease);
 
             Assert.Equal(leaseId, lease.Id);
             Assert.Equal(newOwner, lease.Owner);
+            Assert.Equal("value", lease.Properties["key"]);
         }
 
         [Fact]
@@ -237,9 +304,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease("cached owner");
             IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, "new owner");
 
-            var exception = await Record.ExceptionAsync(async () => await leaseManager.AcquireAsync(cachedLease, "new owner"));
+            var exception = await Record.ExceptionAsync(async () => await leaseManager.AcquireAsync(cachedLease));
 
             Assert.IsAssignableFrom<LeaseLostException>(exception);
         }
@@ -252,7 +319,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             const string storedContinuationToken = "A";
 
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             MockLease storedLease = CreateStoredLease(owner);
             SetupUpdateLeaseAfterRead(leaseUpdater, storedContinuationToken, storedLease);
             SetupReadDocument(storedContinuationToken, documentClient);
@@ -269,14 +336,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
                 .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>()))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException());
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.RenewAsync(cachedLease));
 
-            Assert.IsAssignableFrom<LeaseLostException>(exception); ;
+            Assert.IsAssignableFrom<LeaseLostException>(exception);
         }
 
         [Fact]
@@ -285,14 +352,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
                 .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>()))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException());
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.RenewAsync(cachedLease));
 
-            Assert.IsAssignableFrom<DocumentClientException>(exception); ;
+            Assert.IsAssignableFrom<DocumentClientException>(exception); 
         }
 
         [Fact]
@@ -303,14 +370,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             const string storedContinuationToken = "A";
 
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             MockLease storedLease = CreateStoredLease("different owner");
             SetupUpdateLeaseAfterRead(leaseUpdater, storedContinuationToken, storedLease);
             SetupReadDocument(storedContinuationToken, documentClient);
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.RenewAsync(cachedLease));
 
-            Assert.IsAssignableFrom<LeaseLostException>(exception); ;
+            Assert.IsAssignableFrom<LeaseLostException>(exception);
         }
 
         [Fact]
@@ -321,7 +388,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             const string storedContinuationToken = "A";
 
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             MockLease storedLease = CreateStoredLease(owner);
             SetupUpdateLeaseAfterRead(leaseUpdater, storedContinuationToken, storedLease);
             SetupReadDocument(storedContinuationToken, documentClient);
@@ -337,14 +404,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
                 .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>()))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException());
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.ReleaseAsync(cachedLease));
 
-            Assert.IsAssignableFrom<LeaseLostException>(exception); ;
+            Assert.IsAssignableFrom<LeaseLostException>(exception);
         }
 
         [Fact]
@@ -353,14 +420,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
                 .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>()))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException());
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.ReleaseAsync(cachedLease));
 
-            Assert.IsAssignableFrom<DocumentClientException>(exception); ;
+            Assert.IsAssignableFrom<DocumentClientException>(exception); 
         }
 
         [Fact]
@@ -371,14 +438,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             const string storedContinuationToken = "A";
 
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             MockLease storedLease = CreateStoredLease("different owner");
             SetupUpdateLeaseAfterRead(leaseUpdater, storedContinuationToken, storedLease);
             SetupReadDocument(storedContinuationToken, documentClient);
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.ReleaseAsync(cachedLease));
 
-            Assert.IsAssignableFrom<LeaseLostException>(exception); ;
+            Assert.IsAssignableFrom<LeaseLostException>(exception);
         }
 
         [Fact]
@@ -388,7 +455,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var cachedLease = CreateCachedLease(owner);
 
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
                 .Setup(c => c.DeleteDocumentAsync(documentUri))
                 .ReturnsAsync(new ResourceResponse<Document>(new Document()))
@@ -406,7 +473,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var cachedLease = CreateCachedLease(owner);
 
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
                 .Setup(c => c.DeleteDocumentAsync(documentUri))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException())
@@ -424,7 +491,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var cachedLease = CreateCachedLease(owner);
 
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
-            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
                 .Setup(c => c.DeleteDocumentAsync(documentUri))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException())
@@ -433,6 +500,47 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var exception = await Record.ExceptionAsync(async () => await leaseManager.DeleteAsync(cachedLease));
 
             Assert.IsAssignableFrom<DocumentClientException>(exception);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_UpdatesLease_WhenLeaseOwnershipDoesNotChange()
+        {
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            var cachedLease = CreateCachedLease(owner);
+            cachedLease.Properties["key"] = "value";
+            IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
+
+            var lease = await leaseManager.UpdatePropertiesAsync(cachedLease);
+
+            Assert.Equal(leaseId, lease.Id);
+            Assert.Equal("value", lease.Properties["key"]);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ThrowsLeaseLost_WhenStoredLeaseTakenByOtherOwner()
+        {
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            var cachedLease = CreateCachedLease("cached owner");
+            IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, "cached owner");
+
+            var exception = await Record.ExceptionAsync(async () => await leaseManager.UpdatePropertiesAsync(cachedLease));
+
+            Assert.IsAssignableFrom<LeaseLostException>(exception);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ThrowsLeaseLost_WhenCachedLeaseTakenByOtherOwner()
+        {
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            var cachedLease = CreateCachedLease("cached owner");
+            IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
+
+            var exception = await Record.ExceptionAsync(async () => await leaseManager.UpdatePropertiesAsync(cachedLease));
+
+            Assert.IsAssignableFrom<LeaseLostException>(exception);
         }
 
         private static void SetupReadDocument(string storedContinuationToken, IChangeFeedDocumentClient documentClient)
@@ -454,9 +562,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .ReturnsAsync(storedLease);
         }
 
-        private DocumentServiceLeaseManager CreateLeaseManager(IChangeFeedDocumentClient documentClient, IDocumentServiceLeaseUpdater leaseUpdater)
+        private DocumentServiceLeaseManager CreateLeaseManager(IChangeFeedDocumentClient documentClient, IDocumentServiceLeaseUpdater leaseUpdater, string hostName)
         {
-            return new DocumentServiceLeaseManager(documentClient, leaseUpdater, collectionInfo, storeNamePrefix, collectionLink);
+            return new DocumentServiceLeaseManager(documentClient, leaseUpdater, collectionInfo, storeNamePrefix, collectionLink, hostName);
         }
 
         private IDocumentServiceLeaseUpdater CreateLeaseUpdater(ILease expectedCachedLease)
