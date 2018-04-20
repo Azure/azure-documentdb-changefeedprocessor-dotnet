@@ -1,14 +1,12 @@
 ﻿//----------------------------------------------------------------
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
-using System.Collections.Generic;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-using Newtonsoft.Json.Linq;
-using Xunit;
-
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
 {
-    
+    using System.Collections.Generic;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Xunit;
+
     [Trait("Category", "Gated")]
     public class DocumentServiceLeaseTests
     {

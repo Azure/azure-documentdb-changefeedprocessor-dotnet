@@ -46,8 +46,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     ///
     ///             if (lease.Owner != this.hostName)
     ///             {
-    ///                 var ownerVesiron = lease.Properties[VersionPropertyKey];
-    ///                 if (ownerVesiron != this.hostVersion)
+    ///                 var ownerVersion = lease.Properties[VersionPropertyKey];
+    ///                 if (ownerVersion < this.hostVersion)
     ///                 {
     ///                     takenLeases.Add(lease);
     ///                 }
