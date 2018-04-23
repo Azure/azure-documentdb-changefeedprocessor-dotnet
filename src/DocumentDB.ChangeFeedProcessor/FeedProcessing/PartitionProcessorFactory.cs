@@ -13,15 +13,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     {
         private readonly IChangeFeedDocumentClient documentClient;
         private readonly ChangeFeedHostOptions changeFeedHostOptions;
-        private readonly ChangeFeedOptions changeFeedOptions;
         private readonly ILeaseManager leaseManager;
         private readonly string collectionSelfLink;
 
-        public PartitionProcessorFactory(IChangeFeedDocumentClient documentClient, ChangeFeedHostOptions changeFeedHostOptions, ChangeFeedOptions changeFeedOptions, ILeaseManager leaseManager, string collectionSelfLink)
+        public PartitionProcessorFactory(IChangeFeedDocumentClient documentClient, ChangeFeedHostOptions changeFeedHostOptions, ILeaseManager leaseManager, string collectionSelfLink)
         {
             if (documentClient == null) throw new ArgumentNullException(nameof(documentClient));
             if (changeFeedHostOptions == null) throw new ArgumentNullException(nameof(changeFeedHostOptions));
-            if (changeFeedOptions == null) throw new ArgumentNullException(nameof(changeFeedHostOptions));
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
             if (collectionSelfLink == null) throw new ArgumentNullException(nameof(collectionSelfLink));
 
@@ -29,7 +27,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             this.changeFeedHostOptions = changeFeedHostOptions;
             this.leaseManager = leaseManager;
             this.collectionSelfLink = collectionSelfLink;
-            this.changeFeedOptions = changeFeedOptions;
         }
 
         public IPartitionProcessor Create(ILease lease, IChangeFeedObserver observer)
@@ -43,10 +40,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 RequestContinuation = lease.ContinuationToken,
                 PartitionKeyRangeId = lease.PartitionId,
                 FeedPollDelay = this.changeFeedHostOptions.FeedPollDelay,
-                MaxItemCount = this.changeFeedOptions.MaxItemCount,
-                StartFromBeginning = this.changeFeedOptions.StartFromBeginning,
-                StartTime = this.changeFeedOptions.StartTime,
-                SessionToken = this.changeFeedOptions.SessionToken,
+                MaxItemCount = this.changeFeedHostOptions.MaxItemCount,
+                StartFromBeginning = this.changeFeedHostOptions.StartFromBeginning,
+                StartTime = this.changeFeedHostOptions.StartTime,
+                SessionToken = this.changeFeedHostOptions.SessionToken,
             };
 
             var checkpointer = new PartitionCheckpointer(this.leaseManager, lease);

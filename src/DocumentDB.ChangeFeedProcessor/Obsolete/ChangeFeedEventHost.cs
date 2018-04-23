@@ -152,11 +152,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             ChangeFeedEventHost.TraceLogProvider.OpenNestedContext(hostName);
 
+            changeFeedHostOptions.MaxItemCount = changeFeedOptions.MaxItemCount;
+            changeFeedHostOptions.StartFromBeginning = changeFeedOptions.StartFromBeginning;
+            changeFeedHostOptions.StartTime = changeFeedOptions.StartTime;
+            changeFeedHostOptions.SessionToken = changeFeedOptions.SessionToken;
+
             this.builder
                 .WithHostName(hostName)
                 .WithFeedCollection(feedCollectionLocation)
                 .WithChangeFeedHostOptions(changeFeedHostOptions)
-                .WithChangeFeedOptions(changeFeedOptions)
                 .WithLeaseCollection(leaseCollectionLocation);
         }
 

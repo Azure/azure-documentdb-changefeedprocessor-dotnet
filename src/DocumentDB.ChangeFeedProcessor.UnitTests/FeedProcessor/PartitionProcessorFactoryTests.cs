@@ -32,13 +32,12 @@
         [Fact]
         public void Create_ShouldPassFeedOptionsToQuery_OnCreation()
         {
+            this.fixture.Register(() => DateTime.UtcNow);
             var hostOptions = this.fixture.Create<ChangeFeedHostOptions>();
             var partitionKeyId = this.fixture.Create<string>();
             var leaseContinuationToken = this.fixture.Create<string>();
 
-            this.fixture.Register(() => DateTime.UtcNow);
             this.fixture.Register(() => new PartitionKey(this.fixture.Create<string>()));
-            var feedOptions = this.fixture.Create<ChangeFeedOptions>();
 
             var leaseManager = Mock.Of<ILeaseManager>();
             var lease = Mock.Of<ILease>();
@@ -50,7 +49,7 @@
                 .Setup(l => l.ContinuationToken)
                 .Returns(leaseContinuationToken);
 
-            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, feedOptions, leaseManager, this.collectionSelfLink);
+            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, leaseManager, this.collectionSelfLink);
             var processor = sut.Create(lease, this.observer);
 
             Mock.Get(this.docClient)
@@ -58,9 +57,9 @@
                         It.Is<string>(s => s == this.collectionSelfLink),
                         It.Is<ChangeFeedOptions>(options =>
                             options.PartitionKeyRangeId == partitionKeyId &&
-                            options.SessionToken == feedOptions.SessionToken &&
-                            options.StartFromBeginning == feedOptions.StartFromBeginning &&
-                            options.MaxItemCount == feedOptions.MaxItemCount &&
+                            options.SessionToken == hostOptions.SessionToken &&
+                            options.StartFromBeginning == hostOptions.StartFromBeginning &&
+                            options.MaxItemCount == hostOptions.MaxItemCount &&
                             options.RequestContinuation == leaseContinuationToken)),
                     Times.Once);
         }

@@ -148,6 +148,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 catch(Exception ex)
                 {
                     Debug.Write(ex);
+                    throw;
                 }
             }
 

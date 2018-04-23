@@ -112,7 +112,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private string hostName;
         private DocumentCollectionInfo feedCollectionLocation;
         private ChangeFeedHostOptions changeFeedHostOptions;
-        private ChangeFeedOptions changeFeedOptions;
         private IChangeFeedDocumentClient feedDocumentClient;
         private FeedProcessing.IChangeFeedObserverFactory observerFactory;
         private string databaseResourceId;
@@ -179,33 +178,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             if (changeFeedHostOptions == null) throw new ArgumentNullException(nameof(changeFeedHostOptions));
             this.changeFeedHostOptions = changeFeedHostOptions;
-            return this;
-        }
-
-        /// <summary>
-        /// Sets the <see cref="ChangeFeedOptions"/> to be used when interacting with the Change Feed.
-        /// </summary>
-        /// <param name="changeFeedOptions">The instance of <see cref="ChangeFeedOptions"/> to use.</param>
-        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithChangeFeedOptions(ChangeFeedOptions changeFeedOptions)
-        {
-            if (changeFeedOptions == null) throw new ArgumentNullException(nameof(changeFeedOptions));
-
-            if (!string.IsNullOrEmpty(changeFeedOptions.PartitionKeyRangeId))
-            {
-                throw new ArgumentException(
-                    "changeFeedOptions.PartitionKeyRangeId must be null or empty string.",
-                    nameof(changeFeedOptions.PartitionKeyRangeId));
-            }
-
-            if (changeFeedOptions.PartitionKey != null)
-            {
-                throw new ArgumentException(
-                    "changeFeedOptions.PartitionKey must be null.",
-                    nameof(changeFeedOptions.PartitionKey));
-            }
-
-            this.changeFeedOptions = changeFeedOptions;
             return this;
         }
 
@@ -417,7 +389,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             var partitionObserverFactory = new PartitionSupervisorFactory(
                 factory,
                 leaseManager,
-                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedHostOptions, this.changeFeedOptions, leaseManager, collectionSelfLink),
+                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedHostOptions, leaseManager, collectionSelfLink),
                 this.changeFeedHostOptions);
 
             var partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
@@ -461,7 +433,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             this.feedDocumentClient = this.feedDocumentClient ?? this.feedCollectionLocation.CreateDocumentClient();
             this.changeFeedHostOptions = this.changeFeedHostOptions ?? new ChangeFeedHostOptions();
-            this.changeFeedOptions = this.changeFeedOptions ?? new ChangeFeedOptions();
             this.databaseResourceId = this.databaseResourceId ?? await GetDatabaseResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
             this.collectionResourceId = this.collectionResourceId ?? await GetCollectionResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
         }
