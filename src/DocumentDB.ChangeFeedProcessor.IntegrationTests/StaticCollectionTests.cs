@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 this.ClassData.monitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = true },
-                new ChangeFeedProcessorOptions());
+                new ChangeFeedHostOptions());
             await host.RegisterObserverFactoryAsync(observerFactory);
 
             allDocsProcessed.WaitOne(changeWaitTimeout + changeWaitTimeout);
@@ -100,7 +100,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 this.ClassData.monitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = true },
-                new ChangeFeedProcessorOptions());
+                new ChangeFeedHostOptions());
             await host.RegisterObserverFactoryAsync(observerFactory);
 
             allDocsProcessed.WaitOne(changeWaitTimeout + changeWaitTimeout + changeWaitTimeout);
@@ -140,7 +140,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 this.ClassData.monitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = true },
-                new ChangeFeedProcessorOptions { MaxPartitionCount = partitionKeyRangeCount / 2 });
+                new ChangeFeedHostOptions { MaxPartitionCount = partitionKeyRangeCount / 2 });
             await host1.RegisterObserverFactoryAsync(observerFactory);
 
             var host2 = new ChangeFeedEventHost(
@@ -148,7 +148,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 this.ClassData.monitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = true },
-                new ChangeFeedProcessorOptions { MaxPartitionCount = partitionKeyRangeCount - partitionKeyRangeCount / 2 });
+                new ChangeFeedHostOptions { MaxPartitionCount = partitionKeyRangeCount - partitionKeyRangeCount / 2 });
             await host2.RegisterObserverFactoryAsync(observerFactory);
 
             allDocsProcessed.WaitOne(changeWaitTimeout + changeWaitTimeout);
@@ -189,7 +189,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 this.ClassData.monitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = true, MaxItemCount = 2 },
-                new ChangeFeedProcessorOptions());
+                new ChangeFeedHostOptions());
             await host.RegisterObserverFactoryAsync(observerFactory);
 
             quarterDocsProcessed.WaitOne(changeWaitTimeout + changeWaitTimeout);

@@ -4,6 +4,7 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
+    using System.Diagnostics;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters;
@@ -104,7 +105,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <param name="documentCollectionLocation">Specifies location of the DocumentDB collection to monitor changes for.</param>
         /// <param name="leaseCollectionLocation ">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
         public ChangeFeedEventHost(string hostName, DocumentCollectionInfo documentCollectionLocation, DocumentCollectionInfo leaseCollectionLocation)
-            : this(hostName, documentCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), new ChangeFeedProcessorOptions())
+            : this(hostName, documentCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), new ChangeFeedHostOptions())
         {
         }
 
@@ -114,13 +115,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <param name="hostName">Unique name for this host.</param>
         /// <param name="feedCollectionLocation">Specifies location of the Cosmos DB collection to monitor changes for.</param>
         /// <param name="leaseCollectionLocation">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
-        /// <param name="changeFeedProcessorOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
+        /// <param name="changeFeedHostOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
         public ChangeFeedEventHost(
             string hostName,
             DocumentCollectionInfo feedCollectionLocation,
             DocumentCollectionInfo leaseCollectionLocation,
-            ChangeFeedProcessorOptions changeFeedProcessorOptions)
-            : this(hostName, feedCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), changeFeedProcessorOptions)
+            ChangeFeedHostOptions changeFeedHostOptions)
+            : this(hostName, feedCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), changeFeedHostOptions)
         {
         }
 
@@ -131,13 +132,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <param name="feedCollectionLocation">Specifies location of the Cosmos DB collection to monitor changes for.</param>
         /// <param name="leaseCollectionLocation">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
         /// <param name="changeFeedOptions">Options to pass to the DocumentClient.CreateDocumentChangeFeedQuery API.</param>
-        /// <param name="changeFeedProcessorOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
+        /// <param name="changeFeedHostOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
         public ChangeFeedEventHost(
             string hostName,
             DocumentCollectionInfo feedCollectionLocation,
             DocumentCollectionInfo leaseCollectionLocation,
             ChangeFeedOptions changeFeedOptions,
-            ChangeFeedProcessorOptions changeFeedProcessorOptions)
+            ChangeFeedHostOptions changeFeedHostOptions)
         {
             if (string.IsNullOrEmpty(hostName))
                 throw new ArgumentNullException(nameof(hostName));
@@ -147,20 +148,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new ArgumentNullException(nameof(leaseCollectionLocation));
             if (changeFeedOptions == null)
                 throw new ArgumentNullException(nameof(changeFeedOptions));
-            if (changeFeedProcessorOptions == null)
-                throw new ArgumentNullException(nameof(changeFeedProcessorOptions));
+            if (changeFeedHostOptions == null)
+                throw new ArgumentNullException(nameof(changeFeedHostOptions));
 
             ChangeFeedEventHost.TraceLogProvider.OpenNestedContext(hostName);
-
-            changeFeedProcessorOptions.MaxItemCount = changeFeedOptions.MaxItemCount;
-            changeFeedProcessorOptions.StartFromBeginning = changeFeedOptions.StartFromBeginning;
-            changeFeedProcessorOptions.StartTime = changeFeedOptions.StartTime;
-            changeFeedProcessorOptions.SessionToken = changeFeedOptions.SessionToken;
 
             this.builder
                 .WithHostName(hostName)
                 .WithFeedCollection(feedCollectionLocation)
-                .WithProcessorOptions(changeFeedProcessorOptions)
+                .WithProcessorOptions(CreateProcessorOptions(changeFeedOptions, changeFeedHostOptions))
                 .WithLeaseCollection(leaseCollectionLocation);
         }
 
@@ -211,6 +207,47 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             }
 
             return await this.remainingWorkEstimator.GetEstimatedRemainingWork().ConfigureAwait(false);
+        }
+
+        internal static ChangeFeedProcessorOptions CreateProcessorOptions(ChangeFeedOptions feedOptions, ChangeFeedHostOptions hostOptions)
+        {
+            Debug.Assert(feedOptions != null, nameof(feedOptions));
+            Debug.Assert(hostOptions != null, nameof(hostOptions));
+
+            if (!string.IsNullOrEmpty(feedOptions.PartitionKeyRangeId))
+            {
+                throw new ArgumentException("changeFeedOptions.PartitionKeyRangeId must be null or empty string.", nameof(feedOptions.PartitionKeyRangeId));
+            }
+
+            if (feedOptions.PartitionKey != null)
+            {
+                throw new ArgumentException("changeFeedOptions.PartitionKey must be null.", nameof(feedOptions.PartitionKey));
+            }
+
+            if (hostOptions.DiscardExistingLeases)
+            {
+                throw new ArgumentException("hostOptions.DiscardExistingLeases is no longer supported.", nameof(hostOptions.DiscardExistingLeases));
+            }
+
+            return new ChangeFeedProcessorOptions
+            {
+                MaxItemCount = feedOptions.MaxItemCount,
+                StartFromBeginning = feedOptions.StartFromBeginning,
+                StartTime = feedOptions.StartTime,
+                RequestContinuation = feedOptions.RequestContinuation,
+                SessionToken = feedOptions.SessionToken,
+
+                LeaseRenewInterval = hostOptions.LeaseRenewInterval,
+                LeaseAcquireInterval = hostOptions.LeaseAcquireInterval,
+                LeaseExpirationInterval = hostOptions.LeaseExpirationInterval,
+                FeedPollDelay = hostOptions.FeedPollDelay,
+                CheckpointFrequency = hostOptions.CheckpointFrequency,
+                LeasePrefix = hostOptions.LeasePrefix,
+                MinPartitionCount = hostOptions.MinPartitionCount,
+                MaxPartitionCount = hostOptions.MaxPartitionCount,
+                DiscardExistingLeases = hostOptions.DiscardExistingLeases,
+                QueryPartitionsMaxBatchSize = hostOptions.QueryPartitionsMaxBatchSize,
+            };
         }
 
         private async Task CreateHost()

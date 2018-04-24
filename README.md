@@ -127,6 +127,7 @@ namespace Sample
 The following v1 API from v1 is is present in v2 for backward compatibility but is marked obsolete. It is recommended to use new API.
 
 - Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedEventHost.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedProcessorBuilder.
+- Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedHostOptions.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedProcessorOptions. Note that ChangeFeedProcessorBuilder does not take ChangeFeedOptions, use ChangeFeedProcessorOptions to provide ChangeFeedOptions-related parameters.
 - Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedObserverContext.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserverContext that has ProcessChangesAsync taking new CancellationToken parameter.
 - Microsoft.Azure.Documents.ChangeFeedProcessor.ChangeFeedObserverCloseReason.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.ChangeFeedObserverCloseReason.
 - Microsoft.Azure.Documents.ChangeFeedProcessor.IChangeFeedObserver.<br/> Use Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.IChangeFeedObserver.
