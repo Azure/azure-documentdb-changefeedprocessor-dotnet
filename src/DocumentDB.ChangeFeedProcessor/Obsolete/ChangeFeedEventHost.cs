@@ -156,7 +156,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             this.builder
                 .WithHostName(hostName)
                 .WithFeedCollection(feedCollectionLocation)
-                .WithProcessorOptions(CreateProcessorOptions(changeFeedOptions, changeFeedHostOptions))
+                .WithProcessorOptions(ChangeFeedEventHost.CreateProcessorOptions(changeFeedOptions, changeFeedHostOptions))
                 .WithLeaseCollection(leaseCollectionLocation);
         }
 
