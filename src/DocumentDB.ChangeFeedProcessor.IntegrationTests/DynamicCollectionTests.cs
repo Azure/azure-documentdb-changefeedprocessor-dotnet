@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 this.ClassData.monitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = false },
-                new ChangeFeedHostOptions());
+                new ChangeFeedProcessorOptions());
             await host.RegisterObserverFactoryAsync(observerFactory);
 
             var isStartOk = allObserversStarted.WaitOne(IntegrationTest.changeWaitTimeout + IntegrationTest.changeWaitTimeout);
@@ -121,7 +121,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     this.ClassData.monitoredCollectionInfo,
                     this.LeaseCollectionInfo,
                     new ChangeFeedOptions { StartTime = timeInBeweeen },
-                    new ChangeFeedHostOptions());
+                    new ChangeFeedProcessorOptions());
                 await host.RegisterObserverFactoryAsync(observerFactory);
 
                 var isStartOk = allDocsProcessed.WaitOne(IntegrationTest.changeWaitTimeout + IntegrationTest.changeWaitTimeout);
@@ -198,7 +198,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                         monitoredCollectionInfo,
                         this.LeaseCollectionInfo,
                         new ChangeFeedOptions { StartFromBeginning = true, MaxItemCount = 6 },
-                        new ChangeFeedHostOptions());
+                        new ChangeFeedProcessorOptions());
                     await host.RegisterObserverFactoryAsync(observerFactory);
 
                     var isStartOk = allDocsProcessed.WaitOne(IntegrationTest.changeWaitTimeout + IntegrationTest.changeWaitTimeout);

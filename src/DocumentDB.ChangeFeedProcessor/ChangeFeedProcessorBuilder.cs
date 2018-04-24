@@ -111,8 +111,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private readonly TimeSpan lockTime = TimeSpan.FromSeconds(30);
         private string hostName;
         private DocumentCollectionInfo feedCollectionLocation;
-        private ChangeFeedHostOptions changeFeedHostOptions;
-        private ChangeFeedOptions changeFeedOptions;
+        private ChangeFeedProcessorOptions changeFeedProcessorOptions;
         private IChangeFeedDocumentClient feedDocumentClient;
         private FeedProcessing.IChangeFeedObserverFactory observerFactory;
         private string databaseResourceId;
@@ -171,41 +170,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Sets the <see cref="ChangeFeedHostOptions"/> to be used by this instance of <see cref="IChangeFeedProcessor"/>.
+        /// Sets the <see cref="ChangeFeedProcessorOptions"/> to be used by this instance of <see cref="IChangeFeedProcessor"/>.
         /// </summary>
-        /// <param name="changeFeedHostOptions">The instance of <see cref="ChangeFeedHostOptions"/> to use.</param>
+        /// <param name="changeFeedProcessorOptions">The instance of <see cref="ChangeFeedProcessorOptions"/> to use.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithChangeFeedHostOptions(ChangeFeedHostOptions changeFeedHostOptions)
+        public ChangeFeedProcessorBuilder WithProcessorOptions(ChangeFeedProcessorOptions changeFeedProcessorOptions)
         {
-            if (changeFeedHostOptions == null) throw new ArgumentNullException(nameof(changeFeedHostOptions));
-            this.changeFeedHostOptions = changeFeedHostOptions;
-            return this;
-        }
-
-        /// <summary>
-        /// Sets the <see cref="ChangeFeedOptions"/> to be used when interacting with the Change Feed.
-        /// </summary>
-        /// <param name="changeFeedOptions">The instance of <see cref="ChangeFeedOptions"/> to use.</param>
-        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithChangeFeedOptions(ChangeFeedOptions changeFeedOptions)
-        {
-            if (changeFeedOptions == null) throw new ArgumentNullException(nameof(changeFeedOptions));
-
-            if (!string.IsNullOrEmpty(changeFeedOptions.PartitionKeyRangeId))
-            {
-                throw new ArgumentException(
-                    "changeFeedOptions.PartitionKeyRangeId must be null or empty string.",
-                    nameof(changeFeedOptions.PartitionKeyRangeId));
-            }
-
-            if (changeFeedOptions.PartitionKey != null)
-            {
-                throw new ArgumentException(
-                    "changeFeedOptions.PartitionKey must be null.",
-                    nameof(changeFeedOptions.PartitionKey));
-            }
-
-            this.changeFeedOptions = changeFeedOptions;
+            if (changeFeedProcessorOptions == null) throw new ArgumentNullException(nameof(changeFeedProcessorOptions));
+            this.changeFeedProcessorOptions = changeFeedProcessorOptions;
             return this;
         }
 
@@ -410,23 +382,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             string leaseStoreCollectionLink = leaseCollection.SelfLink;
 
             string collectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
-            var factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedHostOptions.CheckpointFrequency);
-            var synchronizer = new PartitionSynchronizer(this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions.DegreeOfParallelism, this.changeFeedHostOptions.QueryPartitionsMaxBatchSize);
+            var factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedProcessorOptions.CheckpointFrequency);
+            var synchronizer = new PartitionSynchronizer(this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedProcessorOptions.DegreeOfParallelism, this.changeFeedProcessorOptions.QueryPartitionsMaxBatchSize);
             var leaseStore = new LeaseStore(this.leaseDocumentClient, this.leaseCollectionLocation, this.GetLeasePrefix(), leaseStoreCollectionLink);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);
             var partitionObserverFactory = new PartitionSupervisorFactory(
                 factory,
                 leaseManager,
-                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedHostOptions, this.changeFeedOptions, leaseManager, collectionSelfLink),
-                this.changeFeedHostOptions);
+                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseManager, collectionSelfLink),
+                this.changeFeedProcessorOptions);
 
             var partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
             if (this.loadBalancingStrategy == null)
             {
-                this.loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.hostName, this.changeFeedHostOptions.MinPartitionCount, this.changeFeedHostOptions.MaxPartitionCount, this.changeFeedHostOptions.LeaseExpirationInterval);
+                this.loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.hostName, this.changeFeedProcessorOptions.MinPartitionCount, this.changeFeedProcessorOptions.MaxPartitionCount, this.changeFeedProcessorOptions.LeaseExpirationInterval);
             }
 
-            var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedHostOptions.LeaseAcquireInterval);
+            var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedProcessorOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }
 
@@ -453,15 +425,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         private string GetLeasePrefix()
         {
-            string optionsPrefix = this.changeFeedHostOptions.LeasePrefix ?? string.Empty;
+            string optionsPrefix = this.changeFeedProcessorOptions.LeasePrefix ?? string.Empty;
             return string.Format(CultureInfo.InvariantCulture, "{0}{1}_{2}_{3}", optionsPrefix, this.feedCollectionLocation.Uri.Host, this.databaseResourceId, this.collectionResourceId);
         }
 
         private async Task InitializeCollectionPropertiesForBuildAsync()
         {
             this.feedDocumentClient = this.feedDocumentClient ?? this.feedCollectionLocation.CreateDocumentClient();
-            this.changeFeedHostOptions = this.changeFeedHostOptions ?? new ChangeFeedHostOptions();
-            this.changeFeedOptions = this.changeFeedOptions ?? new ChangeFeedOptions();
+            this.changeFeedProcessorOptions = this.changeFeedProcessorOptions ?? new ChangeFeedProcessorOptions();
             this.databaseResourceId = this.databaseResourceId ?? await GetDatabaseResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
             this.collectionResourceId = this.collectionResourceId ?? await GetCollectionResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
         }

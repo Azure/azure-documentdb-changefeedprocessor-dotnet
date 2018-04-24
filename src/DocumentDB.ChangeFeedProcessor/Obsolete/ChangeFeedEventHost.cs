@@ -104,7 +104,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <param name="documentCollectionLocation">Specifies location of the DocumentDB collection to monitor changes for.</param>
         /// <param name="leaseCollectionLocation ">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
         public ChangeFeedEventHost(string hostName, DocumentCollectionInfo documentCollectionLocation, DocumentCollectionInfo leaseCollectionLocation)
-            : this(hostName, documentCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), new ChangeFeedHostOptions())
+            : this(hostName, documentCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), new ChangeFeedProcessorOptions())
         {
         }
 
@@ -114,13 +114,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <param name="hostName">Unique name for this host.</param>
         /// <param name="feedCollectionLocation">Specifies location of the Cosmos DB collection to monitor changes for.</param>
         /// <param name="leaseCollectionLocation">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
-        /// <param name="changeFeedHostOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
+        /// <param name="changeFeedProcessorOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
         public ChangeFeedEventHost(
             string hostName,
             DocumentCollectionInfo feedCollectionLocation,
             DocumentCollectionInfo leaseCollectionLocation,
-            ChangeFeedHostOptions changeFeedHostOptions)
-            : this(hostName, feedCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), changeFeedHostOptions)
+            ChangeFeedProcessorOptions changeFeedProcessorOptions)
+            : this(hostName, feedCollectionLocation, leaseCollectionLocation, new ChangeFeedOptions(), changeFeedProcessorOptions)
         {
         }
 
@@ -131,13 +131,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <param name="feedCollectionLocation">Specifies location of the Cosmos DB collection to monitor changes for.</param>
         /// <param name="leaseCollectionLocation">Specifies location of auxiliary data for load-balancing instances of <see cref="ChangeFeedEventHost" />.</param>
         /// <param name="changeFeedOptions">Options to pass to the DocumentClient.CreateDocumentChangeFeedQuery API.</param>
-        /// <param name="changeFeedHostOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
+        /// <param name="changeFeedProcessorOptions">Additional options to control load-balancing of <see cref="ChangeFeedEventHost" /> instances.</param>
         public ChangeFeedEventHost(
             string hostName,
             DocumentCollectionInfo feedCollectionLocation,
             DocumentCollectionInfo leaseCollectionLocation,
             ChangeFeedOptions changeFeedOptions,
-            ChangeFeedHostOptions changeFeedHostOptions)
+            ChangeFeedProcessorOptions changeFeedProcessorOptions)
         {
             if (string.IsNullOrEmpty(hostName))
                 throw new ArgumentNullException(nameof(hostName));
@@ -147,16 +147,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new ArgumentNullException(nameof(leaseCollectionLocation));
             if (changeFeedOptions == null)
                 throw new ArgumentNullException(nameof(changeFeedOptions));
-            if (changeFeedHostOptions == null)
-                throw new ArgumentNullException(nameof(changeFeedHostOptions));
+            if (changeFeedProcessorOptions == null)
+                throw new ArgumentNullException(nameof(changeFeedProcessorOptions));
 
             ChangeFeedEventHost.TraceLogProvider.OpenNestedContext(hostName);
+
+            changeFeedProcessorOptions.MaxItemCount = changeFeedOptions.MaxItemCount;
+            changeFeedProcessorOptions.StartFromBeginning = changeFeedOptions.StartFromBeginning;
+            changeFeedProcessorOptions.StartTime = changeFeedOptions.StartTime;
+            changeFeedProcessorOptions.SessionToken = changeFeedOptions.SessionToken;
 
             this.builder
                 .WithHostName(hostName)
                 .WithFeedCollection(feedCollectionLocation)
-                .WithChangeFeedHostOptions(changeFeedHostOptions)
-                .WithChangeFeedOptions(changeFeedOptions)
+                .WithProcessorOptions(changeFeedProcessorOptions)
                 .WithLeaseCollection(leaseCollectionLocation);
         }
 

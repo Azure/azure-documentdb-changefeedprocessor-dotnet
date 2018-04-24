@@ -9,16 +9,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// <summary>
     /// Options to control various aspects of partition distribution happening within <see cref="ChangeFeedEventHost"/> instance.
     /// </summary>
-    public class ChangeFeedHostOptions
+    public class ChangeFeedProcessorOptions
     {
         private const int DefaultQueryPartitionsMaxBatchSize = 100;
         private static readonly TimeSpan DefaultRenewInterval = TimeSpan.FromSeconds(17);
         private static readonly TimeSpan DefaultAcquireInterval = TimeSpan.FromSeconds(13);
         private static readonly TimeSpan DefaultExpirationInterval = TimeSpan.FromSeconds(60);
         private static readonly TimeSpan DefaultFeedPollDelay = TimeSpan.FromSeconds(5);
+        private DateTime? startTime;
 
-        /// <summary>Initializes a new instance of the <see cref="ChangeFeedHostOptions" /> class.</summary>
-        public ChangeFeedHostOptions()
+        /// <summary>Initializes a new instance of the <see cref="ChangeFeedProcessorOptions" /> class.</summary>
+        public ChangeFeedProcessorOptions()
         {
             this.LeaseRenewInterval = DefaultRenewInterval;
             this.LeaseAcquireInterval = DefaultAcquireInterval;
@@ -77,6 +78,40 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 this.CheckpointFrequency.ExplicitCheckpoint = !value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the maximum number of items to be returned in the enumeration operation in the Azure Cosmos DB service.
+        /// </summary>
+        public int? MaxItemCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether change feed in the Azure Cosmos DB service should start from beginning (true) or from current (false).
+        /// By default it's start from current (false).
+        /// </summary>
+        public bool StartFromBeginning { get; set; }
+
+        /// <summary>
+        /// Gets or sets the time (exclusive) to start looking for changes after. If this is specified, StartFromBeginning is ignored.
+        /// </summary>
+        public DateTime? StartTime
+        {
+            get
+            {
+                return this.startTime;
+            }
+
+            set
+            {
+                if (value.HasValue && value.Value.Kind == DateTimeKind.Unspecified)
+                    throw new ArgumentException("StartTime cannot have DateTimeKind.Unspecified", nameof(value));
+                this.startTime = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the session token for use with session consistency in the Azure Cosmos DB service.
+        /// </summary>
+        public string SessionToken { get; set; }
 
         /// <summary>
         /// Gets or sets the minimum partition count for the host.

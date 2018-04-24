@@ -146,22 +146,5 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 
             await processor.StopAsync();
         }
-
-        [Fact]
-        public void UseChangeFeedOptionsWithPartitionKeyRangeId()
-        {
-            Assert.Throws<ArgumentException>(() =>
-                this.builder.WithChangeFeedOptions(new ChangeFeedOptions { PartitionKeyRangeId = "0"}));
-        }
-
-        [Fact]
-        public void UseChangeFeedOptionsWithPartitionKey()
-        {
-            Assert.Throws<ArgumentException>(() =>
-            {
-                var partitionKey = new PartitionKey("id");
-                this.builder.WithChangeFeedOptions(new ChangeFeedOptions { PartitionKey = partitionKey });
-            });
-        }
     }
 }

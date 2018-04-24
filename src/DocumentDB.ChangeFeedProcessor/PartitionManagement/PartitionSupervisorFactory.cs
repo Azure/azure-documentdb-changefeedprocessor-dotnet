@@ -11,14 +11,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     {
         private readonly IChangeFeedObserverFactory observerFactory;
         private readonly ILeaseManager leaseManager;
-        private readonly ChangeFeedHostOptions changeFeedHostOptions;
+        private readonly ChangeFeedProcessorOptions changeFeedProcessorOptions;
         private readonly IPartitionProcessorFactory partitionProcessorFactory;
 
         public PartitionSupervisorFactory(
             IChangeFeedObserverFactory observerFactory,
             ILeaseManager leaseManager,
             IPartitionProcessorFactory partitionProcessorFactory,
-            ChangeFeedHostOptions options)
+            ChangeFeedProcessorOptions options)
         {
             if (observerFactory == null) throw new ArgumentNullException(nameof(observerFactory));
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             this.observerFactory = observerFactory;
             this.leaseManager = leaseManager;
-            this.changeFeedHostOptions = options;
+            this.changeFeedProcessorOptions = options;
             this.partitionProcessorFactory = partitionProcessorFactory;
         }
 
@@ -38,7 +38,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             IChangeFeedObserver changeFeedObserver = this.observerFactory.CreateObserver();
             var processor = this.partitionProcessorFactory.Create(lease, changeFeedObserver);
-            var renewer = new LeaseRenewer(lease, this.leaseManager, this.changeFeedHostOptions.LeaseRenewInterval);
+            var renewer = new LeaseRenewer(lease, this.leaseManager, this.changeFeedProcessorOptions.LeaseRenewInterval);
 
             return new PartitionSupervisor(lease, changeFeedObserver, processor, renewer);
         }
