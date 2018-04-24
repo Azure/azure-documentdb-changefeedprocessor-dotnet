@@ -1,0 +1,68 @@
+﻿namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
+{
+    using System;
+    using AutoFixture;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.Client;
+    using Moq;
+    using Xunit;
+
+    [Trait("Category", "Gated")]
+    public class PartitionProcessorFactoryTests
+    {
+        private readonly IChangeFeedDocumentClient docClient;
+        private readonly IChangeFeedObserver observer;
+
+        private readonly Fixture fixture = new Fixture();
+        private readonly string collectionSelfLink;
+
+        public PartitionProcessorFactoryTests()
+        {
+            this.collectionSelfLink = this.fixture.Create<string>();
+            this.docClient = Mock.Of<IChangeFeedDocumentClient>();
+            Mock.Get(this.docClient)
+                .Setup(ex => ex.CreateDocumentChangeFeedQuery(this.collectionSelfLink, It.IsAny<ChangeFeedOptions>()))
+                .Returns(Mock.Of<IChangeFeedDocumentQuery<Document>>());
+
+            this.observer = Mock.Of<IChangeFeedObserver>();
+        }
+
+        [Fact]
+        public void Create_ShouldPassFeedOptionsToQuery_OnCreation()
+        {
+            var hostOptions = this.fixture.Create<ChangeFeedHostOptions>();
+            var partitionKeyId = this.fixture.Create<string>();
+            var leaseContinuationToken = this.fixture.Create<string>();
+
+            this.fixture.Register(() => DateTime.UtcNow);
+            this.fixture.Register(() => new PartitionKey(this.fixture.Create<string>()));
+            var feedOptions = this.fixture.Create<ChangeFeedOptions>();
+
+            var leaseManager = Mock.Of<ILeaseManager>();
+            var lease = Mock.Of<ILease>();
+
+            Mock.Get(lease)
+                .Setup(l => l.PartitionId)
+                .Returns(partitionKeyId);
+            Mock.Get(lease)
+                .Setup(l => l.ContinuationToken)
+                .Returns(leaseContinuationToken);
+
+            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, feedOptions, leaseManager, this.collectionSelfLink);
+            var processor = sut.Create(lease, this.observer);
+
+            Mock.Get(this.docClient)
+                .Verify(d => d.CreateDocumentChangeFeedQuery(
+                        It.Is<string>(s => s == this.collectionSelfLink),
+                        It.Is<ChangeFeedOptions>(options =>
+                            options.PartitionKeyRangeId == partitionKeyId &&
+                            options.SessionToken == feedOptions.SessionToken &&
+                            options.StartFromBeginning == feedOptions.StartFromBeginning &&
+                            options.MaxItemCount == feedOptions.MaxItemCount &&
+                            options.RequestContinuation == leaseContinuationToken)),
+                    Times.Once);
+        }
+    }
+}

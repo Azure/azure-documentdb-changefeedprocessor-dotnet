@@ -7,7 +7,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using System;
     using System.Globalization;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
@@ -122,6 +121,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private IChangeFeedDocumentClient leaseDocumentClient;
         private ILeaseManager leaseManager;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
+        private IPartitionProcessorFactory partitionProcessorFactory;
 
         /// <summary>
         /// Sets the Host name.
@@ -306,6 +306,30 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
+        /// Sets the <see cref="IPartitionProcessorFactory"/> to be used to create <see cref="IPartitionProcessor"/> for partition processing.
+        /// </summary>
+        /// <param name="partitionProcessorFactory">The instance of <see cref="IPartitionProcessorFactory"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
+        public ChangeFeedProcessorBuilder WithPartitionProcessorFactory(IPartitionProcessorFactory partitionProcessorFactory)
+        {
+            if (partitionProcessorFactory == null) throw new ArgumentNullException(nameof(partitionProcessorFactory));
+            this.partitionProcessorFactory = partitionProcessorFactory;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the <see cref="ILeaseManager"/> to be used to manage leases.
+        /// </summary>
+        /// <param name="leaseManager">The instance of <see cref="ILeaseManager"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
+        public ChangeFeedProcessorBuilder WithLeaseManager(ILeaseManager leaseManager)
+        {
+            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
+            this.leaseManager = leaseManager;
+            return this;
+        }
+
+        /// <summary>
         /// Builds a new instance of the <see cref="IChangeFeedProcessor"/> with the specified configuration.
         /// </summary>
         /// <returns>An instance of <see cref="IChangeFeedProcessor"/>.</returns>
@@ -363,13 +387,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return remainingWorkEstimator;
         }
 
-        internal ChangeFeedProcessorBuilder WithLeaseManager(ILeaseManager leaseManager)
-        {
-            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
-            this.leaseManager = leaseManager;
-            return this;
-        }
-
         private static async Task<string> GetDatabaseResourceIdAsync(IChangeFeedDocumentClient documentClient, DocumentCollectionInfo collectionLocation)
         {
             Logger.InfoFormat("Reading database: '{0}'", collectionLocation.DatabaseName);
@@ -397,9 +414,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             var synchronizer = new PartitionSynchronizer(this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions.DegreeOfParallelism, this.changeFeedHostOptions.QueryPartitionsMaxBatchSize);
             var leaseStore = new LeaseStore(this.leaseDocumentClient, this.leaseCollectionLocation, this.GetLeasePrefix(), leaseStoreCollectionLink);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);
-            var partitionObserverFactory = new PartitionSupervisorFactory(factory, this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedHostOptions, this.changeFeedOptions);
-            var partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
+            var partitionObserverFactory = new PartitionSupervisorFactory(
+                factory,
+                leaseManager,
+                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedHostOptions, this.changeFeedOptions, leaseManager, collectionSelfLink),
+                this.changeFeedHostOptions);
 
+            var partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
             if (this.loadBalancingStrategy == null)
             {
                 this.loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.hostName, this.changeFeedHostOptions.MinPartitionCount, this.changeFeedHostOptions.MaxPartitionCount, this.changeFeedHostOptions.LeaseExpirationInterval);
