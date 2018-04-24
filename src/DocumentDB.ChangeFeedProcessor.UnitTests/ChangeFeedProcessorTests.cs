@@ -110,7 +110,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithHostName("someHost")
                 .WithFeedDocumentClient(documentClient)
                 .WithFeedCollection(collectionInfo)
-                .WithChangeFeedHostOptions(new ChangeFeedHostOptions())
+                .WithProcessorOptions(new ChangeFeedProcessorOptions())
                 .WithLeaseManager(leaseManager)
                 .WithLeaseCollection(collectionInfo)
                 .WithLeaseDocumentClient(leaseDocumentClient);

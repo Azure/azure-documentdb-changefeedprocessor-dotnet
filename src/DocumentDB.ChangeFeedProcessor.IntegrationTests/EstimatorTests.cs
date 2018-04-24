@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 this.ClassData.monitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = false },
-                new ChangeFeedHostOptions());
+                new ChangeFeedProcessorOptions());
 
             // Initialize leases
             await host.RegisterObserverFactoryAsync(observerFactory);
@@ -102,7 +102,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     this.ClassData.monitoredCollectionInfo,
                     this.LeaseCollectionInfo,
                     new ChangeFeedOptions { StartFromBeginning = false },
-                    new ChangeFeedHostOptions());
+                    new ChangeFeedProcessorOptions());
 
                 openedCount = 0;
                 processedCount = 0;

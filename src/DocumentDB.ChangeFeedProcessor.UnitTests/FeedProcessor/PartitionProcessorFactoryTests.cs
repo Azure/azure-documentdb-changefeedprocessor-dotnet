@@ -33,7 +33,7 @@
         public void Create_ShouldPassFeedOptionsToQuery_OnCreation()
         {
             this.fixture.Register(() => DateTime.UtcNow);
-            var hostOptions = this.fixture.Create<ChangeFeedHostOptions>();
+            var hostOptions = this.fixture.Create<ChangeFeedProcessorOptions>();
             var partitionKeyId = this.fixture.Create<string>();
             var leaseContinuationToken = this.fixture.Create<string>();
 

@@ -71,7 +71,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     {
         /// <summary>
         /// Select leases that should be taken for processing.
-        /// This method will be called periodically with <see cref="ChangeFeedHostOptions.LeaseAcquireInterval"/>
+        /// This method will be called periodically with <see cref="ChangeFeedProcessorOptions.LeaseAcquireInterval"/>
         /// </summary>
         /// <param name="allLeases">All leases</param>
         /// <returns>Leases that should be taken for processing by this host</returns>

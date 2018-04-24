@@ -12,19 +12,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     internal class PartitionProcessorFactory : IPartitionProcessorFactory
     {
         private readonly IChangeFeedDocumentClient documentClient;
-        private readonly ChangeFeedHostOptions changeFeedHostOptions;
+        private readonly ChangeFeedProcessorOptions changeFeedProcessorOptions;
         private readonly ILeaseManager leaseManager;
         private readonly string collectionSelfLink;
 
-        public PartitionProcessorFactory(IChangeFeedDocumentClient documentClient, ChangeFeedHostOptions changeFeedHostOptions, ILeaseManager leaseManager, string collectionSelfLink)
+        public PartitionProcessorFactory(IChangeFeedDocumentClient documentClient, ChangeFeedProcessorOptions changeFeedProcessorOptions, ILeaseManager leaseManager, string collectionSelfLink)
         {
             if (documentClient == null) throw new ArgumentNullException(nameof(documentClient));
-            if (changeFeedHostOptions == null) throw new ArgumentNullException(nameof(changeFeedHostOptions));
+            if (changeFeedProcessorOptions == null) throw new ArgumentNullException(nameof(changeFeedProcessorOptions));
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
             if (collectionSelfLink == null) throw new ArgumentNullException(nameof(collectionSelfLink));
 
             this.documentClient = documentClient;
-            this.changeFeedHostOptions = changeFeedHostOptions;
+            this.changeFeedProcessorOptions = changeFeedProcessorOptions;
             this.leaseManager = leaseManager;
             this.collectionSelfLink = collectionSelfLink;
         }
@@ -39,11 +39,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 CollectionSelfLink = this.collectionSelfLink,
                 RequestContinuation = lease.ContinuationToken,
                 PartitionKeyRangeId = lease.PartitionId,
-                FeedPollDelay = this.changeFeedHostOptions.FeedPollDelay,
-                MaxItemCount = this.changeFeedHostOptions.MaxItemCount,
-                StartFromBeginning = this.changeFeedHostOptions.StartFromBeginning,
-                StartTime = this.changeFeedHostOptions.StartTime,
-                SessionToken = this.changeFeedHostOptions.SessionToken,
+                FeedPollDelay = this.changeFeedProcessorOptions.FeedPollDelay,
+                MaxItemCount = this.changeFeedProcessorOptions.MaxItemCount,
+                StartFromBeginning = this.changeFeedProcessorOptions.StartFromBeginning,
+                StartTime = this.changeFeedProcessorOptions.StartTime,
+                SessionToken = this.changeFeedProcessorOptions.SessionToken,
             };
 
             var checkpointer = new PartitionCheckpointer(this.leaseManager, lease);

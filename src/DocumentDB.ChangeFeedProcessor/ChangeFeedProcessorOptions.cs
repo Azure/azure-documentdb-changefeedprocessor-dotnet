@@ -9,7 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// <summary>
     /// Options to control various aspects of partition distribution happening within <see cref="ChangeFeedEventHost"/> instance.
     /// </summary>
-    public class ChangeFeedHostOptions
+    public class ChangeFeedProcessorOptions
     {
         private const int DefaultQueryPartitionsMaxBatchSize = 100;
         private static readonly TimeSpan DefaultRenewInterval = TimeSpan.FromSeconds(17);
@@ -18,8 +18,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private static readonly TimeSpan DefaultFeedPollDelay = TimeSpan.FromSeconds(5);
         private DateTime? startTime;
 
-        /// <summary>Initializes a new instance of the <see cref="ChangeFeedHostOptions" /> class.</summary>
-        public ChangeFeedHostOptions()
+        /// <summary>Initializes a new instance of the <see cref="ChangeFeedProcessorOptions" /> class.</summary>
+        public ChangeFeedProcessorOptions()
         {
             this.LeaseRenewInterval = DefaultRenewInterval;
             this.LeaseAcquireInterval = DefaultAcquireInterval;
