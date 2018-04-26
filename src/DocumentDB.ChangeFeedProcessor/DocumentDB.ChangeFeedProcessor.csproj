@@ -21,7 +21,7 @@
     <AssemblyName>Microsoft.Azure.Documents.ChangeFeedProcessor</AssemblyName>
 
     <PackageId>Microsoft.Azure.DocumentDB.ChangeFeedProcessor</PackageId>
-    <PackageVersion>2.0.0-beta</PackageVersion>
+    <PackageVersion>2.0.0-prerelease</PackageVersion>
     <Title>Microsoft Azure Cosmos DB Change Feed Processor library</Title>
     <Authors>Microsoft</Authors>
     <PackageLicenseUrl>http://go.microsoft.com/fwlink/?LinkID=509837</PackageLicenseUrl>
