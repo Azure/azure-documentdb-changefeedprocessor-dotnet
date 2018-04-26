@@ -109,14 +109,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Gets or sets the request continuation token in the Azure Cosmos DB service.
-        /// </summary>
-        public string RequestContinuation { get; set; }
-
-        /// <summary>
         /// Gets or sets the session token for use with session consistency in the Azure Cosmos DB service.
         /// </summary>
         public string SessionToken { get; set; }
+
+        /// <summary>
+        /// Gets or sets the request continuation token in the Azure Cosmos DB service.
+        /// </summary>
+        internal string RequestContinuation { get; set; }
 
         /// <summary>
         /// Gets or sets the minimum partition count for the host.
