@@ -46,7 +46,7 @@
     <Version>2.0.1</Version>
     <AssemblyVersion>2.0.1.0</AssemblyVersion>
     <FileVersion>2.0.1.0</FileVersion>
-    <PackageReleaseNotes>The change log for this project is made available at https://docs.microsoft.com/en-us/azure/cosmos-db/sql-api-sdk-dotnet-changefeed at the time of release.
+    <PackageReleaseNotes>The change log for this project is available at https://docs.microsoft.com/azure/cosmos-db/sql-api-sdk-dotnet-changefeed.
 </PackageReleaseNotes>
   </PropertyGroup>
 
