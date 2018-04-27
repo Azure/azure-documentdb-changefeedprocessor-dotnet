@@ -55,6 +55,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// namespace Sample
     /// {
     ///     using System;
+    ///     using System.Net;
+    ///     using System.Threading;
     ///     using System.Threading.Tasks;
     ///     using Microsoft.Azure.Documents.ChangeFeedProcessor;
     ///     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
@@ -63,6 +65,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     ///     {
     ///         public static void Run()
     ///         {
+    ///
+    ///             // Override defaults to make sure there is enough connections and threads (e.g. DefaultConnectionLimit is 2),
+    ///             // make sure there is at lease PatritionCount * 2 + 1.
+    ///             ServicePointManager.DefaultConnectionLimit = Math.Max(ServicePointManager.DefaultConnectionLimit, 48);
+    ///
+    ///             int workerThreadCount = 0, completionThreadCount = 0;
+    ///             ThreadPool.GetMaxThreads(out workerThreadCount, out completionThreadCount);
+    ///             ThreadPool.SetMaxThreads(Math.Max(workerThreadCount, 48), Math.Max(completionThreadCount, 48));
+    ///
     ///             RunAsync().Wait();
     ///         }
     ///
