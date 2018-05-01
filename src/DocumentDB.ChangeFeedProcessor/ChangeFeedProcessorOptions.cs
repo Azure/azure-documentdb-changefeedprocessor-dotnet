@@ -62,24 +62,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public string LeasePrefix { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the host will checkpoint leases automatically.
-        /// When this is set to false, use ChangeFeedObserverContext.CheckpointAsync for manual control of checkpoint.
-        /// </summary>
-        [Obsolete("IsAutoCheckpointEnabled is deprecated, please use CheckpointFrequency.ExplicitCheckpoint instead.")]
-        public bool IsAutoCheckpointEnabled
-        {
-            get
-            {
-                return !this.CheckpointFrequency.ExplicitCheckpoint;
-            }
-
-            set
-            {
-                this.CheckpointFrequency.ExplicitCheckpoint = !value;
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the maximum number of items to be returned in the enumeration operation in the Azure Cosmos DB service.
         /// </summary>
         public int? MaxItemCount { get; set; }
