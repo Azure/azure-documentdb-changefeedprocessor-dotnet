@@ -43,9 +43,9 @@
     <!--CS1587:XML comment is not placed on a valid language element 
     LibLog files have misplaced comments, but we cannot touch them.-->
     <NoWarn>1587</NoWarn>
-    <Version>2.0.1</Version>
-    <AssemblyVersion>2.0.1.0</AssemblyVersion>
-    <FileVersion>2.0.1.0</FileVersion>
+    <Version>2.0.2</Version>
+    <AssemblyVersion>2.0.2.0</AssemblyVersion>
+    <FileVersion>2.0.2.0</FileVersion>
     <PackageReleaseNotes>The change log for this project is available at https://docs.microsoft.com/azure/cosmos-db/sql-api-sdk-dotnet-changefeed.
 </PackageReleaseNotes>
   </PropertyGroup>
