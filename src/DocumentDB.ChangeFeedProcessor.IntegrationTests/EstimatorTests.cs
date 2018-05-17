@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         }
 
         [Fact]
-        public async Task CoundPendingDocuments()
+        public async Task CountPendingDocuments()
         {
             int documentCount = 1;
             int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
@@ -124,6 +124,73 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 {
                     await newHost.UnregisterObserversAsync();
                 }
+            }
+        }
+
+        [Fact]
+        public async Task WhenNoLeasesReturn1()
+        {
+            var hostName = Guid.NewGuid().ToString();
+
+            var host = new ChangeFeedEventHost(
+                hostName,
+                this.ClassData.monitoredCollectionInfo,
+                this.LeaseCollectionInfo,
+                new ChangeFeedOptions { StartFromBeginning = false },
+                new ChangeFeedHostOptions());
+
+            // Verify that 1 is returned on an uninitialized collection
+            long estimation = await host.GetEstimatedRemainingWork();
+            Assert.Equal(1, estimation);
+        }
+
+        [Fact]
+        public async Task WhenUninitializedLeasesStartFromBeginning()
+        {
+            int documentCount = 1;
+            int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
+            int openedCount = 0, processedCount = 0;
+            var allObserversStarted = new ManualResetEvent(false);
+            var allDocsProcessed = new ManualResetEvent(false);
+
+            var observerFactory = new TestObserverFactory(
+                context =>
+                {
+                    int newCount = Interlocked.Increment(ref openedCount);
+                    if (newCount == partitionCount) allObserversStarted.Set();
+                    return Task.CompletedTask;
+                },
+                null,
+                (ChangeFeedObserverContext context, IReadOnlyList<Document> docs) =>
+                {
+                    int newCount = Interlocked.Add(ref processedCount, docs.Count);
+                    if (newCount == documentCount) allDocsProcessed.Set();
+                    return Task.CompletedTask;
+                });
+
+            var hostName = Guid.NewGuid().ToString();
+
+            var host = new ChangeFeedEventHost(
+                hostName,
+                this.ClassData.monitoredCollectionInfo,
+                this.LeaseCollectionInfo,
+                new ChangeFeedOptions { StartFromBeginning = false },
+                new ChangeFeedHostOptions());
+
+            // Initialize leases
+            await host.RegisterObserverFactoryAsync(observerFactory);
+            // Stop host
+            await host.UnregisterObserversAsync();
+
+            using (var client = new DocumentClient(this.ClassData.monitoredCollectionInfo.Uri, this.ClassData.monitoredCollectionInfo.MasterKey, this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
+            {
+                await IntegrationTestsHelper.CreateDocumentsAsync(
+                    client,
+                    UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName),
+                    10);
+
+                long estimation = await host.GetEstimatedRemainingWork();
+                Assert.Equal(10, estimation);
             }
         }
     }

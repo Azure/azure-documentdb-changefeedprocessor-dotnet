@@ -48,6 +48,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 hasAtLeastOneLease = true;
                 options.PartitionKeyRangeId = existingLease.PartitionId;
                 options.RequestContinuation = existingLease.ContinuationToken;
+                options.StartFromBeginning = string.IsNullOrEmpty(existingLease.ContinuationToken);
 
                 IChangeFeedDocumentQuery<Document> query = this.feedDocumentClient.CreateDocumentChangeFeedQuery(this.collectionSelfLink, options);
                 IFeedResponse<Document> response = null;
