@@ -36,6 +36,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         public async Task<long> GetEstimatedRemainingWork()
         {
             long remainingWork = 0;
+            bool hasAtLeastOneLease = false;
 
             ChangeFeedOptions options = new ChangeFeedOptions
             {
@@ -44,8 +45,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             foreach (ILease existingLease in await this.leaseManager.ListAllLeasesAsync().ConfigureAwait(false))
             {
+                hasAtLeastOneLease = true;
                 options.PartitionKeyRangeId = existingLease.PartitionId;
                 options.RequestContinuation = existingLease.ContinuationToken;
+                options.StartFromBeginning = string.IsNullOrEmpty(existingLease.ContinuationToken);
 
                 IChangeFeedDocumentQuery<Document> query = this.feedDocumentClient.CreateDocumentChangeFeedQuery(this.collectionSelfLink, options);
                 IFeedResponse<Document> response = null;
@@ -71,6 +74,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 {
                     Logger.WarnException("GetEstimateWork > exception: partition '{0}'", clientException, existingLease.PartitionId);
                 }
+            }
+
+            if (!hasAtLeastOneLease)
+            {
+                return 1;
             }
 
             return remainingWork;
