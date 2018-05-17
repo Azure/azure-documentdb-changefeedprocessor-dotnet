@@ -182,6 +182,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             }
         }
 
+        /// <summary>
+        /// Recreates the test collection
+        /// </summary>
+        /// <returns></returns>
+        public async Task ResetTestCollection()
+        {
+            await IntegrationTest.TestClassCleanupAsync(this);
+            await IntegrationTest.TestClassInitializeAsync(this, $"data_{this.GetType().Name}");
+        }
+
         protected virtual Task FinishTestClassInitializeAsync()
         {
             return Task.CompletedTask;
