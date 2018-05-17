@@ -128,7 +128,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         }
 
         [Fact]
-        public async Task WhenNoLeasesReturn1()
+        public async Task WhenNoLeasesExistReturn1()
         {
             var hostName = Guid.NewGuid().ToString();
 
@@ -145,7 +145,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         }
 
         [Fact]
-        public async Task WhenUninitializedLeasesStartFromBeginning()
+        public async Task WhenLeasesHaveContinuationTokenNullStartFromBeginning()
         {
             int documentCount = 1;
             int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
@@ -170,6 +170,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             var hostName = Guid.NewGuid().ToString();
 
+            // We create a host to initialize the leases with ContinuationToken null
             var host = new ChangeFeedEventHost(
                 hostName,
                 this.ClassData.monitoredCollectionInfo,
@@ -179,16 +180,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             // Initialize leases
             await host.RegisterObserverFactoryAsync(observerFactory);
-            // Stop host
+            // Stop host, this leaves the leases with ContinuationToken null state
             await host.UnregisterObserversAsync();
 
-            using (var client = new DocumentClient(this.ClassData.monitoredCollectionInfo.Uri, this.ClassData.monitoredCollectionInfo.MasterKey, this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
+            using (var client = new DocumentClient(
+                this.ClassData.monitoredCollectionInfo.Uri,
+                this.ClassData.monitoredCollectionInfo.MasterKey,
+                this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
             {
+                // Insert documents
                 await IntegrationTestsHelper.CreateDocumentsAsync(
                     client,
                     UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName),
                     10);
 
+                // Since the leases have ContinuationToken null state, the estimator will use StartFromBeginning and pick-up the changes that happened from the start
                 long estimation = await host.GetEstimatedRemainingWork();
                 Assert.Equal(10, estimation);
             }
