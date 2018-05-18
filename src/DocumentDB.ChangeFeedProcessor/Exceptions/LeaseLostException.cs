@@ -15,14 +15,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     public class LeaseLostException : Exception
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class.
         /// </summary>
         public LeaseLostException()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using the specified lease.
         /// </summary>
         /// <param name="lease">Instance of a lost lease.</param>
         public LeaseLostException(ILease lease)
@@ -31,12 +31,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using the specified lease, inner exception, and a flag indicating whether lease is gone.
         /// </summary>
         /// <param name="lease">Instance of a lost lease.</param>
         /// <param name="innerException">The inner exception.</param>
         /// <param name="isGone">Whether lease doesn't exist.</param>
-        public LeaseLostException(ILease lease, Exception innerException, bool isGone = false)
+        public LeaseLostException(ILease lease, Exception innerException, bool isGone)
             : base(null, innerException)
         {
             this.Lease = lease;
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using error message.
         /// </summary>
         /// <param name="message">The exception error message.</param>
         public LeaseLostException(string message)
@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using error message and inner exception.
         /// </summary>
         /// <param name="message">The exception error message.</param>
         /// <param name="innerException">The inner exception.</param>
