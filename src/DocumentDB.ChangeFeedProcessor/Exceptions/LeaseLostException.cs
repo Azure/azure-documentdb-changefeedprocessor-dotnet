@@ -9,7 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
     /// <summary>
-    /// Exception occurred when lease was taken by a different host.
+    /// Exception occurred when lease is lost, that would typically happen when it is taken by another host. Other cases: communication failure, number of retries reached, lease not found.
     /// </summary>
     [Serializable]
     public class LeaseLostException : Exception
@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         /// <summary>
         /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
         /// </summary>
-        /// <param name="lease">Instance of a lease that was taken by a different host.</param>
+        /// <param name="lease">Instance of a lost lease.</param>
         public LeaseLostException(ILease lease)
         {
             this.Lease = lease;
@@ -33,7 +33,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         /// <summary>
         /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
         /// </summary>
-        /// <param name="lease">Instance of a lease that was taken by a different host.</param>
+        /// <param name="lease">Instance of a lost lease.</param>
         /// <param name="innerException">The inner exception.</param>
         /// <param name="isGone">Whether lease doesn't exist.</param>
         public LeaseLostException(ILease lease, Exception innerException, bool isGone = false)
@@ -74,7 +74,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         }
 
         /// <summary>
-        /// Gets lease that was taken by a different host.
+        /// Gets lost lease.
         /// </summary>
         public ILease Lease { get; }
 
