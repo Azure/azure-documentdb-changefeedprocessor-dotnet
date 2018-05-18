@@ -8,19 +8,34 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     using System.Runtime.Serialization;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
+    /// <summary>
+    /// Exception occurred when lease was taken by a different host.
+    /// </summary>
     [Serializable]
-    internal class LeaseLostException : Exception
+    public class LeaseLostException : Exception
     {
-        /// <summary>Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.</summary>
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// </summary>
         public LeaseLostException()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// </summary>
+        /// <param name="lease">Instance of a lease that was taken by a different host.</param>
         public LeaseLostException(ILease lease)
         {
             this.Lease = lease;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// </summary>
+        /// <param name="lease">Instance of a lease that was taken by a different host.</param>
+        /// <param name="innerException">The inner exception.</param>
+        /// <param name="isGone">Whether lease doesn't exist.</param>
         public LeaseLostException(ILease lease, Exception innerException, bool isGone = false)
             : base(null, innerException)
         {
@@ -28,26 +43,51 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
             this.IsGone = isGone;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// </summary>
+        /// <param name="message">The exception error message.</param>
         public LeaseLostException(string message)
             : base(message)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// </summary>
+        /// <param name="message">The exception error message.</param>
+        /// <param name="innerException">The inner exception.</param>
         public LeaseLostException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// </summary>
+        /// <param name="info">The SerializationInfo object that holds serialized object data for the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
         protected LeaseLostException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             this.Lease = (ILease)info.GetValue("Lease", typeof(ILease));
         }
 
+        /// <summary>
+        /// Gets lease that was taken by a different host.
+        /// </summary>
         public ILease Lease { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether lease doesn't exist.
+        /// </summary>
         public bool IsGone { get; }
 
+        /// <summary>
+        /// Sets the System.Runtime.Serialization.SerializationInfo with information about the exception.
+        /// </summary>
+        /// <param name="info">The SerializationInfo object that holds serialized object data for the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
