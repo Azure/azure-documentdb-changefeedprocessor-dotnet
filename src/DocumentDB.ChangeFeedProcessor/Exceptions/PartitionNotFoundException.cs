@@ -20,11 +20,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PartitionNotFoundException"/> class.
+        /// Initializes a new instance of the <see cref="PartitionNotFoundException"/> class using error message.
         /// </summary>
-        /// <param name="lastContinuation"> Request continuation token </param>
-        public PartitionNotFoundException(string lastContinuation)
-            : base(lastContinuation)
+        /// <param name="message">The exception error message.</param>
+        public PartitionNotFoundException(string message)
+            : base(message)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PartitionNotFoundException"/> class using error message and last continuation token.
+        /// </summary>
+        /// <param name="message">The exception error message.</param>
+        /// <param name="lastContinuation"> Request continuation token.</param>
+        public PartitionNotFoundException(string message, string lastContinuation)
+            : base(message, lastContinuation)
         {
         }
 

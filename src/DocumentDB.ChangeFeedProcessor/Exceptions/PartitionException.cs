@@ -15,15 +15,26 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         /// <summary>
         /// Initializes a new instance of the <see cref="PartitionException" /> class.
         /// </summary>
-        public PartitionException()
+        protected PartitionException()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PartitionException"/> class.
+        /// Initializes a new instance of the <see cref="PartitionException"/> class using error message.
         /// </summary>
+        /// <param name="message">The exception error message.</param>
+        protected PartitionException(string message)
+            : base(message)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PartitionException"/> class using error message and last continuation token.
+        /// </summary>
+        /// <param name="message">The exception error message.</param>
         /// <param name="lastContinuation"> Request continuation token </param>
-        public PartitionException(string lastContinuation)
+        protected PartitionException(string message, string lastContinuation)
+            : base(message)
         {
             this.LastContinuation = lastContinuation;
         }
@@ -33,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         /// </summary>
         /// <param name="message">The exception error message.</param>
         /// <param name="innerException">The inner exception.</param>
-        public PartitionException(string message, Exception innerException)
+        protected PartitionException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
@@ -49,7 +60,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         }
 
         /// <summary>
-        /// Gets value of request continuation token.
+        /// Gets the value of request continuation token.
         /// </summary>
         public string LastContinuation { get; }
     }

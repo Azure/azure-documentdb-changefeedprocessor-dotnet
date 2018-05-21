@@ -74,7 +74,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         }
 
         /// <summary>
-        /// Gets lost lease.
+        /// Gets the lost lease.
         /// </summary>
         public ILease Lease { get; }
 
