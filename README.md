@@ -76,6 +76,8 @@ namespace Sample
 namespace Sample
 {
     using System;
+    using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
@@ -84,6 +86,14 @@ namespace Sample
     {
         public static void Run()
         {
+            // Override defaults to make sure there is enough connections and threads (e.g. DefaultConnectionLimit is 2).
+            // Set to a value which is at least PatritionCount * 2 + 1.
+            ServicePointManager.DefaultConnectionLimit = Math.Max(ServicePointManager.DefaultConnectionLimit, 48);
+
+            int workerThreadCount = 0, completionThreadCount = 0;
+            ThreadPool.GetMaxThreads(out workerThreadCount, out completionThreadCount);
+            ThreadPool.SetMaxThreads(Math.Max(workerThreadCount, 48), Math.Max(completionThreadCount, 48));
+
             RunAsync().Wait();
         }
 
@@ -123,6 +133,11 @@ namespace Sample
     }
 }
 ```
+
+## What's new in v2
+See [Release notes](https://docs.microsoft.com/en-us/azure/cosmos-db/sql-api-sdk-dotnet-changefeed).
+
+
 ## Note on obsolete API
 The following v1 API from v1 is is present in v2 for backward compatibility but is marked obsolete. It is recommended to use new API.
 
