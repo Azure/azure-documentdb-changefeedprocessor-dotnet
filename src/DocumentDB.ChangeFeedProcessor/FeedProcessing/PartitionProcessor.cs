@@ -66,9 +66,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     switch (docDbError)
                     {
                         case DocDbError.PartitionNotFound:
-                            throw new PartitionNotFoundException("partition not found", requestContinuation);
+                            throw new PartitionNotFoundException("Partition not found.", requestContinuation);
                         case DocDbError.PartitionSplit:
-                            throw new PartitionSplitException("partition split", requestContinuation);
+                            throw new PartitionSplitException("Partition split.", requestContinuation);
                         case DocDbError.Undefined:
                             throw;
                         case DocDbError.MaxItemCountTooLarge:
