@@ -8,46 +8,86 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     using System.Runtime.Serialization;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
+    /// <summary>
+    /// Exception occurred when lease is lost, that would typically happen when it is taken by another host. Other cases: communication failure, number of retries reached, lease not found.
+    /// </summary>
     [Serializable]
-    internal class LeaseLostException : Exception
+    public class LeaseLostException : Exception
     {
-        /// <summary>Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.</summary>
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class.
+        /// </summary>
         public LeaseLostException()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using the specified lease.
+        /// </summary>
+        /// <param name="lease">Instance of a lost lease.</param>
         public LeaseLostException(ILease lease)
         {
             this.Lease = lease;
         }
 
-        public LeaseLostException(ILease lease, Exception innerException, bool isGone = false)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using the specified lease, inner exception, and a flag indicating whether lease is gone.
+        /// </summary>
+        /// <param name="lease">Instance of a lost lease.</param>
+        /// <param name="innerException">The inner exception.</param>
+        /// <param name="isGone">Whether lease doesn't exist.</param>
+        public LeaseLostException(ILease lease, Exception innerException, bool isGone)
             : base(null, innerException)
         {
             this.Lease = lease;
             this.IsGone = isGone;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using error message.
+        /// </summary>
+        /// <param name="message">The exception error message.</param>
         public LeaseLostException(string message)
             : base(message)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using error message and inner exception.
+        /// </summary>
+        /// <param name="message">The exception error message.</param>
+        /// <param name="innerException">The inner exception.</param>
         public LeaseLostException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
+        /// </summary>
+        /// <param name="info">The SerializationInfo object that holds serialized object data for the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
         protected LeaseLostException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             this.Lease = (ILease)info.GetValue("Lease", typeof(ILease));
         }
 
+        /// <summary>
+        /// Gets the lost lease.
+        /// </summary>
         public ILease Lease { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether lease doesn't exist.
+        /// </summary>
         public bool IsGone { get; }
 
+        /// <summary>
+        /// Sets the System.Runtime.Serialization.SerializationInfo with information about the exception.
+        /// </summary>
+        /// <param name="info">The SerializationInfo object that holds serialized object data for the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
