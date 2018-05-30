@@ -14,6 +14,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentDB.ChangeFeedProces
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentDB.ChangeFeedProcessor.IntegrationTests", "DocumentDB.ChangeFeedProcessor.IntegrationTests\DocumentDB.ChangeFeedProcessor.IntegrationTests.csproj", "{DD816695-2558-4CA1-9E4B-8967C0DBCEAB}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentDB.ChangeFeedProcessor.ConsoleApp", "DocumentDB.ChangeFeedProcessor.ConsoleApp\DocumentDB.ChangeFeedProcessor.ConsoleApp.csproj", "{608E5557-02FA-45AB-84EB-5D2A388C3060}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +34,10 @@ Global
 		{DD816695-2558-4CA1-9E4B-8967C0DBCEAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD816695-2558-4CA1-9E4B-8967C0DBCEAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD816695-2558-4CA1-9E4B-8967C0DBCEAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{608E5557-02FA-45AB-84EB-5D2A388C3060}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{608E5557-02FA-45AB-84EB-5D2A388C3060}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{608E5557-02FA-45AB-84EB-5D2A388C3060}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{608E5557-02FA-45AB-84EB-5D2A388C3060}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
