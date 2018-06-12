@@ -43,12 +43,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             await this.CreateLeasesAsync(partitionIds).ConfigureAwait(false);
         }
 
-        public async Task<IEnumerable<ILease>> SplitPartitionAsync(ILease lease, string lastContinuationToken)
+        public async Task<IEnumerable<ILease>> SplitPartitionAsync(ILease lease)
         {
             if (lease == null)
                 throw new ArgumentNullException(nameof(lease));
 
             string partitionId = lease.PartitionId;
+            string lastContinuationToken = lease.ContinuationToken;
 
             Logger.InfoFormat("Partition {0} is gone due to split", partitionId);
             List<PartitionKeyRange> ranges = await this.EnumPartitionKeyRangesAsync().ConfigureAwait(false);

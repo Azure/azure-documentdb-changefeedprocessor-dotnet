@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 }
             };
 
-            var lease = Mock.Of<ILease>(l => l.PartitionId == "10" && l.ContinuationToken == "pre-last other token");
+            var lease = Mock.Of<ILease>(l => l.PartitionId == "10" && l.ContinuationToken == lastKnowToken);
 
             var keyRangeResponse = Mock.Of<IFeedResponse<PartitionKeyRange>>(r => r.GetEnumerator() == keyRanges.GetEnumerator());
             IChangeFeedDocumentClient documentClient = Mock.Of<IChangeFeedDocumentClient>(c => c.ReadPartitionKeyRangeFeedAsync(It.IsAny<string>(), It.IsAny<FeedOptions>()) == Task.FromResult(keyRangeResponse));
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 m.CreateLeaseIfNotExistAsync("30", lastKnowToken) == Task.FromResult(lease30));
 
             var sut = new PartitionSynchronizer(documentClient, "collectionlink", leaseManager, 1, int.MaxValue);
-            IEnumerable<ILease> result = await sut.SplitPartitionAsync(lease, lastKnowToken);
+            IEnumerable<ILease> result = await sut.SplitPartitionAsync(lease);
             Assert.NotNull(result);
             Assert.Equal(new [] { lease20, lease30 }, result);
         }

@@ -134,7 +134,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             try
             {
-                IEnumerable<ILease> addedLeases = await this.synchronizer.SplitPartitionAsync(lease, lastContinuationToken).ConfigureAwait(false);
+                lease.ContinuationToken = lastContinuationToken;
+                IEnumerable<ILease> addedLeases = await this.synchronizer.SplitPartitionAsync(lease).ConfigureAwait(false);
                 Task[] addLeaseTasks = addedLeases.Select(l =>
                     {
                         l.Properties = lease.Properties;
