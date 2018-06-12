@@ -14,6 +14,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     {
         Task CreateMissingLeasesAsync();
 
-        Task<IEnumerable<ILease>> SplitPartitionAsync(ILease lease);
+        Task<IEnumerable<ILease>> SplitPartitionAsync(ILease lease, string lastContinuationToken);
     }
 }

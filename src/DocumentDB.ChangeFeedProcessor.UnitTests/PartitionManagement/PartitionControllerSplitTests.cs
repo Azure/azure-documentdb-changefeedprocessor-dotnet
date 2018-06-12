@@ -17,6 +17,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     [Trait("Category", "Gated")]
     public class PartitionControllerSplitTests : IAsyncLifetime
     {
+        private const string LastContinuationToken = "lastContinuation";
         private readonly ILease lease, leaseChild, leaseChild2;
         private readonly ILeaseManager leaseManager;
         private readonly IPartitionSupervisorFactory partitionSupervisorFactory;
@@ -43,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var partitionSupervisor = Mock.Of<IPartitionSupervisor>();
             Mock.Get(partitionSupervisor)
                 .Setup(o => o.RunAsync(It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new PartitionSplitException("lastContinuation"));
+                .ThrowsAsync(new PartitionSplitException("message", LastContinuationToken));
 
             partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
 
@@ -92,7 +93,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Returns(Task.FromResult(false));
 
             Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(lease))
+                .Setup(s => s.SplitPartitionAsync(lease, LastContinuationToken))
                 .ReturnsAsync(new[] { leaseChild, leaseChild2 });
 
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -135,7 +136,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Returns(Task.FromResult(false));
 
             Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(lease))
+                .Setup(s => s.SplitPartitionAsync(lease, LastContinuationToken))
                 .ReturnsAsync(new[] { leaseChild, leaseChild2 });
 
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -187,7 +188,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public async Task Controller_ShouldKeepParentLease_IfSplitThrows()
         {
             Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(lease))
+                .Setup(s => s.SplitPartitionAsync(lease, LastContinuationToken))
                 .ThrowsAsync(new InvalidOperationException());
 
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -201,7 +202,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var processor = MockPartitionProcessor();
             Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(lease))
+                .Setup(s => s.SplitPartitionAsync(lease, LastContinuationToken))
                 .ReturnsAsync(new[] { leaseChild, leaseChild2 });
 
             Mock.Get(partitionSupervisorFactory)
@@ -229,7 +230,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public async Task Controller_ShouldDeleteParentLease_IfChildLeaseAcquireThrows()
         {
             Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(lease))
+                .Setup(s => s.SplitPartitionAsync(lease, LastContinuationToken))
                 .ReturnsAsync(new[] { leaseChild, leaseChild2 });
 
             Mock.Get(partitionSupervisorFactory)

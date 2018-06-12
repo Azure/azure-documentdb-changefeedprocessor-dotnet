@@ -20,15 +20,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PartitionSplitException"/> class using error message.
-        /// </summary>
-        /// <param name="message">The exception error message.</param>
-        public PartitionSplitException(string message)
-            : base(message)
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="PartitionSplitException"/> class using error message and last continuation token.
         /// </summary>
         /// <param name="message">The exception error message.</param>
