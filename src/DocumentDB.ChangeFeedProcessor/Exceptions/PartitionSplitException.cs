@@ -13,29 +13,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     public class PartitionSplitException : PartitionException
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PartitionSplitException" /> class.
-        /// </summary>
-        public PartitionSplitException()
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="PartitionSplitException"/> class using error message and last continuation token.
         /// </summary>
         /// <param name="message">The exception error message.</param>
         /// <param name="lastContinuation"> Request continuation token.</param>
         public PartitionSplitException(string message, string lastContinuation)
             : base(message, lastContinuation)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PartitionSplitException" /> class using error message and inner exception.
-        /// </summary>
-        /// <param name="message">The exception error message.</param>
-        /// <param name="innerException">The inner exception.</param>
-        public PartitionSplitException(string message, Exception innerException)
-            : base(message, innerException)
         {
         }
 

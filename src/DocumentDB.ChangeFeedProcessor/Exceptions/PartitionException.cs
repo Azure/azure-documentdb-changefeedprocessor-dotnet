@@ -13,22 +13,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     public class PartitionException : Exception
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PartitionException" /> class.
-        /// </summary>
-        protected PartitionException()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PartitionException"/> class using error message.
-        /// </summary>
-        /// <param name="message">The exception error message.</param>
-        protected PartitionException(string message)
-            : base(message)
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="PartitionException"/> class using error message and last continuation token.
         /// </summary>
         /// <param name="message">The exception error message.</param>
@@ -43,10 +27,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         /// Initializes a new instance of the <see cref="PartitionException" /> class using error message and inner exception.
         /// </summary>
         /// <param name="message">The exception error message.</param>
+        /// <param name="lastContinuation"> Request continuation token </param>
         /// <param name="innerException">The inner exception.</param>
-        protected PartitionException(string message, Exception innerException)
+        protected PartitionException(string message, string lastContinuation, Exception innerException)
             : base(message, innerException)
         {
+            this.LastContinuation = lastContinuation;
         }
 
         /// <summary>
