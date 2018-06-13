@@ -114,9 +114,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             {
                 await partitionSupervisor.RunAsync(this.shutdownCts.Token).ConfigureAwait(false);
             }
-            catch (PartitionSplitException)
+            catch (PartitionSplitException ex)
             {
-                await this.HandleSplitAsync(lease).ConfigureAwait(false);
+                await this.HandleSplitAsync(lease, ex.LastContinuation).ConfigureAwait(false);
             }
             catch (TaskCanceledException)
             {
@@ -130,10 +130,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             await this.RemoveLeaseAsync(lease).ConfigureAwait(false);
         }
 
-        private async Task HandleSplitAsync(ILease lease)
+        private async Task HandleSplitAsync(ILease lease, string lastContinuationToken)
         {
             try
             {
+                lease.ContinuationToken = lastContinuationToken;
                 IEnumerable<ILease> addedLeases = await this.synchronizer.SplitPartitionAsync(lease).ConfigureAwait(false);
                 Task[] addLeaseTasks = addedLeases.Select(l =>
                     {

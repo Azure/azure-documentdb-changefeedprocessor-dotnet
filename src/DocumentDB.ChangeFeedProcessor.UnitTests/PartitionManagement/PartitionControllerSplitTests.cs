@@ -17,6 +17,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     [Trait("Category", "Gated")]
     public class PartitionControllerSplitTests : IAsyncLifetime
     {
+        private const string LastContinuationToken = "lastContinuation";
+        private const string InitialContinuationToken = "initial token";
+        private const string PartitionId = "partitionId";
         private readonly ILease lease, leaseChild, leaseChild2;
         private readonly ILeaseManager leaseManager;
         private readonly IPartitionSupervisorFactory partitionSupervisorFactory;
@@ -25,10 +28,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
         public PartitionControllerSplitTests()
         {
-            lease = Mock.Of<ILease>();
-            Mock.Get(lease)
-                .Setup(l => l.PartitionId)
-                .Returns("partitionId");
+            lease = Mock.Of<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == InitialContinuationToken);
 
             leaseChild = Mock.Of<ILease>();
             Mock.Get(leaseChild)
@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var partitionSupervisor = Mock.Of<IPartitionSupervisor>();
             Mock.Get(partitionSupervisor)
                 .Setup(o => o.RunAsync(It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new PartitionSplitException("lastContinuation"));
+                .ThrowsAsync(new PartitionSplitException("message", LastContinuationToken));
 
             partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
 
@@ -92,7 +92,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Returns(Task.FromResult(false));
 
             Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(lease))
+                .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
                 .ReturnsAsync(new[] { leaseChild, leaseChild2 });
 
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -135,7 +135,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Returns(Task.FromResult(false));
 
             Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(lease))
+                .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
                 .ReturnsAsync(new[] { leaseChild, leaseChild2 });
 
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -201,7 +201,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var processor = MockPartitionProcessor();
             Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(lease))
+                .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
                 .ReturnsAsync(new[] { leaseChild, leaseChild2 });
 
             Mock.Get(partitionSupervisorFactory)
@@ -229,7 +229,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public async Task Controller_ShouldDeleteParentLease_IfChildLeaseAcquireThrows()
         {
             Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(lease))
+                .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
                 .ReturnsAsync(new[] { leaseChild, leaseChild2 });
 
             Mock.Get(partitionSupervisorFactory)

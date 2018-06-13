@@ -49,7 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
                 throw new ArgumentNullException(nameof(lease));
 
             string partitionId = lease.PartitionId;
-            string continuationToken = lease.ContinuationToken;
+            string lastContinuationToken = lease.ContinuationToken;
 
             Logger.InfoFormat("Partition {0} is gone due to split", partitionId);
             List<PartitionKeyRange> ranges = await this.EnumPartitionKeyRangesAsync().ConfigureAwait(false);
@@ -64,7 +64,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             await addedPartitionIds.ForEachAsync(
                 async addedRangeId =>
                 {
-                    ILease newLease = await this.leaseManager.CreateLeaseIfNotExistAsync(addedRangeId, continuationToken).ConfigureAwait(false);
+                    ILease newLease = await this.leaseManager.CreateLeaseIfNotExistAsync(addedRangeId, lastContinuationToken).ConfigureAwait(false);
                     newLeases.Enqueue(newLease);
                 },
                 this.degreeOfParallelism).ConfigureAwait(false);
