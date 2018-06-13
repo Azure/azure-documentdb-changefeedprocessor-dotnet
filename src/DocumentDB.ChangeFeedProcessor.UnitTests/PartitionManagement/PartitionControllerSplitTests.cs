@@ -15,211 +15,202 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     using Xunit;
 
     [Trait("Category", "Gated")]
-    public class PartitionControllerSplitTests : IAsyncLifetime
+    public class PartitionControllerSplitTests
     {
         private const string LastContinuationToken = "lastContinuation";
         private const string InitialContinuationToken = "initial token";
         private const string PartitionId = "partitionId";
-        private readonly ILease lease, leaseChild, leaseChild2;
-        private readonly ILeaseManager leaseManager;
-        private readonly IPartitionSupervisorFactory partitionSupervisorFactory;
-        private readonly IPartitionSynchronizer synchronizer;
-        private readonly PartitionController sut;
 
-        public PartitionControllerSplitTests()
+        private ILease MockLease(string partitionId = null)
         {
-            lease = Mock.Of<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == InitialContinuationToken);
-
-            leaseChild = Mock.Of<ILease>();
-            Mock.Get(leaseChild)
-                .Setup(l => l.PartitionId)
-                .Returns("childPartitionId");
-
-            leaseChild2 = Mock.Of<ILease>();
-            Mock.Get(leaseChild2)
-                .Setup(l => l.PartitionId)
-                .Returns("childPartitionId2");
-
-            var partitionSupervisor = Mock.Of<IPartitionSupervisor>();
-            Mock.Get(partitionSupervisor)
-                .Setup(o => o.RunAsync(It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new PartitionSplitException("message", LastContinuationToken));
-
-            partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
-
-            leaseManager = Mock.Of<ILeaseManager>();
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(lease))
-                .ReturnsAsync(lease);
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.ReleaseAsync(lease))
-                .Returns(Task.FromResult(false));
-
-            synchronizer = Mock.Of<IPartitionSynchronizer>();
-            sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            partitionId = partitionId ?? Guid.NewGuid().ToString();
+            return Mock.Of<ILease>(l => l.PartitionId == partitionId);
         }
 
         [Fact]
-        public async Task Controller_ShouldSignalSynchronizerSplitPartition_IfObserverThrowsPartitionSplitException()
+        public async Task Controller_ShouldSignalSynchronizerSplitPartition_IfPartitionSplitHappened()
         {
-            Mock.Get(partitionSupervisorFactory)
-                .Setup(f => f.Create(leaseChild))
-                .Returns(new PartitionSupervisor(leaseChild, MockObserver(), MockPartitionProcessor(), MockRenewer()));
-
-            Mock.Get(partitionSupervisorFactory)
-                .Setup(f => f.Create(leaseChild2))
-                .Returns<ILease>(l => new PartitionSupervisor(l, MockObserver(), MockPartitionProcessor(), MockRenewer()));
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild))
-                .ReturnsAsync(leaseChild);
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild2))
-                .ReturnsAsync(leaseChild2);
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.DeleteAsync(lease))
-                .Returns(Task.FromResult(false));
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.ReleaseAsync(leaseChild))
-                .Returns(Task.FromResult(false));
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.ReleaseAsync(leaseChild2))
-                .Returns(Task.FromResult(false));
-
-            Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
-                .ReturnsAsync(new[] { leaseChild, leaseChild2 });
-
-            await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
-        }
-
-        [Fact]
-        public async Task Controller_ShouldCopyParentLeaseProperties_IfObserverThrowsPartitionSplitException()
-        {
-            Mock.Get(partitionSupervisorFactory)
-                .Setup(f => f.Create(leaseChild))
-                .Returns(new PartitionSupervisor(leaseChild, MockObserver(), MockPartitionProcessor(), MockRenewer()));
-
-            Mock.Get(partitionSupervisorFactory)
-                .Setup(f => f.Create(leaseChild2))
-                .Returns<ILease>(l => new PartitionSupervisor(l, MockObserver(), MockPartitionProcessor(), MockRenewer()));
-
-            var customProperties = new Dictionary<string, string> { {"key", "value"} };
-            Mock.Get(lease)
-                .Setup(l => l.Properties)
-                .Returns(customProperties);
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild))
-                .ReturnsAsync(leaseChild);
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild2))
-                .ReturnsAsync(leaseChild2);
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.DeleteAsync(lease))
-                .Returns(Task.FromResult(false));
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.ReleaseAsync(leaseChild))
-                .Returns(Task.FromResult(false));
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.ReleaseAsync(leaseChild2))
-                .Returns(Task.FromResult(false));
-
-            Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
-                .ReturnsAsync(new[] { leaseChild, leaseChild2 });
-
-            await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
-
-            Mock.Get(leaseChild)
-                .VerifySet(l => l.Properties = customProperties, Times.Once);
-
-            Mock.Get(leaseChild2)
-                .VerifySet(l => l.Properties = customProperties, Times.Once);
-        }
-
-        // TODO: update the test
-        /*
-        [Fact]
-        public async Task Controller_ShouldProcessChildPartitions_IfParentPartitionIsSplit()
-        {
-            Mock.Get(partitionSupervisorFactory)
-                .Setup(f => f.Create(leaseChild))
-                .Returns<ILease>(l => new PartitionSupervisor(l, MockObserver(), MockPartitionProcessor(), "partition", MockRenewer()));
-
-            Mock.Get(partitionSupervisorFactory)
-                .Setup(f => f.Create(leaseChild2))
-                .Returns<ILease>(l => new PartitionSupervisor(l, MockObserver(), MockPartitionProcessor(), "partition", MockRenewer()));
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild, "host"))
-                .ReturnsAsync(lease);
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild2, "host"))
-                .ReturnsAsync(lease);
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.DeleteAsync(lease))
-                .Returns(Task.FromResult(false));
-
+            //arrange
+            var lease = MockLease(PartitionId);
+            var synchronizer = Mock.Of<IPartitionSynchronizer>();
             Mock.Get(synchronizer)
                 .Setup(s => s.SplitPartitionAsync(lease))
-                .ReturnsAsync(new[] { leaseChild, leaseChild2 });
+                .ReturnsAsync(new[] { MockLease(), MockLease() });
 
+            var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
+            var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
+            var leaseManager = Mock.Of<ILeaseManager>(manager => manager.AcquireAsync(lease) == Task.FromResult(lease));
+
+            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+
+            //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
 
-            IEnumerable<ILease> leases = sut.GetOwnedLeasesSnapshot();
-            Assert.Equal(leases.OrderBy(l => l.PartitionId), new[] { leaseChild, leaseChild2 });
+            //assert
+
+            await sut.ShutdownAsync().ConfigureAwait(false);
+
+            Mock.Get(synchronizer).VerifyAll();
         }
-        */
+
+        [Fact]
+        public async Task Controller_ShouldPassLastKnownContinuationTokenToSynchronizer_IfPartitionSplitHappened()
+        {
+            //arrange
+            var lease = Mock.Of<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == InitialContinuationToken);
+            var synchronizer = Mock.Of<IPartitionSynchronizer>();
+            Mock.Get(synchronizer)
+                .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
+                .ReturnsAsync(new[] { MockLease(), MockLease() });
+
+            var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
+            var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
+            var leaseManager = Mock.Of<ILeaseManager>(manager => manager.AcquireAsync(lease) == Task.FromResult(lease));
+
+            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+
+            //act
+            await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
+
+            //assert
+            await sut.ShutdownAsync().ConfigureAwait(false);
+
+            Mock.Get(synchronizer).VerifyAll();
+        }
+
+        [Fact]
+        public async Task Controller_ShouldCopyParentLeaseProperties_IfPartitionSplitHappened()
+        {
+            //arrange
+            var customProperties = new Dictionary<string, string> { {"key", "value"} };
+            var lease = Mock.Of<ILease>(l => l.PartitionId == PartitionId && l.Properties == customProperties);
+            var synchronizer = Mock.Of<IPartitionSynchronizer>();
+            ILease leaseChild1 = MockLease();
+            ILease leaseChild2 = MockLease();
+            Mock.Get(synchronizer)
+                .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
+                .ReturnsAsync(new[] { leaseChild1, leaseChild2 });
+
+            var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
+            var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
+            var leaseManager = Mock.Of<ILeaseManager>(manager => manager.AcquireAsync(lease) == Task.FromResult(lease));
+
+            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+
+            //act
+            await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
+
+
+            await sut.ShutdownAsync().ConfigureAwait(false);
+
+            Mock.Get(leaseChild1)
+                    .VerifySet(l => l.Properties = customProperties, Times.Once);
+
+            Mock.Get(leaseChild2)
+                .VerifySet(l => l.Properties = customProperties, Times.Once);
+        }
 
         [Fact]
         public async Task Controller_ShouldKeepParentLease_IfSplitThrows()
         {
-            Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(lease))
-                .ThrowsAsync(new InvalidOperationException());
+            //arrange
+            var lease = MockLease(PartitionId);
+            var synchronizer = Mock.Of<IPartitionSynchronizer>(s => s.SplitPartitionAsync(lease) == Task.FromException(new InvalidOperationException()));
+            var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
+            var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
+            var leaseManager = Mock.Of<ILeaseManager>();
 
+            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+
+            //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
 
-            Mock.Get(leaseManager)
-                .Verify(manager => manager.DeleteAsync(lease), Times.Never);
+            //assert
+            await sut.ShutdownAsync().ConfigureAwait(false);
+
+            Mock.Get(leaseManager).Verify(manager => manager.DeleteAsync(lease), Times.Never);
+        }
+
+        [Fact]
+        public async Task Controller_ShouldRunProcessingOnChildPartitions_IfHappyPath()
+        {
+            //arrange
+            var lease = MockLease(PartitionId);
+            var synchronizer = Mock.Of<IPartitionSynchronizer>();
+            ILease leaseChild1 = MockLease();
+            ILease leaseChild2 = MockLease();
+            Mock.Get(synchronizer)
+                .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
+                .ReturnsAsync(new[] { leaseChild1, leaseChild2 });
+
+            var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
+            var partitionSupervisor1 = Mock.Of<IPartitionSupervisor>();
+            Mock.Get(partitionSupervisor1).Setup(o => o.RunAsync(It.IsAny<CancellationToken>())).Returns<CancellationToken>(token => Task.Delay(TimeSpan.FromHours(1), token));
+            var partitionSupervisor2 = Mock.Of<IPartitionSupervisor>();
+            Mock.Get(partitionSupervisor2).Setup(o => o.RunAsync(It.IsAny<CancellationToken>())).Returns<CancellationToken>(token => Task.Delay(TimeSpan.FromHours(1), token));
+
+            var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f =>
+                f.Create(lease) == partitionSupervisor && f.Create(leaseChild1) == partitionSupervisor1 && f.Create(leaseChild2) == partitionSupervisor2);
+            var leaseManager = Mock.Of<ILeaseManager>(manager => manager.AcquireAsync(lease) == Task.FromResult(lease));
+
+            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+
+            //act
+            await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
+
+            //assert
+            await sut.ShutdownAsync().ConfigureAwait(false);
+
+            Mock.Get(leaseManager).Verify(manager => manager.AcquireAsync(leaseChild1), Times.Once);
+            Mock.Get(leaseManager).Verify(manager => manager.AcquireAsync(leaseChild2), Times.Once);
+
+            Mock.Get(partitionSupervisorFactory).Verify(f => f.Create(leaseChild1), Times.Once);
+            Mock.Get(partitionSupervisorFactory).Verify(f => f.Create(leaseChild2), Times.Once);
+
+            Mock.Get(partitionSupervisor1).Verify(p => p.RunAsync(It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(partitionSupervisor2).Verify(p => p.RunAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task Controller_ShouldIgnoreProcessingChildPartition_IfPartitionAlreadyAdded()
         {
-            var processor = MockPartitionProcessor();
+            //arrange
+            var lease = MockLease(PartitionId);
+            var synchronizer = Mock.Of<IPartitionSynchronizer>();
+            ILease leaseChild1 = MockLease();
+            ILease leaseChild2 = MockLease();
             Mock.Get(synchronizer)
                 .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
-                .ReturnsAsync(new[] { leaseChild, leaseChild2 });
+                .ReturnsAsync(new[] { leaseChild1, leaseChild2 });
 
-            Mock.Get(partitionSupervisorFactory)
-                .Setup(f => f.Create(leaseChild))
-                .Returns<ILease>(l => new PartitionSupervisor(l, MockObserver(), MockPartitionProcessor(), MockRenewer()));
+            var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
+            var partitionSupervisor1 = Mock.Of<IPartitionSupervisor>();
+            Mock.Get(partitionSupervisor1).Setup(o => o.RunAsync(It.IsAny<CancellationToken>())).Returns<CancellationToken>(token => Task.Delay(TimeSpan.FromHours(1), token));
+            var partitionSupervisor2 = Mock.Of<IPartitionSupervisor>();
+            Mock.Get(partitionSupervisor2).Setup(o => o.RunAsync(It.IsAny<CancellationToken>())).Returns<CancellationToken>(token => Task.Delay(TimeSpan.FromHours(1), token));
 
-            Mock.Get(partitionSupervisorFactory)
-                .Setup(f => f.Create(leaseChild2))
-                .Returns<ILease>(l => new PartitionSupervisor(l, MockObserver(), MockPartitionProcessor(), MockRenewer()));
+            var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => 
+                f.Create(lease) == partitionSupervisor && f.Create(leaseChild1) == partitionSupervisor1 && f.Create(leaseChild2) == partitionSupervisor2);
+            var leaseManager = Mock.Of<ILeaseManager>(manager => manager.AcquireAsync(lease) == Task.FromResult(lease));
 
+            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+
+            //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
             await sut.AddOrUpdateLeaseAsync(leaseChild2).ConfigureAwait(false);
+            await sut.AddOrUpdateLeaseAsync(leaseChild2).ConfigureAwait(false);
+            await sut.AddOrUpdateLeaseAsync(leaseChild2).ConfigureAwait(false);
+            await sut.AddOrUpdateLeaseAsync(leaseChild2).ConfigureAwait(false);
+            await sut.AddOrUpdateLeaseAsync(leaseChild2).ConfigureAwait(false);
+
+            //assert
+            await sut.ShutdownAsync().ConfigureAwait(false);
 
             Mock.Get(leaseManager)
                 .Verify(manager => manager.AcquireAsync(leaseChild2), Times.Once);
 
             Mock.Get(leaseManager)
-                .Verify(manager => manager.UpdatePropertiesAsync(leaseChild2), Times.Once);
+                .Verify(manager => manager.UpdatePropertiesAsync(leaseChild2), Times.Exactly(5));
 
             Mock.Get(partitionSupervisorFactory)
                 .Verify(f => f.Create(leaseChild2), Times.Once);
@@ -228,72 +219,30 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task Controller_ShouldDeleteParentLease_IfChildLeaseAcquireThrows()
         {
+            //arrange
+            var lease = MockLease(PartitionId);
+            var synchronizer = Mock.Of<IPartitionSynchronizer>();
+            ILease leaseChild2 = MockLease();
             Mock.Get(synchronizer)
-                .Setup(s => s.SplitPartitionAsync(It.Is<ILease>(l => l.PartitionId == PartitionId && l.ContinuationToken == LastContinuationToken)))
-                .ReturnsAsync(new[] { leaseChild, leaseChild2 });
+                .Setup(s => s.SplitPartitionAsync(lease))
+                .ReturnsAsync(new[] { MockLease(), leaseChild2 });
 
-            Mock.Get(partitionSupervisorFactory)
-                .Setup(f => f.Create(leaseChild))
-                .Returns<ILease>(l => new PartitionSupervisor(l, MockObserver(), MockPartitionProcessor(), MockRenewer()));
+            var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
+            var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
+            var leaseManager = Mock.Of<ILeaseManager>(manager => 
+                manager.AcquireAsync(lease) == Task.FromResult(lease) &&
+                manager.AcquireAsync(leaseChild2) == Task.FromException<ILease>(new LeaseLostException())
+                );
 
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild))
-                .ReturnsAsync(leaseChild);
+            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
 
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.AcquireAsync(leaseChild2))
-                .Throws(new LeaseLostException());
-
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.DeleteAsync(lease))
-                .Returns(Task.FromResult(false));
-
+            //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
-        }
 
-        public Task InitializeAsync()
-        {
-            return Task.FromResult(false);
-        }
-
-        public async Task DisposeAsync()
-        {
+            //assert
             await sut.ShutdownAsync().ConfigureAwait(false);
 
-            Mock.Get(leaseManager)
-                .VerifyAll();
-
-            Mock.Get(partitionSupervisorFactory)
-                .VerifyAll();
-
-            Mock.Get(synchronizer)
-                .VerifyAll();
-        }
-
-        private static IPartitionProcessor MockPartitionProcessor()
-        {
-            var mock = new Mock<IPartitionProcessor>();
-            mock
-                .Setup(p => p.RunAsync(It.IsAny<CancellationToken>()))
-                .Returns<CancellationToken>(token => Task.Delay(TimeSpan.FromHours(1), token));
-            return mock.Object;
-        }
-
-        private static ILeaseRenewer MockRenewer()
-        {
-            var mock = new Mock<ILeaseRenewer>();
-            mock
-                .Setup(renewer => renewer.RunAsync(It.IsAny<CancellationToken>()))
-                .Returns<CancellationToken>(token => Task.Delay(TimeSpan.FromMinutes(1), token));
-            return mock.Object;
-        }
-
-        private static IChangeFeedObserver MockObserver()
-        {
-            var mock = new Mock<IChangeFeedObserver>();
-            mock.Setup(observer => observer.OpenAsync(It.IsAny<ChangeFeedObserverContext>()))
-                .Returns(Task.FromResult(false));
-            return mock.Object;
+            Mock.Get(leaseManager).Verify(manager => manager.DeleteAsync(lease), Times.Once);
         }
     }
 }
