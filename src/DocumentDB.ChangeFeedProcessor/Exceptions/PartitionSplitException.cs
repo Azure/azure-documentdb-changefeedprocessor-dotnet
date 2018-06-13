@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     /// <summary>
     /// Exception occurred during partition split.
     /// </summary>
+    [Serializable]
     public class PartitionSplitException : PartitionException
     {
         /// <summary>

@@ -2,6 +2,11 @@
 # Change Feed Processor library (v2)
 This library helps distributing Azure Cosmos DB change feed events in partitioned collection across multiple observers. Instances of the processor can be scaled up (by adding) or down (by removing) dynamically, with partition load being automatically distributed among active instances in about-equal way.
 
+## Releases
+Change Feed Processor for .Net is released as NuGet package.
+* Download the [NuGet package](https://www.nuget.org/packages/Microsoft.Azure.DocumentDB.ChangeFeedProcessor/).
+* See [Release notes](https://docs.microsoft.com/azure/cosmos-db/sql-api-sdk-dotnet-changefeed).
+
 ## Design highlights
 For illustration, let's assume we are processing the change feed from **Monitored collection**, which is partitioned by **city**. The arrows in the preceding diagram indicate the current position (continuation) in the change feed.
 
@@ -123,9 +128,6 @@ namespace Sample
     }
 }
 ```
-## What is new in v2
-See [Release notes](https://docs.microsoft.com/azure/cosmos-db/sql-api-sdk-dotnet-changefeed).
-
 ## Note on obsolete API
 The following v1 API from v1 is is present in v2 for backward compatibility but is marked obsolete. It is recommended to use new API.
 
@@ -180,6 +182,7 @@ using (tracelogProvider.OpenNestedContext(hostName))
 
 ## See also
 * [Working with the change feed support in Azure Cosmos DB](https://docs.microsoft.com/azure/cosmos-db/change-feed)
+* [Previous version (v1) repository](https://github.com/Azure/azure-documentdb-dotnet/tree/master/samples/ChangeFeedProcessor).
 
 # Contributing
 

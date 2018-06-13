@@ -6,7 +6,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
+    using System.Runtime.Serialization.Formatters.Binary;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
@@ -153,6 +155,35 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
                             It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents)), 
                             It.IsAny<CancellationToken>()),
                     Times.Once);
+        }
+
+        [Fact]
+        public void ValidatePartitionSplitException_Constructor()
+        {
+            string message = "message";
+            string continuation = "continuation";
+            var ex = new PartitionSplitException(message, continuation);
+
+            Assert.Equal(message, ex.Message);
+            Assert.Equal(continuation, ex.LastContinuation);
+        }
+
+        // Tests the GetObjectData meatod and the serialization ctor.
+        [Fact]
+        public void ValidatePartitionSplitException_Serialization()
+        {
+            var originalException = new PartitionSplitException("message", "lastContinuation");
+            var buffer = new byte[4096];
+            var formatter = new BinaryFormatter();
+            var stream1 = new MemoryStream(buffer);
+            var stream2 = new MemoryStream(buffer);
+
+            formatter.Serialize(stream1, originalException);
+            var deserializedException = (PartitionSplitException)formatter.Deserialize(stream2);
+
+            Assert.Equal(originalException.Message, deserializedException.Message);
+            Assert.Equal(originalException.InnerException, deserializedException.InnerException);
+            Assert.Equal(originalException.LastContinuation, deserializedException.LastContinuation);
         }
     }
 }
