@@ -9,7 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 
     internal static class DocumentCollectionHelper
     {
-        private const string DefaultUserAgentSuffix = "changefeed-2.0.2";
+        private const string DefaultUserAgentSuffix = "changefeed-2.0.3";
 
         public static DocumentCollectionInfo Canonicalize(this DocumentCollectionInfo collectionInfo)
         {

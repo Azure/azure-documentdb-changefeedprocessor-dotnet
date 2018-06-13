@@ -123,6 +123,9 @@ namespace Sample
     }
 }
 ```
+## What is new in v2
+See [Release notes](https://docs.microsoft.com/azure/cosmos-db/sql-api-sdk-dotnet-changefeed).
+
 ## Note on obsolete API
 The following v1 API from v1 is is present in v2 for backward compatibility but is marked obsolete. It is recommended to use new API.
 
