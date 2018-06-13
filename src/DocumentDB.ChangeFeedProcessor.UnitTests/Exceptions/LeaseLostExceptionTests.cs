@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
 
         // Tests the GetObjectData meatod and the serialization ctor.
         [Fact]
-        public void ValidateSerialization()
+        public void ValidateSerialization_AllFields()
         {
             var lease = new DocumentServiceLease { Id = "id" };
             var originalException = new LeaseLostException(lease, new Exception("foo"), true);
@@ -70,6 +70,25 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
             Assert.Equal(originalException.InnerException.Message, deserializedException.InnerException.Message);
             Assert.Equal(originalException.Lease.Id, deserializedException.Lease.Id);
             Assert.Equal(originalException.IsGone, deserializedException.IsGone);
+        }
+
+        // Make sure that when some fields are not set, serialization is not broken.
+        [Fact]
+        public void ValidateSerialization_NullFields()
+        {
+            var originalException = new LeaseLostException("message");
+            var buffer = new byte[4096];
+            var formatter = new BinaryFormatter();
+            var stream1 = new MemoryStream(buffer);
+            var stream2 = new MemoryStream(buffer);
+
+            formatter.Serialize(stream1, originalException);
+            var deserializedException = (LeaseLostException)formatter.Deserialize(stream2);
+
+            Assert.Equal(originalException.Message, deserializedException.Message);
+            Assert.Null(deserializedException.InnerException);
+            Assert.Null(deserializedException.Lease);
+            Assert.False(deserializedException.IsGone);
         }
     }
 }

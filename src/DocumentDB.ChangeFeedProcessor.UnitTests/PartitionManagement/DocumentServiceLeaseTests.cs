@@ -58,7 +58,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
-        public void ValidateSerialization()
+        public void ValidateSerialization_AllFields()
         {
             DocumentServiceLease originalLease = new DocumentServiceLease
             {
@@ -86,6 +86,28 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             Assert.Equal(originalLease.ContinuationToken, lease.ContinuationToken);
             Assert.Equal(originalLease.Timestamp, lease.Timestamp);
             Assert.Equal(originalLease.Properties["key"], lease.Properties["key"]);
+        }
+
+        // Make sure that when some fields are not set, serialization is not broken.
+        [Fact]
+        public void ValidateSerialization_NullFields()
+        {
+            DocumentServiceLease originalLease = new DocumentServiceLease();
+            var buffer = new byte[4096];
+            var formatter = new BinaryFormatter();
+            var stream1 = new MemoryStream(buffer);
+            var stream2 = new MemoryStream(buffer);
+
+            formatter.Serialize(stream1, originalLease);
+            var lease = (DocumentServiceLease)formatter.Deserialize(stream2);
+
+            Assert.Null(lease.Id);
+            Assert.Null(lease.ETag);
+            Assert.Null(lease.PartitionId);
+            Assert.Null(lease.Owner);
+            Assert.Null(lease.ContinuationToken);
+            Assert.Equal(new DocumentServiceLease().Timestamp, lease.Timestamp);
+            Assert.Empty(lease.Properties);
         }
     }
 }
