@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     /// <summary>
     /// Exception occurred when partition wasn't found.
     /// </summary>
+    [Serializable]
     public class PartitionNotFoundException : PartitionException
     {
         /// <summary>
