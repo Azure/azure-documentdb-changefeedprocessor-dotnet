@@ -168,7 +168,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
             Assert.Equal(continuation, ex.LastContinuation);
         }
 
-        // Tests the GetObjectData meatod and the serialization ctor.
+        // Tests the GetObjectData method and the serialization ctor.
         [Fact]
         public void ValidatePartitionSplitException_Serialization()
         {

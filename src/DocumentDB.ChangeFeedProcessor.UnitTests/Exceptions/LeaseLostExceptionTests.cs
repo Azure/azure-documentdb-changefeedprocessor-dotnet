@@ -12,7 +12,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
     public class LeaseLostExceptionTests
     {
         [Fact]
-        public void RecommendedConstructors()
+        public void ValidateRecommendedConstructors()
         {
             // Default ctor.
             var ex = new LeaseLostException();
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
         }
 
         [Fact]
-        public void LeaseContructor()
+        public void ValidateLeaseContructor()
         {
             var lease = Mock.Of<ILease>();
             var ex = new LeaseLostException(lease);
@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
         }
 
         [Fact]
-        public void IsGoneConstructor()
+        public void ValidateIsGoneConstructor()
         {
             var lease = Mock.Of<ILease>();
             var innerException = new Exception();
@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
             Assert.True(ex.IsGone);
         }
 
-        // Tests the GetObjectData meatod and the serialization ctor.
+        // Tests the GetObjectData method and the serialization ctor.
         [Fact]
         public void ValidateSerialization_AllFields()
         {
