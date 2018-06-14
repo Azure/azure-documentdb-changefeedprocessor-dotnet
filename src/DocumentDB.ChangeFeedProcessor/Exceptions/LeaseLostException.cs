@@ -14,6 +14,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     [Serializable]
     public class LeaseLostException : Exception
     {
+        private static readonly string DefaultMessage = "The lease was lost.";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="LeaseLostException" /> class.
         /// </summary>
@@ -26,7 +28,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         /// </summary>
         /// <param name="lease">Instance of a lost lease.</param>
         public LeaseLostException(ILease lease)
-            : base("The lease was lost.")
+            : base(DefaultMessage)
         {
             this.Lease = lease;
         }
@@ -57,7 +59,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         /// <param name="innerException">The inner exception.</param>
         /// <param name="isGone">Whether lease doesn't exist.</param>
         public LeaseLostException(ILease lease, Exception innerException, bool isGone)
-            : base(null, innerException)
+            : base(DefaultMessage, innerException)
         {
             this.Lease = lease;
             this.IsGone = isGone;
