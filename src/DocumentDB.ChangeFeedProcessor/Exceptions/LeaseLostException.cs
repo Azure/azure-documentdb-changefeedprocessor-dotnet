@@ -14,6 +14,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     [Serializable]
     public class LeaseLostException : Exception
     {
+        private static readonly string DefaultMessage = "The lease was lost.";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="LeaseLostException" /> class.
         /// </summary>
@@ -26,21 +28,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         /// </summary>
         /// <param name="lease">Instance of a lost lease.</param>
         public LeaseLostException(ILease lease)
+            : base(DefaultMessage)
         {
             this.Lease = lease;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using the specified lease, inner exception, and a flag indicating whether lease is gone.
-        /// </summary>
-        /// <param name="lease">Instance of a lost lease.</param>
-        /// <param name="innerException">The inner exception.</param>
-        /// <param name="isGone">Whether lease doesn't exist.</param>
-        public LeaseLostException(ILease lease, Exception innerException, bool isGone)
-            : base(null, innerException)
-        {
-            this.Lease = lease;
-            this.IsGone = isGone;
         }
 
         /// <summary>
@@ -63,6 +53,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="LeaseLostException" /> class using the specified lease, inner exception, and a flag indicating whether lease is gone.
+        /// </summary>
+        /// <param name="lease">Instance of a lost lease.</param>
+        /// <param name="innerException">The inner exception.</param>
+        /// <param name="isGone">Whether lease doesn't exist.</param>
+        public LeaseLostException(ILease lease, Exception innerException, bool isGone)
+            : base(DefaultMessage, innerException)
+        {
+            this.Lease = lease;
+            this.IsGone = isGone;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LeaseLostException" /> class using default values.
         /// </summary>
         /// <param name="info">The SerializationInfo object that holds serialized object data for the exception being thrown.</param>
@@ -71,6 +74,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
             : base(info, context)
         {
             this.Lease = (ILease)info.GetValue("Lease", typeof(ILease));
+            this.IsGone = (bool)info.GetValue("IsGone", typeof(bool));
         }
 
         /// <summary>
@@ -91,11 +95,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-
-            if (this.Lease != null)
-            {
-                info.AddValue("Lease", this.Lease);
-            }
+            info.AddValue("Lease", this.Lease);
+            info.AddValue("IsGone", this.IsGone);
         }
     }
 }

@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
     /// <summary>
     /// General exception occurred during partition processing.
     /// </summary>
+    [Serializable]
     public class PartitionException : Exception
     {
         /// <summary>
@@ -43,11 +44,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         protected PartitionException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
+            this.LastContinuation = (string)info.GetValue("LastContinuation", typeof(string));
         }
 
         /// <summary>
         /// Gets the value of request continuation token.
         /// </summary>
         public string LastContinuation { get; }
+
+        /// <summary>
+        /// Sets the System.Runtime.Serialization.SerializationInfo with information about the exception.
+        /// </summary>
+        /// <param name="info">The SerializationInfo object that holds serialized object data for the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue("LastContinuation", this.LastContinuation);
+        }
     }
 }
