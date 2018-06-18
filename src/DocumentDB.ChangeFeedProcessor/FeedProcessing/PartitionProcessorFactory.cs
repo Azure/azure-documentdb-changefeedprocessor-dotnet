@@ -37,9 +37,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             var settings = new ProcessorSettings
             {
                 CollectionSelfLink = this.collectionSelfLink,
-                RequestContinuation = !string.IsNullOrEmpty(lease.ContinuationToken) ?
-                    lease.ContinuationToken :
-                    this.changeFeedProcessorOptions.RequestContinuation,
+                RequestContinuation = this.changeFeedProcessorOptions.StartFromBeginning ? "0" : lease.ContinuationToken,
                 PartitionKeyRangeId = lease.PartitionId,
                 FeedPollDelay = this.changeFeedProcessorOptions.FeedPollDelay,
                 MaxItemCount = this.changeFeedProcessorOptions.MaxItemCount,
