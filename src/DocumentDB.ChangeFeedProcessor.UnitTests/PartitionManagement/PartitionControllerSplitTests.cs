@@ -105,7 +105,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             //arrange
             var lease = CreateMockLease(PartitionId);
-            var synchronizer = Mock.Of<IPartitionSynchronizer>(s => s.SplitPartitionAsync(lease) == Task.FromException(new InvalidOperationException()));
+            var synchronizer = Mock.Of<IPartitionSynchronizer>(s => s.SplitPartitionAsync(lease) == Task.FromException<IEnumerable<ILease>>(new InvalidOperationException()));
             var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
             var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
             var leaseManager = Mock.Of<ILeaseManager>();

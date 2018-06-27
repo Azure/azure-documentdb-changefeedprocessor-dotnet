@@ -22,57 +22,69 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             feedCollectionInfo.CollectionName = Guid.NewGuid().ToString();
             leaseCollectionInfo.CollectionName = feedCollectionInfo.CollectionName + "-lease";
 
-            var feedClient = new DocumentClient(feedCollectionInfo.Uri, feedCollectionInfo.MasterKey, feedCollectionInfo.ConnectionPolicy);
-            await IntegrationTestsHelper.CreateDocumentCollectionAsync(feedClient, feedCollectionInfo.DatabaseName, new DocumentCollection { Id = feedCollectionInfo.CollectionName }, 400);
-
-            using (var client = new DocumentClient(leaseCollectionInfo.Uri, leaseCollectionInfo.MasterKey, leaseCollectionInfo.ConnectionPolicy))
+            using (var feedClient = new DocumentClient(
+                feedCollectionInfo.Uri, 
+                feedCollectionInfo.MasterKey,
+                feedCollectionInfo.ConnectionPolicy))
             {
-                await IntegrationTestsHelper.CreateDocumentCollectionAsync(client, leaseCollectionInfo.DatabaseName, new DocumentCollection { Id = leaseCollectionInfo.CollectionName }, 400);
-            }
+                await IntegrationTestsHelper.CreateDocumentCollectionAsync(feedClient, feedCollectionInfo.DatabaseName, new DocumentCollection { Id = feedCollectionInfo.CollectionName }, 400);
 
-            TaskCompletionSource<bool> documentReceived = new TaskCompletionSource<bool>();
-            Task Process(IChangeFeedObserverContext changeFeedObserverContext, IReadOnlyList<Document> readOnlyList)
-            {
-                if (readOnlyList.Any(d => d.GetPropertyValue<string>("body") == sessionId))
+                using (var client = new DocumentClient(leaseCollectionInfo.Uri, leaseCollectionInfo.MasterKey, leaseCollectionInfo.ConnectionPolicy))
                 {
-                    documentReceived.SetResult(true);
+                    await IntegrationTestsHelper.CreateDocumentCollectionAsync(
+                        client,
+                        leaseCollectionInfo.DatabaseName,
+                        new DocumentCollection { Id = leaseCollectionInfo.CollectionName },
+                        400);
                 }
-                return Task.CompletedTask;
-            }
 
-            TaskCompletionSource<bool> partitionOpened = new TaskCompletionSource<bool>();
-            FeedProcessing.IChangeFeedObserverFactory observerFactory = new DelegatingMemoryObserverFactory(async ctx =>
-            {
-                await Task.Yield();
-                partitionOpened.SetResult(true);
-            }, (ctx, reason) => Task.CompletedTask, Process);
-
-            IChangeFeedProcessor changeFeedProcessor = await new ChangeFeedProcessorBuilder()
-                .WithObserverFactory(observerFactory)
-                .WithHostName("smoke_test")
-                .WithProcessorOptions(new ChangeFeedProcessorOptions()
+                TaskCompletionSource<bool> documentReceived = new TaskCompletionSource<bool>();
+                Task Process(IChangeFeedObserverContext changeFeedObserverContext, IReadOnlyList<Document> readOnlyList)
                 {
-                    MaxItemCount = 50
-                })
-                .WithFeedCollection(feedCollectionInfo)
-                .WithLeaseCollection(leaseCollectionInfo)
-                .BuildAsync();
+                    if (readOnlyList.Any(d => d.GetPropertyValue<string>("payload") == sessionId))
+                    {
+                        documentReceived.SetResult(true);
+                    }
+                    return Task.CompletedTask;
+                }
 
-            await changeFeedProcessor.StartAsync().ConfigureAwait(false);
+                FeedProcessing.IChangeFeedObserverFactory observerFactory = new DelegatingMemoryObserverFactory(
+                    ctx => Task.CompletedTask,
+                    (ctx, reason) => Task.CompletedTask,
+                    Process);
 
-            try
-            {
-                await partitionOpened.Task;
-                var document = new Document();
-                document.SetPropertyValue("body", sessionId);
-                var collectionUri = UriFactory.CreateDocumentCollectionUri(feedCollectionInfo.DatabaseName, feedCollectionInfo.CollectionName);
-                await feedClient.CreateDocumentAsync(collectionUri, document);
+                IChangeFeedProcessor changeFeedProcessor = await new ChangeFeedProcessorBuilder()
+                    .WithObserverFactory(observerFactory)
+                    .WithHostName("smoke_test")
+                    .WithFeedCollection(feedCollectionInfo)
+                    .WithLeaseCollection(leaseCollectionInfo)
+                    .BuildAsync();
 
-                await documentReceived.Task;
-            }
-            finally
-            {
-                await changeFeedProcessor.StopAsync();
+                await changeFeedProcessor.StartAsync().ConfigureAwait(false);
+
+                try
+                {
+                    var generateDocsTask = await Task.Factory.StartNew(async () =>
+                    {
+                        while (!documentReceived.Task.IsCompleted)
+                        {
+                            var document = new Document();
+                            document.SetPropertyValue("payload", sessionId);
+                            var collectionUri = UriFactory.CreateDocumentCollectionUri(
+                                feedCollectionInfo.DatabaseName,
+                                feedCollectionInfo.CollectionName);
+                            await feedClient.CreateDocumentAsync(collectionUri, document);
+                            await Task.Delay(TimeSpan.FromMilliseconds(100));
+                        }
+                    });
+
+                    await documentReceived.Task;
+                    await generateDocsTask;
+                }
+                finally
+                {
+                    await changeFeedProcessor.StopAsync();
+                }
             }
         }
 
@@ -81,7 +93,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             private readonly Func<IChangeFeedObserverContext, Task> _opened;
             private readonly Func<IChangeFeedObserverContext, FeedProcessing.ChangeFeedObserverCloseReason, Task> _closed;
-            private Func<IChangeFeedObserverContext, IReadOnlyList<Document>, Task> _process;
+            private readonly Func<IChangeFeedObserverContext, IReadOnlyList<Document>, Task> _process;
 
             public DelegatingMemoryObserverFactory(Func<IChangeFeedObserverContext, Task> opened,
                 Func<IChangeFeedObserverContext, FeedProcessing.ChangeFeedObserverCloseReason, Task> closed,
@@ -91,8 +103,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 _closed = closed;
                 _process = process;
             }
-
-
 
             Task FeedProcessing.IChangeFeedObserver.OpenAsync(IChangeFeedObserverContext context)
             {

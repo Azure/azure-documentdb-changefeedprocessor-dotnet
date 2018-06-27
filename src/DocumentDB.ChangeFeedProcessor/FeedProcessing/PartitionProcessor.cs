@@ -22,7 +22,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         private readonly ProcessorSettings settings;
         private readonly IPartitionCheckpointer checkpointer;
         private readonly IChangeFeedObserver observer;
-        private ChangeFeedOptions options;
+        private readonly ChangeFeedOptions options;
 
         public PartitionProcessor(IChangeFeedObserver observer, IChangeFeedDocumentClient documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
         {
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
-            string requestContinuation = this.settings.RequestContinuation;
+            string lastContinuation = this.settings.RequestContinuation;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -52,7 +52,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 
                 try
                 {
-                    requestContinuation = await this.ProcessBatch(cancellationToken).ConfigureAwait(false);
+                    do
+                    {
+                        IFeedResponse<Document> response = await this.query.ExecuteNextAsync<Document>(cancellationToken).ConfigureAwait(false);
+                        lastContinuation = response.ResponseContinuation;
+                        if (response.Count > 0)
+                        {
+                            await this.DispatchChanges(response, cancellationToken).ConfigureAwait(false);
+                        }
+                    }
+                    while (this.query.HasMoreResults && !cancellationToken.IsCancellationRequested);
 
                     if (this.options.MaxItemCount != this.settings.MaxItemCount)
                     {
@@ -66,9 +75,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     switch (docDbError)
                     {
                         case DocDbError.PartitionNotFound:
-                            throw new PartitionNotFoundException("Partition not found.", requestContinuation);
+                            throw new PartitionNotFoundException("Partition not found.", lastContinuation);
                         case DocDbError.PartitionSplit:
-                            throw new PartitionSplitException("Partition split.", requestContinuation);
+                            throw new PartitionSplitException("Partition split.", lastContinuation);
                         case DocDbError.Undefined:
                             throw;
                         case DocDbError.MaxItemCountTooLarge:
@@ -102,24 +111,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
-        }
-
-        private async Task<string> ProcessBatch(CancellationToken cancellation)
-        {
-            string lastContinuation;
-
-            do
-            {
-                IFeedResponse<Document> response = await this.query.ExecuteNextAsync<Document>(cancellation).ConfigureAwait(false);
-                lastContinuation = response.ResponseContinuation;
-                if (response.Count > 0)
-                {
-                    await this.DispatchChanges(response, cancellation).ConfigureAwait(false);
-                }
-            }
-            while (this.query.HasMoreResults && !cancellation.IsCancellationRequested);
-
-            return lastContinuation;
         }
 
         private Task DispatchChanges(IFeedResponse<Document> response, CancellationToken cancellationToken)
