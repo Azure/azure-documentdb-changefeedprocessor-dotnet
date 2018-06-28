@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net451</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -21,7 +21,7 @@
     <AssemblyName>Microsoft.Azure.Documents.ChangeFeedProcessor</AssemblyName>
 
     <PackageId>Microsoft.Azure.DocumentDB.ChangeFeedProcessor</PackageId>
-    <PackageVersion>2.0.3-prerelease</PackageVersion>
+    <PackageVersion>2.0.4</PackageVersion>
     <Title>Microsoft Azure Cosmos DB Change Feed Processor library</Title>
     <Authors>Microsoft</Authors>
     <PackageLicenseUrl>http://go.microsoft.com/fwlink/?LinkID=509837</PackageLicenseUrl>
@@ -43,9 +43,9 @@
     <!--CS1587:XML comment is not placed on a valid language element 
     LibLog files have misplaced comments, but we cannot touch them.-->
     <NoWarn>1587</NoWarn>
-    <Version>2.0.3</Version>
-    <AssemblyVersion>2.0.3.0</AssemblyVersion>
-    <FileVersion>2.0.3.0</FileVersion>
+    <Version>2.0.4</Version>
+    <AssemblyVersion>2.0.4.0</AssemblyVersion>
+    <FileVersion>2.0.4.0</FileVersion>
     <PackageReleaseNotes>The change log for this project is available at https://docs.microsoft.com/azure/cosmos-db/sql-api-sdk-dotnet-changefeed.
 </PackageReleaseNotes>
   </PropertyGroup>
@@ -64,7 +64,7 @@
     <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.9.1" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net451'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
     <PackageReference Include="Microsoft.Azure.DocumentDB" Version="1.21.1" />
   </ItemGroup>
 
