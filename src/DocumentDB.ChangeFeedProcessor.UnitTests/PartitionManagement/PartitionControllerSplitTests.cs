@@ -207,6 +207,33 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
+        public async Task Controller_ShouldDeleteParentLease_IfChildLeasesCreatedByAnotherHost()
+        {
+            //arrange
+            var lease = CreateMockLease(PartitionId);
+            var synchronizer = Mock.Of<IPartitionSynchronizer>();
+            Mock.Get(synchronizer)
+                .Setup(s => s.SplitPartitionAsync(lease))
+                .ReturnsAsync(new ILease[] { });
+
+            var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
+            var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
+            var leaseManager = Mock.Of<ILeaseManager>(manager =>
+                manager.AcquireAsync(lease) == Task.FromResult(lease)
+            );
+
+            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+
+            //act
+            await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
+
+            //assert
+            await sut.ShutdownAsync().ConfigureAwait(false);
+
+            Mock.Get(leaseManager).Verify(manager => manager.DeleteAsync(lease), Times.Once);
+        }
+
+        [Fact]
         public async Task Controller_ShouldDeleteParentLease_IfChildLeaseAcquireThrows()
         {
             //arrange
