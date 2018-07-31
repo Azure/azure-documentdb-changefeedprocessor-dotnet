@@ -65,7 +65,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
                 async addedRangeId =>
                 {
                     ILease newLease = await this.leaseManager.CreateLeaseIfNotExistAsync(addedRangeId, lastContinuationToken).ConfigureAwait(false);
-                    newLeases.Enqueue(newLease);
+                    if (newLease != null)
+                    {
+                        newLeases.Enqueue(newLease);
+                    }
                 },
                 this.degreeOfParallelism).ConfigureAwait(false);
 
