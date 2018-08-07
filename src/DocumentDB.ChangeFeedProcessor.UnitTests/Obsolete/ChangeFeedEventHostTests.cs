@@ -87,5 +87,13 @@
                     new DocumentCollectionInfo(),
                     new ChangeFeedHostOptions { DiscardExistingLeases = true }));
         }
+
+        [Fact]
+        public void ValidateHostName()
+        {
+            var hostName = "name";
+            var host = new ChangeFeedEventHost(hostName, new DocumentCollectionInfo(), new DocumentCollectionInfo());
+            Assert.Equal(hostName, host.HostName);
+        }
     }
 }
