@@ -109,7 +109,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly TimeSpan sleepTime = TimeSpan.FromSeconds(15);
         private readonly TimeSpan lockTime = TimeSpan.FromSeconds(30);
-        private string hostName;
         private DocumentCollectionInfo feedCollectionLocation;
         private ChangeFeedProcessorOptions changeFeedProcessorOptions;
         private IChangeFeedDocumentClient feedDocumentClient;
@@ -122,6 +121,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
         private IPartitionProcessorFactory partitionProcessorFactory;
 
+        internal string HostName
+        {
+            get; private set;
+        }
+
         /// <summary>
         /// Sets the Host name.
         /// </summary>
@@ -129,7 +133,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
         public ChangeFeedProcessorBuilder WithHostName(string hostName)
         {
-            this.hostName = hostName;
+            this.HostName = hostName;
             return this;
         }
 
@@ -307,7 +311,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <returns>An instance of <see cref="IChangeFeedProcessor"/>.</returns>
         public async Task<IChangeFeedProcessor> BuildAsync()
         {
-            if (this.hostName == null)
+            if (this.HostName == null)
             {
                 throw new InvalidOperationException("Host name was not specified");
             }
@@ -395,7 +399,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             var partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
             if (this.loadBalancingStrategy == null)
             {
-                this.loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.hostName, this.changeFeedProcessorOptions.MinPartitionCount, this.changeFeedProcessorOptions.MaxPartitionCount, this.changeFeedProcessorOptions.LeaseExpirationInterval);
+                this.loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.HostName, this.changeFeedProcessorOptions.MinPartitionCount, this.changeFeedProcessorOptions.MaxPartitionCount, this.changeFeedProcessorOptions.LeaseExpirationInterval);
             }
 
             var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedProcessorOptions.LeaseAcquireInterval);
@@ -410,7 +414,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 var leaseManagerBuilder = new LeaseManagerBuilder()
                     .WithLeasePrefix(leasePrefix)
                     .WithLeaseCollection(this.leaseCollectionLocation)
-                    .WithHostName(this.hostName);
+                    .WithHostName(this.HostName);
 
                 if (this.leaseDocumentClient != null)
                 {

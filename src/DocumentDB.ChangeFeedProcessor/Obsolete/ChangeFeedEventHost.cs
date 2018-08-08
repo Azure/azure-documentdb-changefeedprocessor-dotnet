@@ -160,6 +160,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 .WithLeaseCollection(leaseCollectionLocation);
         }
 
+        /// <summary>Gets the host name, which is a unique name for the instance.</summary>
+        /// <value>The host name.</value>
+        public string HostName
+        {
+            get { return this.builder.HostName; }
+        }
+
         /// <summary>Asynchronously registers the observer interface implementation with the host.
         /// This method also starts the host and enables it to start participating in the partition distribution process.</summary>
         /// <typeparam name="T">Implementation of your application-specific event observer.</typeparam>
