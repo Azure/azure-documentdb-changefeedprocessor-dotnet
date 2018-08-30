@@ -39,6 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             public string PartitionId { get; set; }
             public string Owner { get; set; }
             public DateTime Timestamp { get; set; }
+            public DateTime ServerTimestamp { get; set; }
             public string ContinuationToken { get; set; }
             public string Id { get; set; }
             public string ConcurrencyToken { get; set; }
