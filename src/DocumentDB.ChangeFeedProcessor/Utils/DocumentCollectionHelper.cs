@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 
         internal static IChangeFeedDocumentClient CreateDocumentClient(this DocumentCollectionInfo collectionInfo)
         {
-            var internalClient = new DocumentClient(collectionInfo.Uri, collectionInfo.MasterKey, collectionInfo.ConnectionPolicy);
+            var internalClient = new DocumentClient(collectionInfo.Uri, collectionInfo.MasterKey, collectionInfo.ConnectionPolicy, ConsistencyLevel.Eventual);
             return new ChangeFeedDocumentClient(internalClient);
         }
 
