@@ -49,44 +49,47 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator
         public async Task<RemainingPartitionWork[]> GetEstimatedPartitionsRemainingWork()
         {
             IReadOnlyList<ILease> leases = await this.leaseManager.ListAllLeasesAsync().ConfigureAwait(false);
-            if (leases.Count == 0)
+            if (leases == null || leases.Count == 0)
             {
                 return new RemainingPartitionWork[0];
             }
 
-            List<Task<IList<RemainingPartitionWork>>> tasks = null;
-            try
-            {
-                var queue = new ConcurrentQueue<ILease>(leases);
-                tasks = Enumerable.Range(1, this.degreeOfParallelism).Select(async _ =>
+            var tasks = Partitioner.Create(leases)
+                .GetPartitions(this.degreeOfParallelism)
+                .Select(partition => Task.Run(async () =>
                 {
                     IList<RemainingPartitionWork> results = new List<RemainingPartitionWork>();
-                    ILease item;
-                    while (queue.TryDequeue(out item))
+                    using (partition)
                     {
-                        try
+                        while (partition.MoveNext())
                         {
-                            if (string.IsNullOrEmpty(item.PartitionId)) continue;
-                            var result = await this.GetRemainingWorkForLeaseAsync(item);
-                            results.Add(new RemainingPartitionWork(item.PartitionId, result));
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.WarnException($"Getting estimated work for {item.PartitionId} failed!", ex);
+                            ILease item = partition.Current;
+                            try
+                            {
+                                if (string.IsNullOrEmpty(item.PartitionId)) continue;
+                                var result = await this.GetRemainingWorkForLeaseAsync(item);
+                                results.Add(new RemainingPartitionWork(item.PartitionId, result));
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.WarnException($"Getting estimated work for {item.PartitionId} failed!", ex);
+                            }
                         }
                     }
 
-                    return results;
-                }).ToList();
+                    return results.ToArray();
+                })).ToArray();
 
-                await Task.WhenAll(tasks).ConfigureAwait(false);
+            try
+            {
+                await Task.WhenAll(tasks);
             }
             catch (Exception ex)
             {
                 Logger.WarnException("Incomplete estimation results!", ex);
             }
 
-            return tasks?.SelectMany(t => t.Result).ToArray();
+            return tasks.Where(t => t.Status == TaskStatus.RanToCompletion).SelectMany(t => t.Result).ToArray();
         }
 
         private static Document GetFirstDocument(IFeedResponse<Document> response)

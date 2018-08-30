@@ -19,7 +19,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     public class RemainingWorkEstimatorTests
     {
         private const string collectionSelfLink = "selfLink";
-        private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         [Fact]
         public async Task EstimateTotal_ShouldReturnPendingWork_IfOnePartition()
