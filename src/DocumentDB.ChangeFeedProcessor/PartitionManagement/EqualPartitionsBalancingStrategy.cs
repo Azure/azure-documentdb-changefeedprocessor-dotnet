@@ -115,14 +115,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         private void CategorizeLeases(IEnumerable<ILease> allLeases, Dictionary<string, ILease> allPartitions, List<ILease> expiredLeases, Dictionary<string, int> workerToPartitionCount)
         {
+            DateTime minUpdateTimeUtc = DateTime.UtcNow - this.leaseExpirationInterval;
             foreach (ILease lease in allLeases)
             {
                 Debug.Assert(lease.PartitionId != null, "TakeLeasesAsync: lease.PartitionId cannot be null.");
 
                 allPartitions.Add(lease.PartitionId, lease);
-                if (string.IsNullOrWhiteSpace(lease.Owner) || this.IsExpired(lease))
+                if (string.IsNullOrWhiteSpace(lease.Owner) || this.IsExpiredOrStuck(lease, minUpdateTimeUtc))
                 {
-                    Logger.DebugFormat("Found unused or expired lease: {0}", lease);
+                    Logger.InfoFormat("Found unused or expired lease: {0}", lease);
                     expiredLeases.Add(lease);
                 }
                 else
@@ -146,9 +147,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             }
         }
 
-        private bool IsExpired(ILease lease)
+        private bool IsExpiredOrStuck(ILease lease, DateTime minUpdateTimeUtc)
         {
-            return lease.Timestamp.ToUniversalTime() + this.leaseExpirationInterval < DateTime.UtcNow;
+            return lease.Timestamp.ToUniversalTime() < minUpdateTimeUtc || lease.ServerTimestamp.ToUniversalTime() < minUpdateTimeUtc;
         }
     }
 }

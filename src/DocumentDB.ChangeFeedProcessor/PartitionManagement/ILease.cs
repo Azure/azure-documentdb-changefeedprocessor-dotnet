@@ -50,6 +50,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         string ConcurrencyToken { get; }
 
         /// <summary>
+        /// Gets the timestamp of the lease update on the server.
+        /// </summary>
+        DateTime ServerTimestamp { get; }
+
+        /// <summary>
         /// Gets or sets custom lease properties which can be managed from <see cref="IParitionLoadBalancingStrategy"/>.
         /// </summary>
         Dictionary<string, string> Properties { get; set; }

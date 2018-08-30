@@ -50,9 +50,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         public string ContinuationToken { get; set; }
 
         [JsonIgnore]
+        public DateTime ServerTimestamp
+        {
+            get { return UnixStartTime.AddSeconds(this.TS); }
+        }
+
+        [JsonIgnore]
         public DateTime Timestamp
         {
-            get { return this.ExplicitTimestamp ?? UnixStartTime.AddSeconds(this.TS); }
+            get { return this.ExplicitTimestamp ?? this.ServerTimestamp; }
             set { this.ExplicitTimestamp = value; }
         }
 
@@ -80,11 +86,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "{0} Owner='{1}' Continuation={2} Timestamp(local)={3}",
+                "{0} Owner='{1}' Continuation={2} Timestamp(local)={3} Timestamp(server)={4}",
                 this.Id,
                 this.Owner,
                 this.ContinuationToken,
-                this.Timestamp.ToLocalTime());
+                this.Timestamp.ToLocalTime(),
+                this.ServerTimestamp.ToUniversalTime());
         }
     }
 }
