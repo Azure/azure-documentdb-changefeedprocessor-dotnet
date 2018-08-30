@@ -62,11 +62,11 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="2.0.0-preview" />
+    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="2.0.0-preview2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
-    <PackageReference Include="Microsoft.Azure.DocumentDB" Version="2.0.0-preview" />
+    <PackageReference Include="Microsoft.Azure.DocumentDB" Version="2.0.0-preview2" />
   </ItemGroup>
 
   <ItemGroup>
