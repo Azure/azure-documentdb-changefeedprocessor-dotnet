@@ -130,10 +130,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator
             ChangeFeedOptions options = new ChangeFeedOptions
             {
                 MaxItemCount = 1,
+                PartitionKeyRangeId = existingLease.PartitionId,
+                RequestContinuation = existingLease.ContinuationToken,
+                StartFromBeginning = string.IsNullOrEmpty(existingLease.ContinuationToken),
             };
-            options.PartitionKeyRangeId = existingLease.PartitionId;
-            options.RequestContinuation = existingLease.ContinuationToken;
-            options.StartFromBeginning = string.IsNullOrEmpty(existingLease.ContinuationToken);
             IChangeFeedDocumentQuery<Document> query = this.feedDocumentClient.CreateDocumentChangeFeedQuery(this.collectionSelfLink, options);
             IFeedResponse<Document> response = null;
 
