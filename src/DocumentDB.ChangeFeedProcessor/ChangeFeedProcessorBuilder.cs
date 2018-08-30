@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
@@ -359,7 +360,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             ILeaseManager leaseManager = await this.GetLeaseManagerAsync().ConfigureAwait(false);
 
-            IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink());
+            IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink(), this.feedCollectionLocation.ConnectionPolicy.MaxConnectionLimit);
             return remainingWorkEstimator;
         }
 
