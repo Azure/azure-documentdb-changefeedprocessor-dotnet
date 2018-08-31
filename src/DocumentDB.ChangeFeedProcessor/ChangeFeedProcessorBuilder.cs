@@ -396,12 +396,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseManager, collectionSelfLink),
                 this.changeFeedProcessorOptions);
 
-            var partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
             if (this.loadBalancingStrategy == null)
             {
                 this.loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.HostName, this.changeFeedProcessorOptions.MinPartitionCount, this.changeFeedProcessorOptions.MaxPartitionCount, this.changeFeedProcessorOptions.LeaseExpirationInterval);
             }
 
+            IPartitionController partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
+            partitionController = new PartitionControllerHealthnessEvaluator(partitionController, this.changeFeedProcessorOptions.LeaseExpirationInterval, new FailFastUnhealthyHandlingStrategy());
             var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedProcessorOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }
