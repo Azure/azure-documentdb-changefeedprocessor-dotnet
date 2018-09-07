@@ -7,11 +7,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using System;
     using System.Diagnostics;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>

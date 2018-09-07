@@ -2,14 +2,11 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
-using Microsoft.Azure.Documents.Client;
 using Moq;
 using Xunit;
 
@@ -19,6 +16,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     public class RemainingWorkEstimatorTests
     {
         private const string collectionSelfLink = "selfLink";
+
+        [Fact]
+        public async Task EstimateTotal_ShouldReturnOne_IfNoLeaseDocumentsCreated()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>(0);
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>(),
+                collectionSelfLink,
+                1);
+            long pendingWork = await sut.GetEstimatedRemainingWork();
+            Assert.Equal(1, pendingWork);
+        }
 
         [Fact]
         public async Task EstimateTotal_ShouldReturnPendingWork_IfOnePartition()
@@ -35,7 +45,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
-        public async Task EstimateTotal_ShouldReturnZero_WhenEmptyResponse()
+        public async Task EstimateTotal_ShouldReturnZero_WhenEmptyFeedResponse()
         {
             IReadOnlyList<ILease> leases = new List<ILease>
             {
@@ -90,7 +100,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
-        public async Task EstimateTotal_ShouldReturnZero_WhenNothingSucceeds()
+        public async Task EstimateTotal_ShouldReturnOne_WhenNothingSucceeds()
         {
             IReadOnlyList<ILease> leases = new List<ILease>
             {
@@ -103,7 +113,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 collectionSelfLink,
                 1);
             long pendingWork = await sut.GetEstimatedRemainingWork();
-            Assert.Equal(0, pendingWork);
+            Assert.Equal(1, pendingWork);
+        }
+
+        [Fact]
+        public async Task EstimateTotal_ShouldPropagateExecption_IfUnknownExceptionHappened()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>(0);
+            var leaseManager = new Mock<ILeaseManager>();
+            leaseManager.Setup(m => m.ListAllLeasesAsync()).ThrowsAsync(new InvalidOperationException());
+            var sut = new RemainingWorkEstimator(
+                leaseManager.Object,
+                Mock.Of<IChangeFeedDocumentClient>(),
+                collectionSelfLink,
+                1);
+            await Assert.ThrowsAsync<InvalidOperationException>(sut.GetEstimatedRemainingWork);
         }
 
         [Fact]
@@ -117,8 +141,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 collectionSelfLink,
                 1);
 
-            RemainingPartitionWork[] pendingWork = await sut.GetEstimatedPartitionsRemainingWork();
-            Assert.Contains(pendingWork, work => work.PartitionRangeId == "1" && work.RemainingWork == 6);
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartition();
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 6);
             Assert.Single(pendingWork);
         }
 
@@ -138,8 +162,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 collectionSelfLink,
                 1);
 
-            RemainingPartitionWork[] pendingWork = await sut.GetEstimatedPartitionsRemainingWork();
-            Assert.Contains(pendingWork, work => work.PartitionRangeId == "1" && work.RemainingWork == 3);
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartition();
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 3);
             Assert.Single(pendingWork);
         }
 
@@ -156,7 +180,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                     .SetupQueryResponseFailure("1", "100"),
                 collectionSelfLink,
                 1);
-            RemainingPartitionWork[] pendingWork = await sut.GetEstimatedPartitionsRemainingWork();
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartition();
             Assert.Empty(pendingWork);
         }
 
@@ -173,8 +197,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                     .SetupQueryResponse("1", "100", null, "1:100"),
                 collectionSelfLink,
                 1);
-            RemainingPartitionWork[] pendingWork = await sut.GetEstimatedPartitionsRemainingWork();
-            Assert.Contains(pendingWork, work => work.PartitionRangeId == "1" && work.RemainingWork == 0);
+
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartition();
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 0);
             Assert.Single(pendingWork);
         }
 
@@ -193,58 +218,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                     .SetupQueryResponse("2", "200", "201", "2:201"),
                 collectionSelfLink,
                 1);
-            RemainingPartitionWork[] pendingWork = await sut.GetEstimatedPartitionsRemainingWork();
-            Assert.Contains(pendingWork, work => work.PartitionRangeId == "1" && work.RemainingWork == 6);
-            Assert.Contains(pendingWork, work => work.PartitionRangeId == "2" && work.RemainingWork == 1);
-            Assert.Equal(2, pendingWork.Length);
-        }
 
-    }
-
-    internal static class ChangeFeedDocumentClientExtensions
-    {
-        public static IChangeFeedDocumentClient SetupQueryResponse(this IChangeFeedDocumentClient client, string pid, string token, string documentLsn, string targetSession)
-        {
-            IList<Document> docs;
-            if (documentLsn != null)
-            {
-                Document document = new Document();
-                document.SetPropertyValue("_lsn", documentLsn);
-                docs = new List<Document> { document };
-            }
-            else
-            {
-                docs = new List<Document>();
-            }
-
-            var feedResponse = Mock.Of<IFeedResponse<Document>>(f => 
-                f.SessionToken == targetSession &&
-                f.Count == docs.Count && 
-                f.GetEnumerator() == docs.GetEnumerator());
-            var documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>(q => q.ExecuteNextAsync<Document>(It.IsAny<CancellationToken>()) == Task.FromResult(feedResponse));
-
-            Mock.Get(client)
-                .Setup(c => c.CreateDocumentChangeFeedQuery(
-                                It.IsAny<string>(),
-                                It.Is<ChangeFeedOptions>(o => o.PartitionKeyRangeId == pid && o.RequestContinuation == token)))
-                .Returns(documentQuery);
-
-            return client;
-        }
-        public static IChangeFeedDocumentClient SetupQueryResponseFailure(this IChangeFeedDocumentClient client, string pid, string token)
-        {
-            var documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
-            Mock.Get(documentQuery)
-                .Setup(q => q.ExecuteNextAsync<Document>(It.IsAny<CancellationToken>()))
-                .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException());
-
-            Mock.Get(client)
-                .Setup(c => c.CreateDocumentChangeFeedQuery(
-                    It.IsAny<string>(),
-                    It.Is<ChangeFeedOptions>(o => o.PartitionKeyRangeId == pid && o.RequestContinuation == token)))
-                .Returns(documentQuery);
-
-            return client;
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartition();
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 6);
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "2" && work.RemainingWork == 1);
+            Assert.Equal(2, pendingWork.Count);
         }
     }
 }

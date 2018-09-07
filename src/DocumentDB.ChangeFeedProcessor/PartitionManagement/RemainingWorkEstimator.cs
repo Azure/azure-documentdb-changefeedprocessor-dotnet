@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System;
     using System.Collections.Concurrent;
@@ -13,7 +13,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
 
     internal class RemainingWorkEstimator : IRemainingWorkEstimator
@@ -30,7 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
             if (string.IsNullOrEmpty(collectionSelfLink)) throw new ArgumentNullException(nameof(collectionSelfLink));
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
-            if (degreeOfParallelism < 1 || degreeOfParallelism > ServicePointManager.DefaultConnectionLimit) throw new ArgumentException("Degree of parallelism is out of range", nameof(degreeOfParallelism));
+            if (degreeOfParallelism < 1) throw new ArgumentException("Degree of parallelism is out of range", nameof(degreeOfParallelism));
 
             this.leaseManager = leaseManager;
             this.collectionSelfLink = collectionSelfLink;
@@ -40,18 +39,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator
 
         public async Task<long> GetEstimatedRemainingWork()
         {
-            RemainingPartitionWork[] partitions = await this.GetEstimatedPartitionsRemainingWork();
-            if (partitions == null) return 0;
+            var partitions = await this.GetEstimatedRemainingWorkPerPartition();
+            if (partitions.Count == 0) return 1;
 
             return partitions.Sum(partition => partition.RemainingWork);
         }
 
-        public async Task<RemainingPartitionWork[]> GetEstimatedPartitionsRemainingWork()
+        public async Task<IReadOnlyList<RemainingPartitionWork>> GetEstimatedRemainingWorkPerPartition()
         {
             IReadOnlyList<ILease> leases = await this.leaseManager.ListAllLeasesAsync().ConfigureAwait(false);
             if (leases == null || leases.Count == 0)
             {
-                return new RemainingPartitionWork[0];
+                return new List<RemainingPartitionWork>().AsReadOnly();
             }
 
             var tasks = Partitioner.Create(leases)
@@ -70,7 +69,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator
                                 var result = await this.GetRemainingWorkForLeaseAsync(item);
                                 results.Add(new RemainingPartitionWork(item.PartitionId, result));
                             }
-                            catch (Exception ex)
+                            catch (DocumentClientException ex)
                             {
                                 Logger.WarnException($"Getting estimated work for {item.PartitionId} failed!", ex);
                             }
@@ -89,7 +88,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator
                 Logger.WarnException("Incomplete estimation results!", ex);
             }
 
-            return tasks.Where(t => t.Status == TaskStatus.RanToCompletion).SelectMany(t => t.Result).ToArray();
+            return tasks.Where(t => t.Status == TaskStatus.RanToCompletion).SelectMany(t => t.Result).ToList().AsReadOnly();
         }
 
         private static Document GetFirstDocument(IFeedResponse<Document> response)

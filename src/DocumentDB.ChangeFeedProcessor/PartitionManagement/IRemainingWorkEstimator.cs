@@ -2,8 +2,9 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
+    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -21,6 +22,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Estimator
         /// Calculates an estimate of the pending work remaining to be read in the Change Feed in amount of documents per partition.
         /// </summary>
         /// <returns>An array of an estimation of pending work in amount of documents per partitions.</returns>
-        Task<RemainingPartitionWork[]> GetEstimatedPartitionsRemainingWork();
+        Task<IReadOnlyList<RemainingPartitionWork>> GetEstimatedRemainingWorkPerPartition();
     }
 }
