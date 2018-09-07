@@ -1,0 +1,26 @@
+﻿//----------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
+//----------------------------------------------------------------
+
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
+{
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+
+    /// <summary>
+    /// A strategy which crashes the process. It calls Environment.FailFast
+    /// </summary>
+    public class SilentUnhealthinessHandlingStrategy : IUnhealthinessHandlingStrategy
+    {
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
+
+        /// <inheritdoc />
+        public Task HandleAsync(ILease lease, Exception exception)
+        {
+            Logger.ErrorException($"Unhealthy instance detected. Last aquired lease {lease}", exception);
+            return Task.FromResult(true);
+        }
+    }
+}

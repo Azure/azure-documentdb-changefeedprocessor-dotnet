@@ -11,6 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
@@ -120,6 +121,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private ILeaseManager leaseManager;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
         private IPartitionProcessorFactory partitionProcessorFactory;
+        private IUnhealthinessHandlingStrategy unhealthinessHandlingStrategy;
 
         internal string HostName
         {
@@ -306,6 +308,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
+        /// Sets the <see cref="IUnhealthinessHandlingStrategy"/> to be used to handled unhealthiness situation.
+        /// </summary>
+        /// <param name="unhealthinessHandlingStrategy">The instance of <see cref="IUnhealthinessHandlingStrategy"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
+        public ChangeFeedProcessorBuilder WithUnhealthinessHandlingStrategy(IUnhealthinessHandlingStrategy unhealthinessHandlingStrategy)
+        {
+            if (unhealthinessHandlingStrategy == null)
+                throw new ArgumentNullException(nameof(unhealthinessHandlingStrategy));
+            this.unhealthinessHandlingStrategy = unhealthinessHandlingStrategy;
+            return this;
+        }
+
+        /// <summary>
         /// Builds a new instance of the <see cref="IChangeFeedProcessor"/> with the specified configuration.
         /// </summary>
         /// <returns>An instance of <see cref="IChangeFeedProcessor"/>.</returns>
@@ -402,7 +417,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             }
 
             IPartitionController partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
-            partitionController = new PartitionControllerHealthnessEvaluator(partitionController, this.changeFeedProcessorOptions.LeaseExpirationInterval, new FailFastUnhealthyHandlingStrategy());
+
+            if (this.unhealthinessHandlingStrategy == null)
+            {
+                this.unhealthinessHandlingStrategy = new SilentUnhealthinessHandlingStrategy();
+            }
+
+            partitionController = new PartitionControllerHealthinessEvaluator(partitionController, this.changeFeedProcessorOptions.LeaseExpirationInterval, this.unhealthinessHandlingStrategy);
             var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedProcessorOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }

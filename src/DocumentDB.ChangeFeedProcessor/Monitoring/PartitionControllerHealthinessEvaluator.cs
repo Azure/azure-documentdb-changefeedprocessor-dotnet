@@ -7,20 +7,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
-    internal class PartitionControllerHealthnessEvaluator : IPartitionController
+    internal class PartitionControllerHealthinessEvaluator : IPartitionController
     {
         private static readonly long UninitializedTicks = DateTime.MaxValue.Ticks;
         private readonly IPartitionController inner;
         private readonly long maxAllowedUnhealthyDuration;
-        private readonly IUnhealthyHandlingStrategy unhealthyStrategy;
+        private readonly IUnhealthinessHandlingStrategy unhealthinessStrategy;
         private long firstUnhealthyTick = UninitializedTicks;
 
-        public PartitionControllerHealthnessEvaluator(IPartitionController inner, TimeSpan leaseExpirationTimeout, IUnhealthyHandlingStrategy unhealthyStrategy)
+        public PartitionControllerHealthinessEvaluator(IPartitionController inner, TimeSpan leaseExpirationTimeout, IUnhealthinessHandlingStrategy unhealthinessStrategy)
         {
             this.inner = inner ?? throw new ArgumentNullException(nameof(inner));
-            this.unhealthyStrategy = unhealthyStrategy ?? throw new ArgumentNullException(nameof(unhealthyStrategy));
+            this.unhealthinessStrategy = unhealthinessStrategy ?? throw new ArgumentNullException(nameof(unhealthinessStrategy));
             this.maxAllowedUnhealthyDuration = leaseExpirationTimeout.Ticks * 5;
         }
 
@@ -35,12 +36,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             {
                 throw;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
                 long fistUnhealthyOccurenceTicks = Interlocked.CompareExchange(ref this.firstUnhealthyTick, DateTime.UtcNow.Ticks, UninitializedTicks);
                 if (DateTime.UtcNow.Ticks > checked(fistUnhealthyOccurenceTicks + this.maxAllowedUnhealthyDuration))
                 {
-                    await this.unhealthyStrategy.HandleAsync();
+                    await this.unhealthinessStrategy.HandleAsync(lease, exception);
                 }
 
                 throw;
