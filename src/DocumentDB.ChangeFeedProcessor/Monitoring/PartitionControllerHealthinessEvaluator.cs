@@ -18,11 +18,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private readonly IUnhealthinessHandlingStrategy unhealthinessStrategy;
         private long firstUnhealthyTick = UninitializedTicks;
 
-        public PartitionControllerHealthinessEvaluator(IPartitionController inner, TimeSpan leaseExpirationTimeout, IUnhealthinessHandlingStrategy unhealthinessStrategy)
+        public PartitionControllerHealthinessEvaluator(IPartitionController inner, long unhealthinessDurationTicks, IUnhealthinessHandlingStrategy unhealthinessStrategy)
         {
             this.inner = inner ?? throw new ArgumentNullException(nameof(inner));
             this.unhealthinessStrategy = unhealthinessStrategy ?? throw new ArgumentNullException(nameof(unhealthinessStrategy));
-            this.maxAllowedUnhealthyDuration = leaseExpirationTimeout.Ticks * 5;
+            this.maxAllowedUnhealthyDuration = unhealthinessDurationTicks;
         }
 
         public async Task AddOrUpdateLeaseAsync(ILease lease)

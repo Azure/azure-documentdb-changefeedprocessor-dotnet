@@ -108,6 +108,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     public class ChangeFeedProcessorBuilder
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
+        private static readonly long DefaultUnhealthinessDuration = TimeSpan.FromMinutes(15).Ticks;
         private readonly TimeSpan sleepTime = TimeSpan.FromSeconds(15);
         private readonly TimeSpan lockTime = TimeSpan.FromSeconds(30);
         private DocumentCollectionInfo feedCollectionLocation;
@@ -423,7 +424,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 this.unhealthinessHandlingStrategy = new SilentUnhealthinessHandlingStrategy();
             }
 
-            partitionController = new PartitionControllerHealthinessEvaluator(partitionController, this.changeFeedProcessorOptions.LeaseExpirationInterval, this.unhealthinessHandlingStrategy);
+            long unhealtinessDuration = Math.Max(15 * this.changeFeedProcessorOptions.LeaseExpirationInterval.Ticks, DefaultUnhealthinessDuration);
+            partitionController = new PartitionControllerHealthinessEvaluator(partitionController, unhealtinessDuration, this.unhealthinessHandlingStrategy);
             var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedProcessorOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }
