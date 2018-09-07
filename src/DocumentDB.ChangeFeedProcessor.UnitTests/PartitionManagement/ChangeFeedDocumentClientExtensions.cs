@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
@@ -10,7 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 {
     internal static class ChangeFeedDocumentClientExtensions
     {
-        public static IChangeFeedDocumentClient SetupQueryResponse(this IChangeFeedDocumentClient client, string pid, string token, string documentLsn, string targetSession)
+        public static IChangeFeedDocumentClient SetupQueryResponse(this IChangeFeedDocumentClient client, string pid, string token, string documentLsn, string targetSession, Func<IFeedResponse<Document>, Task<IFeedResponse<Document>>> callback = null)
         {
             IList<Document> docs;
             if (documentLsn != null)
@@ -28,13 +29,26 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 f.SessionToken == targetSession &&
                 f.Count == docs.Count && 
                 f.GetEnumerator() == docs.GetEnumerator());
-            var documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>(q => q.ExecuteNextAsync<Document>(It.IsAny<CancellationToken>()) == Task.FromResult(feedResponse));
+
+            var documentQuery = new Mock<IChangeFeedDocumentQuery<Document>>();
+
+            documentQuery
+                .Setup(q => q.ExecuteNextAsync<Document>(It.IsAny<CancellationToken>()))
+                .Returns(async (CancellationToken ct) =>
+                {
+                    var response = feedResponse;
+                    if (callback != null)
+                    {
+                        response = await callback(response);
+                    }
+                    return response;
+                });
 
             Mock.Get(client)
                 .Setup(c => c.CreateDocumentChangeFeedQuery(
                     It.IsAny<string>(),
                     It.Is<ChangeFeedOptions>(o => o.PartitionKeyRangeId == pid && o.RequestContinuation == token)))
-                .Returns(documentQuery);
+                .Returns(documentQuery.Object);
 
             return client;
         }

@@ -224,5 +224,47 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "2" && work.RemainingWork == 1);
             Assert.Equal(2, pendingWork.Count);
         }
+
+        [Fact]
+        public async Task EstimatePerPartition_ShouldRunInParallel_IfDegreeOfParallelismIsTwo()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100"),
+                Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
+            };
+
+            TaskCompletionSource<bool> cts1 = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> cts2 = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> ctsAll = new TaskCompletionSource<bool>();
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", "101", "1:106", async r =>
+                    {
+                        cts1.SetResult(true);
+                        await ctsAll.Task;
+                        return r;
+                    })
+                    .SetupQueryResponse("2", "200", "201", "2:201", async r =>
+                    {
+                        cts2.SetResult(true);
+                        await ctsAll.Task;
+                        return r;
+                    }),
+                collectionSelfLink,
+                2);
+
+            var workPerPartitionTask = sut.GetEstimatedRemainingWorkPerPartition();
+
+            await Task.WhenAll(cts1.Task, cts2.Task);
+            ctsAll.SetResult(true);
+
+            var pendingWork = await workPerPartitionTask;
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 6);
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "2" && work.RemainingWork == 1);
+            Assert.Equal(2, pendingWork.Count);
+        }
+
     }
 }
