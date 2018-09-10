@@ -56,12 +56,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public static IChangeFeedDocumentClient SetupQueryResponseFailure(
             this IChangeFeedDocumentClient client, 
             string partitionKeyRangeId, 
-            string token)
+            string token, 
+            Exception exception = null)
         {
             var documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
             Mock.Get(documentQuery)
                 .Setup(q => q.ExecuteNextAsync<Document>(It.IsAny<CancellationToken>()))
-                .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException());
+                .ThrowsAsync(exception ?? DocumentExceptionHelpers.CreateNotFoundException());
 
             Mock.Get(client)
                 .Setup(c => c.CreateDocumentChangeFeedQuery(

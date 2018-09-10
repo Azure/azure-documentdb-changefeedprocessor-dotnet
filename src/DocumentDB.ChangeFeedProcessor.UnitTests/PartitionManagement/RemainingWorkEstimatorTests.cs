@@ -100,6 +100,24 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
+        public async Task EstimateTotal_ShouldRethrowException_IfEstimatorPartitionWorkThrowsUnknonwException()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100"),
+                Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
+            };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", "101", "1:103")
+                    .SetupQueryResponseFailure("2", "200", new InvalidOperationException()),
+                collectionSelfLink,
+                1);
+            await Assert.ThrowsAsync<InvalidOperationException>(sut.GetEstimatedRemainingWork);
+        }
+
+        [Fact]
         public async Task EstimateTotal_ShouldReturnOne_WhenNothingSucceeds()
         {
             IReadOnlyList<ILease> leases = new List<ILease>

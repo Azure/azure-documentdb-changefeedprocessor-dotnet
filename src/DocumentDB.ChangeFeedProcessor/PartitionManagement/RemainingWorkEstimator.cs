@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 .GetPartitions(this.degreeOfParallelism)
                 .Select(partition => Task.Run(async () =>
                 {
-                    var results = new List<RemainingPartitionWork>();
+                    var partialResults = new List<RemainingPartitionWork>();
                     using (partition)
                     {
                         while (partition.MoveNext())
@@ -67,7 +67,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                             {
                                 if (string.IsNullOrEmpty(item?.PartitionId)) continue;
                                 var result = await this.GetRemainingWorkAsync(item);
-                                results.Add(new RemainingPartitionWork(item.PartitionId, result));
+                                partialResults.Add(new RemainingPartitionWork(item.PartitionId, result));
                             }
                             catch (DocumentClientException ex)
                             {
@@ -76,19 +76,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                         }
                     }
 
-                    return results;
+                    return partialResults;
                 })).ToArray();
 
-            try
-            {
-                await Task.WhenAll(tasks);
-            }
-            catch (Exception ex)
-            {
-                Logger.WarnException("Incomplete estimation results!", ex);
-            }
-
-            return tasks.Where(t => t.Status == TaskStatus.RanToCompletion).SelectMany(t => t.Result).ToList().AsReadOnly();
+            var results = await Task.WhenAll(tasks);
+            return results.SelectMany(r => r).ToList().AsReadOnly();
         }
 
         private static Document GetFirstDocument(IFeedResponse<Document> response)
