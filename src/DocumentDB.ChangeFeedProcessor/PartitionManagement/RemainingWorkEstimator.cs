@@ -65,8 +65,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                             ILease item = partition.Current;
                             try
                             {
-                                if (string.IsNullOrEmpty(item.PartitionId)) continue;
-                                var result = await this.GetRemainingWorkForLeaseAsync(item);
+                                if (string.IsNullOrEmpty(item?.PartitionId)) continue;
+                                var result = await this.GetRemainingWorkAsync(item);
                                 results.Add(new RemainingPartitionWork(item.PartitionId, result));
                             }
                             catch (DocumentClientException ex)
@@ -76,7 +76,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                         }
                     }
 
-                    return results.ToArray();
+                    return results;
                 })).ToArray();
 
             try
@@ -127,7 +127,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return sessionToken.Substring(separatorIndex + 1);
         }
 
-        private async Task<long> GetRemainingWorkForLeaseAsync(ILease existingLease)
+        private async Task<long> GetRemainingWorkAsync(ILease existingLease)
         {
             ChangeFeedOptions options = new ChangeFeedOptions
             {

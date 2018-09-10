@@ -52,7 +52,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             return client;
         }
-        public static IChangeFeedDocumentClient SetupQueryResponseFailure(this IChangeFeedDocumentClient client, string pid, string token)
+
+        public static IChangeFeedDocumentClient SetupQueryResponseFailure(
+            this IChangeFeedDocumentClient client, 
+            string partitionKeyRangeId, 
+            string token)
         {
             var documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
             Mock.Get(documentQuery)
@@ -62,7 +66,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             Mock.Get(client)
                 .Setup(c => c.CreateDocumentChangeFeedQuery(
                     It.IsAny<string>(),
-                    It.Is<ChangeFeedOptions>(o => o.PartitionKeyRangeId == pid && o.RequestContinuation == token)))
+                    It.Is<ChangeFeedOptions>(o => o.PartitionKeyRangeId == partitionKeyRangeId && o.RequestContinuation == token)))
                 .Returns(documentQuery);
 
             return client;
