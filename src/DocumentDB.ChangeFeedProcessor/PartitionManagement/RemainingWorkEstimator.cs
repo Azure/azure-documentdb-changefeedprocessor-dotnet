@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 .GetPartitions(this.degreeOfParallelism)
                 .Select(partition => Task.Run(async () =>
                 {
-                    IList<RemainingPartitionWork> results = new List<RemainingPartitionWork>();
+                    var results = new List<RemainingPartitionWork>();
                     using (partition)
                     {
                         while (partition.MoveNext())
@@ -116,7 +116,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return parsed;
         }
 
-        private static string ExtractLSNFromSessionToken(string sessionToken)
+        private static string ExtractLsnFromSessionToken(string sessionToken)
         {
             if (string.IsNullOrEmpty(sessionToken))
             {
@@ -142,7 +142,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             try
             {
                 response = await query.ExecuteNextAsync<Document>().ConfigureAwait(false);
-                long parsedLSNFromSessionToken = TryConvertToNumber(ExtractLSNFromSessionToken(response.SessionToken));
+                long parsedLSNFromSessionToken = TryConvertToNumber(ExtractLsnFromSessionToken(response.SessionToken));
                 long lastQueryLSN = response.Count > 0
                     ? TryConvertToNumber(GetFirstDocument(response).GetPropertyValue<string>(LSNPropertyName)) - 1
                     : parsedLSNFromSessionToken;
