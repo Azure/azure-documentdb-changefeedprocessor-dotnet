@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         /// Get all the leases.
         /// </summary>
         /// <returns>Enumerable of all the leases</returns>
-        Task<IEnumerable<ILease>> ListAllLeasesAsync();
+        Task<IReadOnlyList<ILease>> ListAllLeasesAsync();
 
         /// <summary>
         /// Get all the leases owned by the current host.

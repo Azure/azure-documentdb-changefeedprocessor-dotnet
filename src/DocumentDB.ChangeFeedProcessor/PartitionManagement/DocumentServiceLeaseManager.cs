@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             this.hostName = hostName;
         }
 
-        public async Task<IEnumerable<ILease>> ListAllLeasesAsync()
+        public async Task<IReadOnlyList<ILease>> ListAllLeasesAsync()
         {
             return await this.ListDocumentsAsync(this.GetPartitionLeasePrefix()).ConfigureAwait(false);
         }
@@ -249,7 +249,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return document != null ? DocumentServiceLease.FromDocument(document) : null;
         }
 
-        private async Task<IEnumerable<DocumentServiceLease>> ListDocumentsAsync(string prefix)
+        private async Task<IReadOnlyList<DocumentServiceLease>> ListDocumentsAsync(string prefix)
         {
             if (string.IsNullOrEmpty(prefix))
                 throw new ArgumentException("Prefix must be non-empty string", nameof(prefix));
