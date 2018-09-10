@@ -159,7 +159,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 collectionSelfLink,
                 1);
 
-            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartition();
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartitionAsync();
             Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 6);
             Assert.Single(pendingWork);
         }
@@ -180,7 +180,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 collectionSelfLink,
                 1);
 
-            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartition();
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartitionAsync();
             Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 3);
             Assert.Single(pendingWork);
         }
@@ -198,7 +198,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                     .SetupQueryResponseFailure("1", "100"),
                 collectionSelfLink,
                 1);
-            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartition();
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartitionAsync();
             Assert.Empty(pendingWork);
         }
 
@@ -216,7 +216,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 collectionSelfLink,
                 1);
 
-            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartition();
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartitionAsync();
             Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 0);
             Assert.Single(pendingWork);
         }
@@ -237,7 +237,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 collectionSelfLink,
                 1);
 
-            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartition();
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartitionAsync();
             Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 6);
             Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "2" && work.RemainingWork == 1);
             Assert.Equal(2, pendingWork.Count);
@@ -273,7 +273,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 collectionSelfLink,
                 2);
 
-            var workPerPartitionTask = sut.GetEstimatedRemainingWorkPerPartition();
+            var workPerPartitionTask = sut.GetEstimatedRemainingWorkPerPartitionAsync();
 
             await Task.WhenAll(cts1.Task, cts2.Task);
             ctsAll.SetResult(true);

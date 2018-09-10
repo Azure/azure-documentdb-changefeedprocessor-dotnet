@@ -39,13 +39,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public async Task<long> GetEstimatedRemainingWork()
         {
-            var partitions = await this.GetEstimatedRemainingWorkPerPartition();
+            var partitions = await this.GetEstimatedRemainingWorkPerPartitionAsync();
             if (partitions.Count == 0) return 1;
 
             return partitions.Sum(partition => partition.RemainingWork);
         }
 
-        public async Task<IReadOnlyList<RemainingPartitionWork>> GetEstimatedRemainingWorkPerPartition()
+        public async Task<IReadOnlyList<RemainingPartitionWork>> GetEstimatedRemainingWorkPerPartitionAsync()
         {
             IReadOnlyList<ILease> leases = await this.leaseManager.ListAllLeasesAsync().ConfigureAwait(false);
             if (leases == null || leases.Count == 0)
