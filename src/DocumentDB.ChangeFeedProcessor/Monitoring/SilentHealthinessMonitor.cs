@@ -10,17 +10,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
     /// <summary>
-    /// A strategy which crashes the process. It calls Environment.FailFast
+    /// A monitor which logs the errors only.
     /// </summary>
-    public class FailFastUnhealthinessHandlingStrategy : IUnhealthinessHandlingStrategy
+    public class SilentHealthinessMonitor : IHealthinessMonitor
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
         /// <inheritdoc />
-        public Task HandleAsync(ILease lease, Exception exception)
+        public Task InspectAsync(HealthEventLevel level, HealthEventPhase phase, ILease lease, Exception exception = null)
         {
-            Logger.ErrorException($"Unhealthy instance detected. Last aquired lease {lease}", exception);
-            Environment.FailFast("Unhealthy instance detected.");
+            if (level == HealthEventLevel.Error)
+            {
+                Logger.ErrorException($"Unhealthiness detected in the phase {phase} for {lease}. ", exception);
+            }
 
             return Task.FromResult(true);
         }

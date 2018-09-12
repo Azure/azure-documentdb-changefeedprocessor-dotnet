@@ -122,7 +122,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private ILeaseManager leaseManager;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
         private IPartitionProcessorFactory partitionProcessorFactory;
-        private IUnhealthinessHandlingStrategy unhealthinessHandlingStrategy;
+        private IHealthinessMonitor healthinessMonitor;
 
         internal string HostName
         {
@@ -309,15 +309,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Sets the <see cref="IUnhealthinessHandlingStrategy"/> to be used to handled unhealthiness situation.
+        /// Sets the <see cref="IHealthinessMonitor"/> to be used to monitor unhealthiness situation.
         /// </summary>
-        /// <param name="unhealthinessHandlingStrategy">The instance of <see cref="IUnhealthinessHandlingStrategy"/> to use.</param>
+        /// <param name="healthinessMonitor">The instance of <see cref="IHealthinessMonitor"/> to use.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithUnhealthinessHandlingStrategy(IUnhealthinessHandlingStrategy unhealthinessHandlingStrategy)
+        public ChangeFeedProcessorBuilder WithHealthinessMonitor(IHealthinessMonitor healthinessMonitor)
         {
-            if (unhealthinessHandlingStrategy == null)
-                throw new ArgumentNullException(nameof(unhealthinessHandlingStrategy));
-            this.unhealthinessHandlingStrategy = unhealthinessHandlingStrategy;
+            if (healthinessMonitor == null)
+                throw new ArgumentNullException(nameof(healthinessMonitor));
+            this.healthinessMonitor = healthinessMonitor;
             return this;
         }
 
@@ -419,13 +419,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             IPartitionController partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
 
-            if (this.unhealthinessHandlingStrategy == null)
+            if (this.healthinessMonitor == null)
             {
-                this.unhealthinessHandlingStrategy = new SilentUnhealthinessHandlingStrategy();
+                this.healthinessMonitor = new SilentHealthinessMonitor();
             }
 
             long unhealtinessDuration = Math.Max(15 * this.changeFeedProcessorOptions.LeaseExpirationInterval.Ticks, DefaultUnhealthinessDuration);
-            partitionController = new PartitionControllerHealthinessEvaluator(partitionController, unhealtinessDuration, this.unhealthinessHandlingStrategy);
+            partitionController = new PartitionControllerHealthinessMonitor(partitionController, this.healthinessMonitor);
             var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedProcessorOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }

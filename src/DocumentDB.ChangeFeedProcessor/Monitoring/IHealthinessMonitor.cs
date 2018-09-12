@@ -11,14 +11,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
     /// <summary>
     /// A strategy for handling the situation when the change feed processor is not able to aquire lease due to unknown reasons.
     /// </summary>
-    public interface IUnhealthinessHandlingStrategy
+    public interface IHealthinessMonitor
     {
         /// <summary>
         /// A logic to handle that exceptional situation.
         /// </summary>
+        /// <param name="level">The health level</param>
+        /// <param name="phase">The phase which reports healthiness or failure</param>
         /// <param name="lease">Last lease which the system tried to aquire but failed.</param>
         /// <param name="exception">Last unknonw exception thrown when the system tried to aquire the lease</param>
-        /// <returns>Task</returns>
-        Task HandleAsync(ILease lease, Exception exception);
+        Task InspectAsync(HealthEventLevel level, HealthEventPhase phase, ILease lease, Exception exception = null);
     }
 }

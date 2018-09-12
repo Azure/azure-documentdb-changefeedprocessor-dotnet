@@ -10,19 +10,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
-    internal class PartitionControllerHealthinessEvaluator : IPartitionController
+    internal class PartitionControllerHealthinessMonitor : IPartitionController
     {
-        private static readonly long UninitializedTicks = DateTime.MaxValue.Ticks;
         private readonly IPartitionController inner;
-        private readonly long maxAllowedUnhealthyDuration;
-        private readonly IUnhealthinessHandlingStrategy unhealthinessStrategy;
-        private long firstUnhealthyTick = UninitializedTicks;
+        private readonly IHealthinessMonitor monitor;
 
-        public PartitionControllerHealthinessEvaluator(IPartitionController inner, long unhealthinessDurationTicks, IUnhealthinessHandlingStrategy unhealthinessStrategy)
+        public PartitionControllerHealthinessMonitor(IPartitionController inner, IHealthinessMonitor monitor)
         {
             this.inner = inner ?? throw new ArgumentNullException(nameof(inner));
-            this.unhealthinessStrategy = unhealthinessStrategy ?? throw new ArgumentNullException(nameof(unhealthinessStrategy));
-            this.maxAllowedUnhealthyDuration = unhealthinessDurationTicks;
+            this.monitor = monitor ?? throw new ArgumentNullException(nameof(monitor));
         }
 
         public async Task AddOrUpdateLeaseAsync(ILease lease)
@@ -30,7 +26,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             try
             {
                 await this.inner.AddOrUpdateLeaseAsync(lease);
-                Interlocked.CompareExchange(ref this.firstUnhealthyTick, UninitializedTicks, this.firstUnhealthyTick);
+                await this.monitor.InspectAsync(HealthEventLevel.Health, HealthEventPhase.AquireLease, lease);
             }
             catch (DocumentClientException)
             {
@@ -38,11 +34,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             }
             catch (Exception exception)
             {
-                long fistUnhealthyOccurenceTicks = Interlocked.CompareExchange(ref this.firstUnhealthyTick, DateTime.UtcNow.Ticks, UninitializedTicks);
-                if (DateTime.UtcNow.Ticks > checked(fistUnhealthyOccurenceTicks + this.maxAllowedUnhealthyDuration))
-                {
-                    await this.unhealthinessStrategy.HandleAsync(lease, exception);
-                }
+                await this.monitor.InspectAsync(HealthEventLevel.Error, HealthEventPhase.AquireLease, lease, exception);
 
                 throw;
             }
