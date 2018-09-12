@@ -54,6 +54,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public string CollectionName { get; set; }
 
         /// <summary>
+        /// Gets or sets the consistency level. Default is null which means it will be used a collection level consistency.
+        /// </summary>
+        public ConsistencyLevel? ConsistencyLevel { get; set; }
+
+        /// <summary>
         /// Gets or sets the connection policy to connect to Document service.
         /// </summary>
         public ConnectionPolicy ConnectionPolicy { get; set; }

@@ -80,11 +80,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "{0} Owner='{1}' Continuation={2} Timestamp(local)={3}",
+                "{0} Owner='{1}' Continuation={2} Timestamp(local)={3} Timestamp(server)={4}",
                 this.Id,
                 this.Owner,
                 this.ContinuationToken,
-                this.Timestamp.ToLocalTime());
+                this.Timestamp.ToUniversalTime(),
+                UnixStartTime.AddSeconds(this.TS).ToUniversalTime());
         }
     }
 }

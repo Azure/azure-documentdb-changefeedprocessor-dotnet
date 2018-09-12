@@ -1,6 +1,7 @@
 ﻿//----------------------------------------------------------------
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
+
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
@@ -9,7 +10,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>

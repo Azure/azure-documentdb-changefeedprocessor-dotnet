@@ -375,7 +375,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             ILeaseManager leaseManager = await this.GetLeaseManagerAsync().ConfigureAwait(false);
 
-            IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink());
+            IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink(), this.feedCollectionLocation.ConnectionPolicy.MaxConnectionLimit);
             return remainingWorkEstimator;
         }
 

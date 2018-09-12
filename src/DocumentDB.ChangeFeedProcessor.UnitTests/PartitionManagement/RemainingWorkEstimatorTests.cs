@@ -2,12 +2,11 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
-using Microsoft.Azure.Documents.Client;
 using Moq;
 using Xunit;
 
@@ -17,90 +16,273 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     public class RemainingWorkEstimatorTests
     {
         private const string collectionSelfLink = "selfLink";
-        private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-        private readonly ILease lease;
-        private readonly IChangeFeedDocumentClient docClient;
-        private readonly IChangeFeedDocumentQuery<Document> documentQuery;
-        private readonly RemainingWorkEstimator remainingWorkEstimator;
-        private readonly ILeaseManager leaseManager;
-        private IFeedResponse<Document> feedResponse;
-        private List<Document> documents;
 
-        public RemainingWorkEstimatorTests()
+        [Fact]
+        public async Task EstimateTotal_ShouldReturnOne_IfNoLeaseDocumentsCreated()
         {
-            var document = new Document();
-            document.SetPropertyValue("_lsn", "10");
-            documents = new List<Document> { document };
-
-            feedResponse = Mock.Of<IFeedResponse<Document>>();
-            Mock.Get(feedResponse)
-                .Setup(response => response.SessionToken)
-                .Returns("0:15");
-
-            Mock.Get(feedResponse)
-                .Setup(response => response.Count)
-                .Returns(documents.Count);
-
-            Mock.Get(feedResponse)
-                .Setup(response => response.GetEnumerator())
-                .Returns(documents.GetEnumerator());
-
-            lease = Mock.Of<ILease>();
-            Mock.Get(lease)
-                .Setup(l => l.PartitionId)
-                .Returns("partitionId");
-
-            leaseManager = Mock.Of<ILeaseManager>();
-            Mock.Get(leaseManager)
-                .Setup(manager => manager.ListAllLeasesAsync())
-                .ReturnsAsync(new List<ILease>() { lease });
-            
-            documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
-            Mock.Get(documentQuery)
-                .Setup(query => query.HasMoreResults)
-                .Returns(false);
-
-            Mock.Get(documentQuery)
-                .Setup(query => query.ExecuteNextAsync<Document>(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(() => feedResponse)
-                .Callback(() => cancellationTokenSource.Cancel());
-
-            docClient = Mock.Of<IChangeFeedDocumentClient>();
-            Mock.Get(docClient)
-                .Setup(ex => ex.CreateDocumentChangeFeedQuery(collectionSelfLink, It.IsAny<ChangeFeedOptions>()))
-                .Returns(documentQuery);
-
-            remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, docClient, collectionSelfLink);
+            IReadOnlyList<ILease> leases = new List<ILease>(0);
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>(),
+                collectionSelfLink,
+                1);
+            long pendingWork = await sut.GetEstimatedRemainingWork();
+            Assert.Equal(1, pendingWork);
         }
 
         [Fact]
-        public async Task Estimate_ShouldReturnPendingWork()
+        public async Task EstimateTotal_ShouldReturnPendingWork_IfOnePartition()
         {
-            long pendingWork = await remainingWorkEstimator.GetEstimatedRemainingWork();
+            IReadOnlyList<ILease> leases = new List<ILease> { Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100") };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", "101", "1:106"),
+                collectionSelfLink,
+                1);
+            long pendingWork = await sut.GetEstimatedRemainingWork();
             Assert.Equal(6, pendingWork);
         }
 
         [Fact]
-        public async Task Estimate_ShouldReturnZero_WhenEmpty()
+        public async Task EstimateTotal_ShouldReturnZero_WhenEmptyFeedResponse()
         {
-            var document = new Document();
-            documents = new List<Document> { };
-
-            feedResponse = Mock.Of<IFeedResponse<Document>>();
-            Mock.Get(feedResponse)
-                .Setup(response => response.SessionToken)
-                .Returns("0:15");
-
-            Mock.Get(feedResponse)
-                .Setup(response => response.Count)
-                .Returns(documents.Count);
-
-            Mock.Get(feedResponse)
-                .Setup(response => response.GetEnumerator())
-                .Returns(documents.GetEnumerator());
-
-            long pendingWork = await remainingWorkEstimator.GetEstimatedRemainingWork();
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100")
+            };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", null, "1:100"),
+                collectionSelfLink,
+                1);
+            long pendingWork = await sut.GetEstimatedRemainingWork();
             Assert.Equal(0, pendingWork);
         }
+
+        [Fact]
+        public async Task EstimateTotal_ShouldReturnPendingWork_IfMultiplePartitions()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100"),
+                Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
+            };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", "101", "1:106")
+                    .SetupQueryResponse("2", "200", "201", "2:201"),
+                collectionSelfLink,
+                1);
+            long pendingWork = await sut.GetEstimatedRemainingWork();
+            Assert.Equal(7, pendingWork);
+        }
+
+        [Fact]
+        public async Task EstimateTotal_ShouldReturnPendingWork_IfMultiplePartitionsButOneFails()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100"),
+                Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
+            };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", "101", "1:103")
+                    .SetupQueryResponseFailure("2", "200"),
+                collectionSelfLink,
+                1);
+            long pendingWork = await sut.GetEstimatedRemainingWork();
+            Assert.Equal(3, pendingWork);
+        }
+
+        [Fact]
+        public async Task EstimateTotal_ShouldRethrowException_IfEstimatorPartitionWorkThrowsUnknonwException()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100"),
+                Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
+            };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", "101", "1:103")
+                    .SetupQueryResponseFailure("2", "200", new InvalidOperationException()),
+                collectionSelfLink,
+                1);
+            await Assert.ThrowsAsync<InvalidOperationException>(sut.GetEstimatedRemainingWork);
+        }
+
+        [Fact]
+        public async Task EstimateTotal_ShouldReturnOne_WhenNothingSucceeds()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100")
+            };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponseFailure("1", "100"),
+                collectionSelfLink,
+                1);
+            long pendingWork = await sut.GetEstimatedRemainingWork();
+            Assert.Equal(1, pendingWork);
+        }
+
+        [Fact]
+        public async Task EstimateTotal_ShouldPropagateExecption_IfUnknownExceptionHappened()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>(0);
+            var leaseManager = new Mock<ILeaseManager>();
+            leaseManager.Setup(m => m.ListAllLeasesAsync()).ThrowsAsync(new InvalidOperationException());
+            var sut = new RemainingWorkEstimator(
+                leaseManager.Object,
+                Mock.Of<IChangeFeedDocumentClient>(),
+                collectionSelfLink,
+                1);
+            await Assert.ThrowsAsync<InvalidOperationException>(sut.GetEstimatedRemainingWork);
+        }
+
+        [Fact]
+        public async Task EstimatePerPartition_ShouldReturnPendingWork_IfOnePartition()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease> { Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100") };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", "101", "1:106"),
+                collectionSelfLink,
+                1);
+
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartitionAsync();
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 6);
+            Assert.Single(pendingWork);
+        }
+
+        [Fact]
+        public async Task EstimatePerPartition_ShouldReturnPendingWork_IfMultiplePartitionsButOneFails()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100"),
+                Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
+            };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", "101", "1:103")
+                    .SetupQueryResponseFailure("2", "200"),
+                collectionSelfLink,
+                1);
+
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartitionAsync();
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 3);
+            Assert.Single(pendingWork);
+        }
+
+        [Fact]
+        public async Task EstimatePerPartition_ShouldReturnEmpty_WhenNothingSucceeds()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100")
+            };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponseFailure("1", "100"),
+                collectionSelfLink,
+                1);
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartitionAsync();
+            Assert.Empty(pendingWork);
+        }
+
+        [Fact]
+        public async Task EstimatePerPartition_ShouldReturnZero_WhenEmptyResponse()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100")
+            };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", null, "1:100"),
+                collectionSelfLink,
+                1);
+
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartitionAsync();
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 0);
+            Assert.Single(pendingWork);
+        }
+
+        [Fact]
+        public async Task EstimatePerPartition_ShouldReturnPendingWork_IfMultiplePartitions()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100"),
+                Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
+            };
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", "101", "1:106")
+                    .SetupQueryResponse("2", "200", "201", "2:201"),
+                collectionSelfLink,
+                1);
+
+            var pendingWork = await sut.GetEstimatedRemainingWorkPerPartitionAsync();
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 6);
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "2" && work.RemainingWork == 1);
+            Assert.Equal(2, pendingWork.Count);
+        }
+
+        [Fact]
+        public async Task EstimatePerPartition_ShouldRunInParallel_IfDegreeOfParallelismIsTwo()
+        {
+            IReadOnlyList<ILease> leases = new List<ILease>
+            {
+                Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100"),
+                Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
+            };
+
+            TaskCompletionSource<bool> cts1 = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> cts2 = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> ctsAll = new TaskCompletionSource<bool>();
+            var sut = new RemainingWorkEstimator(
+                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<IChangeFeedDocumentClient>()
+                    .SetupQueryResponse("1", "100", "101", "1:106", async r =>
+                    {
+                        cts1.SetResult(true);
+                        await ctsAll.Task;
+                        return r;
+                    })
+                    .SetupQueryResponse("2", "200", "201", "2:201", async r =>
+                    {
+                        cts2.SetResult(true);
+                        await ctsAll.Task;
+                        return r;
+                    }),
+                collectionSelfLink,
+                2);
+
+            var workPerPartitionTask = sut.GetEstimatedRemainingWorkPerPartitionAsync();
+
+            await Task.WhenAll(cts1.Task, cts2.Task);
+            ctsAll.SetResult(true);
+
+            var pendingWork = await workPerPartitionTask;
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "1" && work.RemainingWork == 6);
+            Assert.Contains(pendingWork, work => work.PartitionKeyRangeId == "2" && work.RemainingWork == 1);
+            Assert.Equal(2, pendingWork.Count);
+        }
+
     }
 }
