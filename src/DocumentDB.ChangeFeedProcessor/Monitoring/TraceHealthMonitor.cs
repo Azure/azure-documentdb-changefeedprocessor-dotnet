@@ -17,11 +17,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
         /// <inheritdoc />
-        public Task InspectAsync(HealthSeverity severity, MonitoredOperation operation, ILease lease, Exception exception = null)
+        public Task InspectAsync(HealthMonitoringRecord record)
         {
-            if (severity == HealthSeverity.Error)
+            if (record.Severity == HealthSeverity.Error)
             {
-                Logger.ErrorException($"Unhealthiness detected in the operation {operation} for {lease}. ", exception);
+                Logger.ErrorException($"Unhealthiness detected in the operation {record.Operation} for {record.Lease}. ", record.Exception);
             }
 
             return Task.FromResult(true);

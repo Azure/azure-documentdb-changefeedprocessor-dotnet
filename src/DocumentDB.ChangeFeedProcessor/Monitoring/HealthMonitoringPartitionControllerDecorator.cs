@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             try
             {
                 await this.inner.AddOrUpdateLeaseAsync(lease);
-                await this.monitor.InspectAsync(HealthSeverity.Health, MonitoredOperation.AquireLease, lease);
+                await this.monitor.InspectAsync(new HealthMonitoringRecord(HealthSeverity.Health, MonitoredOperation.AquireLease, lease, null));
             }
             catch (DocumentClientException)
             {
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             }
             catch (Exception exception)
             {
-                await this.monitor.InspectAsync(HealthSeverity.Error, MonitoredOperation.AquireLease, lease, exception);
+                await this.monitor.InspectAsync(new HealthMonitoringRecord(HealthSeverity.Error, MonitoredOperation.AquireLease, lease, exception));
 
                 throw;
             }
