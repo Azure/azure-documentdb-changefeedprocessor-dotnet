@@ -13,19 +13,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         [Fact]
         public async Task AcquireLease_ShouldReportHealthy_IfNoIssues()
         {
-            var monitor = new Mock<IHealthinessMonitor>();
-            var sut = new PartitionControllerHealthinessMonitor(Mock.Of<IPartitionController>(), monitor.Object);
+            var monitor = new Mock<IHealthMonitor>();
+            var sut = new HealthMonitoringPartitionControllerDecorator(Mock.Of<IPartitionController>(), monitor.Object);
             var lease = Mock.Of<ILease>();
             await sut.AddOrUpdateLeaseAsync(lease);
 
-            monitor.Verify(m => m.InspectAsync(HealthEventLevel.Health, HealthEventPhase.AquireLease, lease, null));
+            monitor.Verify(m => m.InspectAsync(HealthSeverity.Health, MonitoredOperation.AquireLease, lease, null));
         }
 
         [Fact]
         public async Task AcquireLease_ShouldReportFailure_IfSystemIssue()
         {
             var lease = Mock.Of<ILease>();
-            var monitor = new Mock<IHealthinessMonitor>();
+            var monitor = new Mock<IHealthMonitor>();
             var controller = new Mock<IPartitionController>();
 
             Exception exception = new InvalidOperationException();
@@ -33,10 +33,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(c => c.AddOrUpdateLeaseAsync(lease))
                 .Returns(Task.FromException(exception));
 
-            var sut = new PartitionControllerHealthinessMonitor(controller.Object, monitor.Object);
+            var sut = new HealthMonitoringPartitionControllerDecorator(controller.Object, monitor.Object);
             await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AddOrUpdateLeaseAsync(lease));
 
-            monitor.Verify(m => m.InspectAsync(HealthEventLevel.Error, HealthEventPhase.AquireLease, lease, exception));
+            monitor.Verify(m => m.InspectAsync(HealthSeverity.Error, MonitoredOperation.AquireLease, lease, exception));
         }
 
     }

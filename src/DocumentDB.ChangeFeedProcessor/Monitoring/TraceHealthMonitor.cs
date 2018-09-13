@@ -12,16 +12,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
     /// <summary>
     /// A monitor which logs the errors only.
     /// </summary>
-    public class SilentHealthinessMonitor : IHealthinessMonitor
+    internal class TraceHealthMonitor : IHealthMonitor
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
         /// <inheritdoc />
-        public Task InspectAsync(HealthEventLevel level, HealthEventPhase phase, ILease lease, Exception exception = null)
+        public Task InspectAsync(HealthSeverity severity, MonitoredOperation operation, ILease lease, Exception exception = null)
         {
-            if (level == HealthEventLevel.Error)
+            if (severity == HealthSeverity.Error)
             {
-                Logger.ErrorException($"Unhealthiness detected in the phase {phase} for {lease}. ", exception);
+                Logger.ErrorException($"Unhealthiness detected in the operation {operation} for {lease}. ", exception);
             }
 
             return Task.FromResult(true);

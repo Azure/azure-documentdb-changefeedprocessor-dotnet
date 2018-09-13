@@ -122,7 +122,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private ILeaseManager leaseManager;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
         private IPartitionProcessorFactory partitionProcessorFactory;
-        private IHealthinessMonitor healthinessMonitor;
+        private IHealthMonitor healthMonitor;
 
         internal string HostName
         {
@@ -309,15 +309,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Sets the <see cref="IHealthinessMonitor"/> to be used to monitor unhealthiness situation.
+        /// Sets the <see cref="IHealthMonitor"/> to be used to monitor unhealthiness situation.
         /// </summary>
-        /// <param name="healthinessMonitor">The instance of <see cref="IHealthinessMonitor"/> to use.</param>
+        /// <param name="healthMonitor">The instance of <see cref="IHealthMonitor"/> to use.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithHealthinessMonitor(IHealthinessMonitor healthinessMonitor)
+        public ChangeFeedProcessorBuilder WithHealthinessMonitor(IHealthMonitor healthMonitor)
         {
-            if (healthinessMonitor == null)
-                throw new ArgumentNullException(nameof(healthinessMonitor));
-            this.healthinessMonitor = healthinessMonitor;
+            if (healthMonitor == null)
+                throw new ArgumentNullException(nameof(healthMonitor));
+            this.healthMonitor = healthMonitor;
             return this;
         }
 
@@ -419,13 +419,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             IPartitionController partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
 
-            if (this.healthinessMonitor == null)
+            if (this.healthMonitor == null)
             {
-                this.healthinessMonitor = new SilentHealthinessMonitor();
+                this.healthMonitor = new TraceHealthMonitor();
             }
 
             long unhealtinessDuration = Math.Max(15 * this.changeFeedProcessorOptions.LeaseExpirationInterval.Ticks, DefaultUnhealthinessDuration);
-            partitionController = new PartitionControllerHealthinessMonitor(partitionController, this.healthinessMonitor);
+            partitionController = new HealthMonitoringPartitionControllerDecorator(partitionController, this.healthMonitor);
             var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedProcessorOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }

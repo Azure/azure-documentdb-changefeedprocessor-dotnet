@@ -5,18 +5,13 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
 {
     /// <summary>
-    /// The healthiness level
+    /// The health monitoring phase
     /// </summary>
-    public enum HealthEventLevel
+    public enum MonitoredOperation
     {
         /// <summary>
-        /// Error level
+        /// A phase when the instance tries to aquire the lease
         /// </summary>
-        Error,
-
-        /// <summary>
-        /// Health level
-        /// </summary>
-        Health,
+        AquireLease,
     }
 }

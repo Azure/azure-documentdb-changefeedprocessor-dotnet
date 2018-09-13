@@ -10,12 +10,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
-    internal class PartitionControllerHealthinessMonitor : IPartitionController
+    internal class HealthMonitoringPartitionControllerDecorator : IPartitionController
     {
         private readonly IPartitionController inner;
-        private readonly IHealthinessMonitor monitor;
+        private readonly IHealthMonitor monitor;
 
-        public PartitionControllerHealthinessMonitor(IPartitionController inner, IHealthinessMonitor monitor)
+        public HealthMonitoringPartitionControllerDecorator(IPartitionController inner, IHealthMonitor monitor)
         {
             this.inner = inner ?? throw new ArgumentNullException(nameof(inner));
             this.monitor = monitor ?? throw new ArgumentNullException(nameof(monitor));
@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             try
             {
                 await this.inner.AddOrUpdateLeaseAsync(lease);
-                await this.monitor.InspectAsync(HealthEventLevel.Health, HealthEventPhase.AquireLease, lease);
+                await this.monitor.InspectAsync(HealthSeverity.Health, MonitoredOperation.AquireLease, lease);
             }
             catch (DocumentClientException)
             {
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             }
             catch (Exception exception)
             {
-                await this.monitor.InspectAsync(HealthEventLevel.Error, HealthEventPhase.AquireLease, lease, exception);
+                await this.monitor.InspectAsync(HealthSeverity.Error, MonitoredOperation.AquireLease, lease, exception);
 
                 throw;
             }
