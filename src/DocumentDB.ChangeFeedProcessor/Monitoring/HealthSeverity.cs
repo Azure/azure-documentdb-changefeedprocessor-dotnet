@@ -10,13 +10,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
     public enum HealthSeverity
     {
         /// <summary>
+        /// Critical level.
+        /// </summary>
+        Critical = 10,
+
+        /// <summary>
         /// Error level.
         /// </summary>
-        Error,
+        Error = 20,
 
         /// <summary>
         /// Information level.
         /// </summary>
-        Informational,
+        Informational = 30,
     }
 }

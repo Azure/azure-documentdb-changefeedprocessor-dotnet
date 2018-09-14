@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var lease = Mock.Of<ILease>();
             await sut.AddOrUpdateLeaseAsync(lease);
 
-            monitor.Verify(m => m.InspectAsync(It.Is<HealthMonitoringRecord>(r => r.Severity == HealthSeverity.Informational && r.Lease == lease && r.Operation == MonitoredOperation.AquireLease && r.Exception == null)));
+            monitor.Verify(m => m.InspectAsync(It.Is<HealthMonitoringRecord>(r => r.Severity == HealthSeverity.Informational && r.Lease == lease && r.Operation == MonitoredOperation.AcquireLease && r.Exception == null)));
         }
 
         [Fact]
@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var sut = new HealthMonitoringPartitionControllerDecorator(controller.Object, monitor.Object);
             await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AddOrUpdateLeaseAsync(lease));
 
-            monitor.Verify(m => m.InspectAsync(It.Is<HealthMonitoringRecord>(r => r.Severity == HealthSeverity.Error && r.Lease == lease && r.Operation == MonitoredOperation.AquireLease && r.Exception == exception)));
+            monitor.Verify(m => m.InspectAsync(It.Is<HealthMonitoringRecord>(r => r.Severity == HealthSeverity.Error && r.Lease == lease && r.Operation == MonitoredOperation.AcquireLease && r.Exception == exception)));
         }
 
     }

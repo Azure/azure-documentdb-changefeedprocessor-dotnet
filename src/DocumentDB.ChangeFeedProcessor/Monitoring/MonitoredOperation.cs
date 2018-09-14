@@ -10,8 +10,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
     public enum MonitoredOperation
     {
         /// <summary>
-        /// A phase when the instance tries to aquire the lease
+        /// A phase when the instance tries to acquire the lease
         /// </summary>
-        AquireLease,
+        AcquireLease,
     }
 }
