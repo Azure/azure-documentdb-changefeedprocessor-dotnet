@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var lease = Mock.Of<ILease>();
             await sut.AddOrUpdateLeaseAsync(lease);
 
-            monitor.Verify(m => m.InspectAsync(It.Is<HealthMonitoringRecord>(r => r.Severity == HealthSeverity.Health && r.Lease == lease && r.Operation == MonitoredOperation.AquireLease && r.Exception == null)));
+            monitor.Verify(m => m.InspectAsync(It.Is<HealthMonitoringRecord>(r => r.Severity == HealthSeverity.Informational && r.Lease == lease && r.Operation == MonitoredOperation.AquireLease && r.Exception == null)));
         }
 
         [Fact]

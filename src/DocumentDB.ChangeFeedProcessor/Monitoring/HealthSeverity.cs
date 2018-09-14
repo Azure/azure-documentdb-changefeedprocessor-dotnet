@@ -15,8 +15,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
         Error,
 
         /// <summary>
-        /// Health level.
+        /// Information level.
         /// </summary>
-        Health,
+        Informational,
     }
 }
