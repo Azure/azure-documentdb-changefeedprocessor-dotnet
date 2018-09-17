@@ -7,7 +7,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
     using System.Threading.Tasks;
 
     /// <summary>
-    /// A strategy for handling the situation when the change feed processor is not able to aquire lease due to unknown reasons.
+    /// A strategy for handling the situation when the change feed processor is not able to acquire lease due to unknown reasons.
     /// </summary>
     public interface IHealthMonitor
     {
