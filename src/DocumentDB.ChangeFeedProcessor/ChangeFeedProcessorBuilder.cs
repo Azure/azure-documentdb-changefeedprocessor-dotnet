@@ -11,6 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
@@ -107,6 +108,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     public class ChangeFeedProcessorBuilder
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
+        private static readonly long DefaultUnhealthinessDuration = TimeSpan.FromMinutes(15).Ticks;
         private readonly TimeSpan sleepTime = TimeSpan.FromSeconds(15);
         private readonly TimeSpan lockTime = TimeSpan.FromSeconds(30);
         private DocumentCollectionInfo feedCollectionLocation;
@@ -120,6 +122,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private ILeaseManager leaseManager;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
         private IPartitionProcessorFactory partitionProcessorFactory;
+        private IHealthMonitor healthMonitor;
 
         internal string HostName
         {
@@ -306,6 +309,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
+        /// Sets the <see cref="IHealthMonitor"/> to be used to monitor unhealthiness situation.
+        /// </summary>
+        /// <param name="healthMonitor">The instance of <see cref="IHealthMonitor"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
+        public ChangeFeedProcessorBuilder WithHealthinessMonitor(IHealthMonitor healthMonitor)
+        {
+            if (healthMonitor == null)
+                throw new ArgumentNullException(nameof(healthMonitor));
+            this.healthMonitor = healthMonitor;
+            return this;
+        }
+
+        /// <summary>
         /// Builds a new instance of the <see cref="IChangeFeedProcessor"/> with the specified configuration.
         /// </summary>
         /// <returns>An instance of <see cref="IChangeFeedProcessor"/>.</returns>
@@ -396,12 +412,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseManager, collectionSelfLink),
                 this.changeFeedProcessorOptions);
 
-            var partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
             if (this.loadBalancingStrategy == null)
             {
                 this.loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.HostName, this.changeFeedProcessorOptions.MinPartitionCount, this.changeFeedProcessorOptions.MaxPartitionCount, this.changeFeedProcessorOptions.LeaseExpirationInterval);
             }
 
+            IPartitionController partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
+
+            if (this.healthMonitor == null)
+            {
+                this.healthMonitor = new TraceHealthMonitor();
+            }
+
+            long unhealtinessDuration = Math.Max(15 * this.changeFeedProcessorOptions.LeaseExpirationInterval.Ticks, DefaultUnhealthinessDuration);
+            partitionController = new HealthMonitoringPartitionControllerDecorator(partitionController, this.healthMonitor);
             var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedProcessorOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }
