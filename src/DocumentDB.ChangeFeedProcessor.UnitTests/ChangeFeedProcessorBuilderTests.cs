@@ -157,28 +157,28 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         [Fact]
         public async Task BuildThrowsWhenLeaseCollectionPartitionedNotById()
         {
-            SetupBuilderForPartitionedLeaseCollection("not_id");
+            SetupBuilderForPartitionedLeaseCollection("/not_id");
             await Assert.ThrowsAsync<ArgumentException>(async () => await builder.BuildAsync() );
         }
 
         [Fact]
         public async Task BuildWhenLeaseCollectionPartitionedById()
         {
-            SetupBuilderForPartitionedLeaseCollection("id");
+            SetupBuilderForPartitionedLeaseCollection("/id");
             await this.builder.BuildAsync();
         }
 
         [Fact]
         public async Task BuildEstimatorThrowsWhenLeaseCollectionPartitionedNotById()
         {
-            SetupBuilderForPartitionedLeaseCollection("not_id");
+            SetupBuilderForPartitionedLeaseCollection("/not_id");
             await Assert.ThrowsAsync<ArgumentException>(async () => await builder.BuildEstimatorAsync());
         }
 
         [Fact]
         public async Task BuildEstimatorWhenLeaseCollectionPartitionedById()
         {
-            SetupBuilderForPartitionedLeaseCollection("id");
+            SetupBuilderForPartitionedLeaseCollection("/id");
             await this.builder.BuildEstimatorAsync();
         }
 
