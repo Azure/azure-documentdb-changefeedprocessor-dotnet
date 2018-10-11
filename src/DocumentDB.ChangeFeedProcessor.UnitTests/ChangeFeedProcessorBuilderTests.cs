@@ -110,7 +110,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(ex => ex.ReadDocumentCollectionAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>()))
                 .ReturnsAsync(new ResourceResponse<DocumentCollection>(collection));
             Mock.Get(documentClient)
-                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>(), null))
+                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>(), null, default(CancellationToken)))
                 .ReturnsAsync(new ResourceResponse<Document>(new Document()));
             Mock.Get(documentClient)
                 .Setup(c => c.CreateDocumentQuery<Document>(collectionLink,

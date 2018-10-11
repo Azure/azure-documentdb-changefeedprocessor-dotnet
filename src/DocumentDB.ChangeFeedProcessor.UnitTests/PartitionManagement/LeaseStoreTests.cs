@@ -3,6 +3,7 @@
 //----------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
@@ -33,7 +34,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
-                .Setup(c => c.ReadDocumentAsync(It.Is<Uri>(uri => uri.ToString().EndsWith(storeMarker)), null))
+                .Setup(c => c.ReadDocumentAsync(It.Is<Uri>(uri => uri.ToString().EndsWith(storeMarker)), null, default(CancellationToken)))
                 .ReturnsAsync(CreateResponse());
 
             var leaseStore = new LeaseStore(client, collectionInfo, containerNamePrefix, leaseStoreCollectionProperties);
@@ -46,7 +47,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
-                .Setup(c => c.ReadDocumentAsync(It.Is<Uri>(uri => uri.ToString().EndsWith(storeMarker)), null))
+                .Setup(c => c.ReadDocumentAsync(It.Is<Uri>(uri => uri.ToString().EndsWith(storeMarker)), null, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException());
 
             var leaseStore = new LeaseStore(client, collectionInfo, containerNamePrefix, leaseStoreCollectionProperties);
@@ -64,7 +65,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(client)
                 .Verify(c =>
-                        c.CreateDocumentAsync(leaseStoreCollectionProperties.SelfLink, It.Is<Document>(d => d.TimeToLive == (int)lockTime.TotalSeconds && d.Id == "prefix.lock")),
+                        c.CreateDocumentAsync(leaseStoreCollectionProperties.SelfLink, It.Is<Document>(d => d.TimeToLive == (int)lockTime.TotalSeconds && d.Id == "prefix.lock"),
+                        null,
+                        false,
+                        default(CancellationToken)),
                     Times.Once);
         }
 
@@ -73,7 +77,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
-                .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>()))
+                .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>(), null, false, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException());
 
             var leaseStore = new LeaseStore(client, collectionInfo, containerNamePrefix, leaseStoreCollectionProperties);
@@ -82,7 +86,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(client)
                 .Verify(c =>
-                        c.CreateDocumentAsync(leaseStoreCollectionProperties.SelfLink, It.Is<Document>(d => d.TimeToLive == (int)lockTime.TotalSeconds && d.Id == "prefix.lock")),
+                        c.CreateDocumentAsync(leaseStoreCollectionProperties.SelfLink, It.Is<Document>(d => d.TimeToLive == (int)lockTime.TotalSeconds && d.Id == "prefix.lock"),
+                        null,
+                        false,
+                        default(CancellationToken)),
                     Times.Once);
         }
 
@@ -91,7 +98,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
-                .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>()))
+                .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>(), null, false, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateRequestRateTooLargeException());
 
             var leaseStore = new LeaseStore(client, collectionInfo, containerNamePrefix, leaseStoreCollectionProperties);
@@ -108,7 +115,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(client)
                 .Verify(c =>
-                        c.CreateDocumentAsync(leaseStoreCollectionProperties.SelfLink, It.Is<Document>(d => d.Id == storeMarker)),
+                        c.CreateDocumentAsync(leaseStoreCollectionProperties.SelfLink, It.Is<Document>(d => d.Id == storeMarker),
+                        null,
+                        false,
+                        default(CancellationToken)),
                     Times.Once);
         }
 
@@ -117,7 +127,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
-                .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>()))
+                .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>(), null, false, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException());
 
             var leaseStore = new LeaseStore(client, collectionInfo, containerNamePrefix, leaseStoreCollectionProperties);
@@ -125,7 +135,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(client)
                 .Verify(c =>
-                        c.CreateDocumentAsync(leaseStoreCollectionProperties.SelfLink, It.Is<Document>(d => d.Id == storeMarker)),
+                        c.CreateDocumentAsync(leaseStoreCollectionProperties.SelfLink, It.Is<Document>(d => d.Id == storeMarker),
+                        null,
+                        false,
+                        default(CancellationToken)),
                     Times.Once);
         }
 
@@ -134,7 +147,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
-                .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>()))
+                .Setup(c => c.CreateDocumentAsync(It.IsAny<string>(), It.IsAny<object>(), null, false, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateRequestRateTooLargeException());
 
             var leaseStore = new LeaseStore(client, collectionInfo, containerNamePrefix, leaseStoreCollectionProperties);

@@ -201,7 +201,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                     d.PartitionId == partitionId &&
                     d.ContinuationToken == null &&
                     d.Id == leaseId
-                )))
+                ), null, false, default(CancellationToken)))
                 .ReturnsAsync(new ResourceResponse<Document>())
                 .Verifiable();
 
@@ -224,7 +224,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(c => c.CreateDocumentAsync(collectionLink, It.Is<DocumentServiceLease>(d =>
                     d.PartitionId == partitionId &&
                     d.ContinuationToken == continuationToken &&
-                    d.Id == $"{storeNamePrefix}..{partitionId}")))
+                    d.Id == $"{storeNamePrefix}..{partitionId}"), null, false, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException())
                 .Verifiable();
 
@@ -244,7 +244,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(c => c.CreateDocumentAsync(collectionLink, It.Is<DocumentServiceLease>(d =>
                     d.PartitionId == partitionId &&
                     d.ContinuationToken == continuationToken &&
-                    d.Id == $"{storeNamePrefix}..{partitionId}")))
+                    d.Id == $"{storeNamePrefix}..{partitionId}"), null, false, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException());
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.CreateLeaseIfNotExistAsync(partitionId, continuationToken));
@@ -338,7 +338,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
-                .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>(), null))
+                .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>(), null, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException());
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.RenewAsync(cachedLease));
@@ -354,7 +354,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
-                .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>(), null))
+                .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>(), null, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException());
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.RenewAsync(cachedLease));
@@ -406,7 +406,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
-                .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>(), null))
+                .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>(), null, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException());
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.ReleaseAsync(cachedLease));
@@ -422,7 +422,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
-                .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>(), null))
+                .Setup(c => c.ReadDocumentAsync(It.IsAny<Uri>(), null, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException());
 
             var exception = await Record.ExceptionAsync(async () => await leaseManager.ReleaseAsync(cachedLease));
@@ -457,7 +457,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
-                .Setup(c => c.DeleteDocumentAsync(documentUri))
+                .Setup(c => c.DeleteDocumentAsync(documentUri, null, default(CancellationToken)))
                 .ReturnsAsync(new ResourceResponse<Document>(new Document()))
                 .Verifiable();
 
@@ -475,7 +475,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
-                .Setup(c => c.DeleteDocumentAsync(documentUri))
+                .Setup(c => c.DeleteDocumentAsync(documentUri, null, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException())
                 .Verifiable();
 
@@ -493,7 +493,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner);
             Mock.Get(documentClient)
-                .Setup(c => c.DeleteDocumentAsync(documentUri))
+                .Setup(c => c.DeleteDocumentAsync(documentUri, null, default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException())
                 .Verifiable();
 
@@ -550,7 +550,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             storedLeaseDocument.SetPropertyValue("PartitionId", partitionId);
             storedLeaseDocument.SetPropertyValue("ContinuationToken", storedContinuationToken);
             Mock.Get(documentClient)
-                .Setup(c => c.ReadDocumentAsync(documentUri, null))
+                .Setup(c => c.ReadDocumentAsync(documentUri, null, default(CancellationToken)))
                 .ReturnsAsync(new ResourceResponse<Document>(storedLeaseDocument));
         }
 
