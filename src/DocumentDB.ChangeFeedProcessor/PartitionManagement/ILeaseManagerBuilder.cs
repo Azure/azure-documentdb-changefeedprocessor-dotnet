@@ -13,7 +13,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         LeaseManagerBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation);
 
-        LeaseManagerBuilder WithLeaseCollectionLink(string leaseStoreCollectionLink);
+        LeaseManagerBuilder WithLeaseCollectionMetadata(CollectionMetadata leaseCollectionMetadata);
 
         LeaseManagerBuilder WithLeaseDocumentClient(IChangeFeedDocumentClient leaseDocumentClient);
 

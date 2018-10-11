@@ -82,10 +82,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         /// Reads a <see cref="Microsoft.Azure.Documents.Document"/> as an asynchronous operation in the Azure DocumentDB database service.
         /// </summary>
         /// <param name="documentUri">The link for the document to be read.</param>
+        /// <param name="requestOptions">The RequestOptions for the request.</param>
         /// <returns>
         /// A <see cref="System.Threading.Tasks"/> containing a <see cref="Microsoft.Azure.Documents.Client.IResourceResponse{T}"/> which wraps a <see cref="Microsoft.Azure.Documents.Document"/> containing the read resource record.
         /// </returns>
-        Task<IResourceResponse<Document>> ReadDocumentAsync(Uri documentUri);
+        Task<IResourceResponse<Document>> ReadDocumentAsync(Uri documentUri, RequestOptions requestOptions);
 
         /// <summary>
         /// Extension method to create a query for documents in the Azure DocumentDB database service.
@@ -93,7 +94,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         /// <typeparam name="T">The type of object to query.</typeparam>
         /// <param name="documentCollectionUri">The URI of the document collection.</param>
         /// <param name="querySpec">The sql query.</param>
+        /// <param name="feedOptions">Options for the query.</param>
         /// <returns>The query result set.</returns>
-        IQueryable<T> CreateDocumentQuery<T>(string documentCollectionUri, SqlQuerySpec querySpec);
+        IQueryable<T> CreateDocumentQuery<T>(string documentCollectionUri, SqlQuerySpec querySpec, FeedOptions feedOptions);
     }
 }

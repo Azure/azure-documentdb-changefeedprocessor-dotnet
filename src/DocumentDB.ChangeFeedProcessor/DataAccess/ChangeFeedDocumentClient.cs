@@ -109,10 +109,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         /// Reads a single document.
         /// </summary>
         /// <param name="documentUri">Document Uri to read.</param>
+        /// <param name="requestOptions">The RequestOptions for the request.</param>
         /// <returns>A response containing a <see cref="Document"/>.</returns>
-        public async Task<IResourceResponse<Document>> ReadDocumentAsync(Uri documentUri)
+        public async Task<IResourceResponse<Document>> ReadDocumentAsync(Uri documentUri, RequestOptions requestOptions)
         {
-            return await this.documentClient.ReadDocumentAsync(documentUri).ConfigureAwait(false);
+            return await this.documentClient.ReadDocumentAsync(documentUri, requestOptions).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -121,10 +122,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         /// <typeparam name="T">Document type.</typeparam>
         /// <param name="documentCollectionUri">Collection Uri.</param>
         /// <param name="querySpec">Instance of <see cref="SqlQuerySpec"/> to execute.</param>
+        /// <param name="feedOptions">Options for the query.</param>
         /// <returns>An <see cref="IQueryable"/>.</returns>
-        public IQueryable<T> CreateDocumentQuery<T>(string documentCollectionUri, SqlQuerySpec querySpec)
+        public IQueryable<T> CreateDocumentQuery<T>(string documentCollectionUri, SqlQuerySpec querySpec, FeedOptions feedOptions)
         {
-            return this.documentClient.CreateDocumentQuery<T>(documentCollectionUri, querySpec);
+            return this.documentClient.CreateDocumentQuery<T>(documentCollectionUri, querySpec, feedOptions);
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private DocumentCollectionInfo leaseCollectionLocation;
         private IChangeFeedDocumentClient leaseDocumentClient;
         private string leasePrefix;
-        private string leaseStoreCollectionLink;
+        private CollectionMetadata leaseCollectionMetadata;
         private string hostName;
 
         public LeaseManagerBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation)
@@ -41,11 +41,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return this;
         }
 
-        public LeaseManagerBuilder WithLeaseCollectionLink(string leaseStoreCollectionLink)
+        public LeaseManagerBuilder WithLeaseCollectionMetadata(CollectionMetadata leaseCollectionMetadata)
         {
-            if (leaseStoreCollectionLink == null) throw new ArgumentNullException(nameof(leaseStoreCollectionLink));
+            if (leaseCollectionMetadata == null) throw new ArgumentNullException(nameof(leaseCollectionMetadata));
 
-            this.leaseStoreCollectionLink = leaseStoreCollectionLink;
+            this.leaseCollectionMetadata = leaseCollectionMetadata;
             return this;
         }
 
@@ -63,10 +63,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
 
-            if (this.leaseStoreCollectionLink == null)
+            if (this.leaseCollectionMetadata == null)
             {
-                DocumentCollection documentCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
-                this.leaseStoreCollectionLink = documentCollection.SelfLink;
+                DocumentCollection leaseCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
+                this.leaseCollectionMetadata = new CollectionMetadata(
+                    leaseCollection.SelfLink,
+                    leaseCollection.PartitionKey != null && leaseCollection.PartitionKey.Paths != null && leaseCollection.PartitionKey.Paths.Count != 0);
             }
 
             var updater = new DocumentServiceLeaseUpdater(this.leaseDocumentClient);
@@ -74,8 +76,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 this.leaseDocumentClient,
                 updater,
                 this.leaseCollectionLocation,
+                this.leaseCollectionMetadata,
                 this.leasePrefix,
-                this.leaseStoreCollectionLink,
                 this.hostName);
             return documentServiceLeaseManager;
         }

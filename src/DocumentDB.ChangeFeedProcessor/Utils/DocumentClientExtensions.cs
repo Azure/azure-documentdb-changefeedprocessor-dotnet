@@ -13,11 +13,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 
     internal static class DocumentClientExtensions
     {
-        public static async Task<Document> TryGetDocumentAsync(this IChangeFeedDocumentClient client, Uri documentUri)
+        public static async Task<Document> TryGetDocumentAsync(
+            this IChangeFeedDocumentClient client,
+            Uri documentUri,
+            RequestOptions requestOptions)
         {
             try
             {
-                IResourceResponse<Document> response = await client.ReadDocumentAsync(documentUri).ConfigureAwait(false);
+                IResourceResponse<Document> response = await client.ReadDocumentAsync(documentUri, requestOptions).ConfigureAwait(false);
                 return response.Resource;
             }
             catch (DocumentClientException ex)
@@ -53,8 +56,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             this IChangeFeedDocumentClient client,
             DocumentCollectionInfo collectionInfo)
         {
-            Uri collectionUri =
-                UriFactory.CreateDocumentCollectionUri(collectionInfo.DatabaseName, collectionInfo.CollectionName);
+            Uri collectionUri = UriFactory.CreateDocumentCollectionUri(collectionInfo.DatabaseName, collectionInfo.CollectionName);
             IResourceResponse<DocumentCollection> response =
                 await client.ReadDocumentCollectionAsync(collectionUri, new RequestOptions()).ConfigureAwait(false);
             return response.Resource;
