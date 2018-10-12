@@ -65,10 +65,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             if (this.leaseCollectionMetadata == null)
             {
-                DocumentCollection leaseCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
-                this.leaseCollectionMetadata = new CollectionMetadata(
-                    leaseCollection.SelfLink,
-                    leaseCollection.PartitionKey != null && leaseCollection.PartitionKey.Paths != null && leaseCollection.PartitionKey.Paths.Count != 0);
+                DocumentCollection leaseCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(
+                    this.leaseCollectionLocation).ConfigureAwait(false);
+                this.leaseCollectionMetadata = await this.leaseDocumentClient.GetCollectionMetadataAsync(
+                    this.leaseCollectionLocation, true).ConfigureAwait(false);
             }
 
             var updater = new DocumentServiceLeaseUpdater(this.leaseDocumentClient);

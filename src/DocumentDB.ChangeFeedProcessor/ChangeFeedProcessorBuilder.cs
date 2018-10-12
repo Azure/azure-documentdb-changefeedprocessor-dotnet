@@ -350,11 +350,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
-            var leaseCollectionMetadata = await this.GetCollectionMetadata(
-                this.leaseDocumentClient, this.leaseCollectionLocation, true).ConfigureAwait(false);
+            var leaseCollectionMetadata = await this.leaseDocumentClient.GetCollectionMetadataAsync(
+                this.leaseCollectionLocation,
+                true).ConfigureAwait(false);
             ILeaseManager leaseManager = await this.GetLeaseManagerAsync(leaseCollectionMetadata).ConfigureAwait(false);
 
-            IPartitionManager partitionManager = this.BuildPartitionManagerAsync(leaseManager, leaseCollectionMetadata);
+            IPartitionManager partitionManager = this.BuildPartitionManager(leaseManager, leaseCollectionMetadata);
             return new ChangeFeedProcessor(partitionManager);
         }
 
@@ -377,11 +378,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
-            var leaseCollectionMetadata = await this.GetCollectionMetadata(
-                this.leaseDocumentClient, this.leaseCollectionLocation, true);
+            var leaseCollectionMetadata = await this.leaseDocumentClient.GetCollectionMetadataAsync(
+                this.leaseCollectionLocation,
+                true).ConfigureAwait(false);
             ILeaseManager leaseManager = await this.GetLeaseManagerAsync(leaseCollectionMetadata).ConfigureAwait(false);
 
-            IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink(), this.feedCollectionLocation.ConnectionPolicy.MaxConnectionLimit);
+            IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(
+                leaseManager,
+                this.feedDocumentClient,
+                this.feedCollectionLocation.GetCollectionSelfLink(),
+                this.feedCollectionLocation.ConnectionPolicy.MaxConnectionLimit);
             return remainingWorkEstimator;
         }
 
@@ -400,7 +406,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return documentCollection.ResourceId;
         }
 
-        private IPartitionManager BuildPartitionManagerAsync(ILeaseManager leaseManager, CollectionMetadata leaseCollectionMetadata)
+        private IPartitionManager BuildPartitionManager(ILeaseManager leaseManager, CollectionMetadata leaseCollectionMetadata)
         {
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
             string feedCollectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
@@ -459,26 +465,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             }
 
             return this.leaseManager;
-        }
-
-        private async Task<CollectionMetadata> GetCollectionMetadata(
-            IChangeFeedDocumentClient documentClient,
-            DocumentCollectionInfo collectionLocation,
-            bool isPartitionKeyByIdRequiredIfPartitioned)
-        {
-            DocumentCollection collection = await documentClient.GetDocumentCollectionAsync(collectionLocation).ConfigureAwait(false);
-
-            bool isPartitioned =
-                collection.PartitionKey != null &&
-                collection.PartitionKey.Paths != null &&
-                collection.PartitionKey.Paths.Count > 0;
-            if (isPartitioned && isPartitionKeyByIdRequiredIfPartitioned &&
-                (collection.PartitionKey.Paths.Count != 1 || collection.PartitionKey.Paths[0] != "/id"))
-            {
-                throw new ArgumentException("The lease collection, if partitioned, must have partition key equal to id.");
-            }
-
-            return new CollectionMetadata(collection.SelfLink, isPartitioned);
         }
 
         private string GetLeasePrefix()
