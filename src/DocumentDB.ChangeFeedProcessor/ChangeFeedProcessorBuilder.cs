@@ -313,10 +313,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// </summary>
         /// <param name="healthMonitor">The instance of <see cref="IHealthMonitor"/> to use.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithHealthinessMonitor(IHealthMonitor healthMonitor)
+        public ChangeFeedProcessorBuilder WithHealthMonitor(IHealthMonitor healthMonitor)
         {
-            if (healthMonitor == null)
-                throw new ArgumentNullException(nameof(healthMonitor));
+            if (healthMonitor == null) throw new ArgumentNullException(nameof(healthMonitor));
             this.healthMonitor = healthMonitor;
             return this;
         }
