@@ -13,8 +13,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     {
         private DocumentCollectionInfo leaseCollectionLocation;
         private IChangeFeedDocumentClient leaseDocumentClient;
+        private IRequestOptionsFactory requestOptionsFactory;
         private string leasePrefix;
-        private CollectionMetadata leaseCollectionMetadata;
+        private string leaseCollectionLink;
         private string hostName;
 
         public LeaseManagerBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation)
@@ -41,11 +42,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return this;
         }
 
-        public LeaseManagerBuilder WithLeaseCollectionMetadata(CollectionMetadata leaseCollectionMetadata)
+        public LeaseManagerBuilder WithLeaseCollectionLink(string leaseCollectionLink)
         {
-            if (leaseCollectionMetadata == null) throw new ArgumentNullException(nameof(leaseCollectionMetadata));
+            if (leaseCollectionLink == null) throw new ArgumentNullException(nameof(leaseCollectionLink));
+            this.leaseCollectionLink = leaseCollectionLink;
+            return this;
+        }
 
-            this.leaseCollectionMetadata = leaseCollectionMetadata;
+        public LeaseManagerBuilder WithRequestOptionsFactory(IRequestOptionsFactory requestOptionsFactory)
+        {
+            if (requestOptionsFactory == null) throw new ArgumentNullException(nameof(requestOptionsFactory));
+            this.requestOptionsFactory = requestOptionsFactory;
             return this;
         }
 
@@ -57,29 +64,24 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return this;
         }
 
-        public async Task<ILeaseManager> BuildAsync()
+        public Task<ILeaseManager> BuildAsync()
         {
             if (this.leaseCollectionLocation == null) throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
+            if (this.leaseCollectionLink == null) throw new InvalidOperationException(nameof(this.leaseCollectionLink) + " was not specified");
+            if (this.requestOptionsFactory == null) throw new InvalidOperationException(nameof(this.requestOptionsFactory) + " was not specified");
 
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
-
-            if (this.leaseCollectionMetadata == null)
-            {
-                DocumentCollection leaseCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(
-                    this.leaseCollectionLocation).ConfigureAwait(false);
-                this.leaseCollectionMetadata = await this.leaseDocumentClient.GetCollectionMetadataAsync(
-                    this.leaseCollectionLocation, true).ConfigureAwait(false);
-            }
 
             var updater = new DocumentServiceLeaseUpdater(this.leaseDocumentClient);
             var documentServiceLeaseManager = new DocumentServiceLeaseManager(
                 this.leaseDocumentClient,
                 updater,
                 this.leaseCollectionLocation,
-                this.leaseCollectionMetadata,
+                this.requestOptionsFactory,
                 this.leasePrefix,
+                this.leaseCollectionLink,
                 this.hostName);
-            return documentServiceLeaseManager;
+            return Task.FromResult<ILeaseManager>(documentServiceLeaseManager);
         }
     }
 }

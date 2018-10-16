@@ -17,25 +17,29 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         private readonly IChangeFeedDocumentClient client;
         private readonly DocumentCollectionInfo leaseStoreCollectionInfo;
         private readonly string containerNamePrefix;
-        private readonly CollectionMetadata leaseCollectionMetadata;
+        private readonly string leaseCollectionLink;
+        private readonly IRequestOptionsFactory requestOptionsFactory;
 
         public LeaseStore(
             IChangeFeedDocumentClient client,
-            DocumentCollectionInfo leaseStoreCollectionInfo,
+            DocumentCollectionInfo leaseCollectionInfo,
             string containerNamePrefix,
-            CollectionMetadata leaseCollectionMetadata)
+            string leaseCollectionLink,
+            IRequestOptionsFactory requestOptionsFactory)
         {
             this.client = client;
-            this.leaseStoreCollectionInfo = leaseStoreCollectionInfo;
+            this.leaseStoreCollectionInfo = leaseCollectionInfo;
             this.containerNamePrefix = containerNamePrefix;
-            this.leaseCollectionMetadata = leaseCollectionMetadata;
+            this.leaseCollectionLink = leaseCollectionLink;
+            this.requestOptionsFactory = requestOptionsFactory;
         }
 
         public async Task<bool> IsInitializedAsync()
         {
             string markerDocId = this.GetStoreMarkerName();
             Uri documentUri = UriFactory.CreateDocumentUri(this.leaseStoreCollectionInfo.DatabaseName, this.leaseStoreCollectionInfo.CollectionName, markerDocId);
-            var requestOptions = this.leaseCollectionMetadata.GetRequestOptionsWithPartitionKeyById(markerDocId);
+            var requestOptions = this.requestOptionsFactory.CreateRequestOptions(
+                DocumentServiceLease.FromDocument(new Document { Id = markerDocId }));
 
             Document document = await this.client.TryGetDocumentAsync(documentUri, requestOptions).ConfigureAwait(false);
             return document != null;
@@ -45,14 +49,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         {
             string markerDocId = this.GetStoreMarkerName();
             var containerDocument = new Document { Id = markerDocId };
-            await this.client.TryCreateDocumentAsync(this.leaseCollectionMetadata.SelfLink, containerDocument).ConfigureAwait(false);
+            await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
         }
 
         public async Task<bool> LockInitializationAsync(TimeSpan lockTime)
         {
             string lockId = this.GetStoreLockName();
             var containerDocument = new Document { Id = lockId, TimeToLive = (int)lockTime.TotalSeconds };
-            return await this.client.TryCreateDocumentAsync(this.leaseCollectionMetadata.SelfLink, containerDocument).ConfigureAwait(false);
+            return await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
         }
 
         private string GetStoreMarkerName()

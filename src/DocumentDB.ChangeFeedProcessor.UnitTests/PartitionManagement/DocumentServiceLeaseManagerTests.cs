@@ -568,8 +568,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 documentClient,
                 leaseUpdater,
                 collectionInfo,
-                new CollectionMetadata(collectionLink, false),
+                new RequestOptionsFactoryForFixedCollection(),
                 storeNamePrefix,
+                collectionLink,
                 hostName);
         }
 
