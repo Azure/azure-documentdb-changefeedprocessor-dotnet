@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.Documents.Linq;
     using Moq;
@@ -26,7 +27,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Uri = new Uri("https://some.host.com")
         };
         private static readonly Database database = new Database { ResourceId = "someResource" };
-        private static readonly DocumentCollection collection = new DocumentCollection { ResourceId = "someResource" };
+        private static readonly DocumentCollection collection = MockHelpers.CreateCollection("someResource");
+
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
@@ -69,6 +71,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 
         private IChangeFeedDocumentClient CreateMockDocumentClient()
         {
+            return CreateMockDocumentClient(collection);
+        }
+
+        private IChangeFeedDocumentClient CreateMockDocumentClient(DocumentCollection collection)
+        {
             var documents = new List<Document>();
             var feedResponse = Mock.Of<IFeedResponse<Document>>();
             Mock.Get(feedResponse)
@@ -103,7 +110,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(ex => ex.ReadDocumentCollectionAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>()))
                 .ReturnsAsync(new ResourceResponse<DocumentCollection>(collection));
             Mock.Get(documentClient)
-                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>()))
+                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>(), null, default(CancellationToken)))
                 .ReturnsAsync(new ResourceResponse<Document>(new Document()));
             Mock.Get(documentClient)
                 .Setup(c => c.CreateDocumentQuery<Document>(collectionLink,
@@ -111,7 +118,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                                                 spec.Parameters.Count == 1 &&
                                                 spec.Parameters[0].Name == "@PartitionLeasePrefix" &&
                                                 (string)spec.Parameters[0].Value == storeNamePrefix + ".."
-                    )))
+                    ), null))
                 .Returns(leaseQueryMock.As<IQueryable<Document>>().Object);
 
             return documentClient;
@@ -145,6 +152,43 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Verify(s => s.SelectLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.AtLeastOnce);
 
             await processor.StopAsync();
+        }
+
+        [Fact]
+        public async Task BuildThrowsWhenLeaseCollectionPartitionedNotById()
+        {
+            SetupBuilderForPartitionedLeaseCollection("/not_id");
+            await Assert.ThrowsAsync<ArgumentException>(async () => await builder.BuildAsync() );
+        }
+
+        [Fact]
+        public async Task BuildWhenLeaseCollectionPartitionedById()
+        {
+            SetupBuilderForPartitionedLeaseCollection("/id");
+            await this.builder.BuildAsync();
+        }
+
+        [Fact]
+        public async Task BuildEstimatorThrowsWhenLeaseCollectionPartitionedNotById()
+        {
+            SetupBuilderForPartitionedLeaseCollection("/not_id");
+            await Assert.ThrowsAsync<ArgumentException>(async () => await builder.BuildEstimatorAsync());
+        }
+
+        [Fact]
+        public async Task BuildEstimatorWhenLeaseCollectionPartitionedById()
+        {
+            SetupBuilderForPartitionedLeaseCollection("/id");
+            await this.builder.BuildEstimatorAsync();
+        }
+
+        private void SetupBuilderForPartitionedLeaseCollection(string partitionKey)
+        {
+            var partitionedCollection = MockHelpers.CreateCollection("someResource", new PartitionKeyDefinition { Paths = { partitionKey } });
+            this.builder
+                .WithFeedDocumentClient(this.CreateMockDocumentClient())
+                .WithLeaseDocumentClient(this.CreateMockDocumentClient(partitionedCollection))
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>());
         }
     }
 }

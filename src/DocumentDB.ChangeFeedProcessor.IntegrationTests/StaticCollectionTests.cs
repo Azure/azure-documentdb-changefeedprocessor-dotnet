@@ -14,15 +14,24 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {
 #pragma warning disable CS0618 // Type or member is obsolete
 
+    /// <summary>
+    /// For these tests, the collection is not modified while tests are running.
+    /// </summary>
+    /// <remarks>
+    /// The class is abstract to avoid xunit discovering its tests, the tests must be discovered from derived classes only.
+    /// </remarks>
     [Trait("Category", "Integration")]
     [Collection("Integration tests")]
-    public class StaticCollectionTests : IntegrationTest
+    public abstract class StaticCollectionTests : IntegrationTest
     {
         const int documentCount = 1519;
 
-        public StaticCollectionTests(IntegrationTestFixture fixture) : base(fixture, typeof(StaticCollectionTests))
+        public StaticCollectionTests(
+            IntegrationTestFixture fixture,
+            Type testClassType,
+            bool isPartitionedLeaseCollection) : 
+            base(fixture, testClassType, isPartitionedLeaseCollection: isPartitionedLeaseCollection)
         {
-
         }
 
         [Fact]
