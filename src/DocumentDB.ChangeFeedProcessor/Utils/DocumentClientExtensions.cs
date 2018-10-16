@@ -62,25 +62,5 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
                 await client.ReadDocumentCollectionAsync(collectionUri, new RequestOptions()).ConfigureAwait(false);
             return response.Resource;
         }
-
-        internal static async Task<CollectionMetadata> GetCollectionMetadataAsync(
-            this IChangeFeedDocumentClient documentClient,
-            DocumentCollectionInfo collectionInfo,
-            bool isPartitionKeyByIdRequiredIfPartitioned)
-        {
-            DocumentCollection collection = await documentClient.GetDocumentCollectionAsync(collectionInfo).ConfigureAwait(false);
-
-            bool isPartitioned =
-                collection.PartitionKey != null &&
-                collection.PartitionKey.Paths != null &&
-                collection.PartitionKey.Paths.Count > 0;
-            if (isPartitioned && isPartitionKeyByIdRequiredIfPartitioned &&
-                (collection.PartitionKey.Paths.Count != 1 || collection.PartitionKey.Paths[0] != "/id"))
-            {
-                throw new ArgumentException("The lease collection, if partitioned, must have partition key equal to id.");
-            }
-
-            return new CollectionMetadata(collection.SelfLink, isPartitioned);
-        }
     }
 }

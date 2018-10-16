@@ -42,14 +42,5 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
         {
             return UriFactory.CreateDocumentCollectionUri(collectionInfo.DatabaseName, collectionInfo.CollectionName).ToString();
         }
-
-        internal static RequestOptions GetRequestOptionsWithPartitionKeyById(
-            this CollectionMetadata collectionMetadata,
-            string documentId)
-        {
-            return collectionMetadata.IsPartitioned ?
-                new RequestOptions { PartitionKey = new PartitionKey(documentId) } :
-                null;
-        }
     }
 }
