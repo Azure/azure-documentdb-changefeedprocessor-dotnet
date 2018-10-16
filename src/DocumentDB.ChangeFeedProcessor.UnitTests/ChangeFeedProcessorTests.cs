@@ -12,9 +12,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.Documents.Linq;
     using Moq;
+    using Newtonsoft.Json;
     using Xunit;
 
     [Trait("Category", "Gated")]
@@ -31,9 +33,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         private static readonly Database database = new Database() {
             ResourceId = "someResource"
         };
-        private static readonly DocumentCollection collection = new DocumentCollection() {
-            ResourceId = "someResource"
-        };
+        private static readonly DocumentCollection collection = MockHelpers.CreateCollection("someResource");
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly IChangeFeedObserver observer;
@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                                                 spec.Parameters.Count == 1 &&
                                                 spec.Parameters[0].Name == "@PartitionLeasePrefix" &&
                                                 (string)spec.Parameters[0].Value == storeNamePrefix + ".."
-                    )))
+                    ), null))
                 .Returns(leaseQueryMock.As<IQueryable<Document>>().Object);
             leaseQueryMock
                 .Setup(q => q.HasMoreResults)
@@ -62,7 +62,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(ex => ex.ReadDocumentCollectionAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>()))
                 .ReturnsAsync(new ResourceResponse<DocumentCollection>(collection));
             Mock.Get(leaseDocumentClient)
-                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>()))
+                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>(), null, default(CancellationToken)))
                 .ReturnsAsync(new ResourceResponse<Document>(new Document()));
 
             var documents = new List<Document> { };

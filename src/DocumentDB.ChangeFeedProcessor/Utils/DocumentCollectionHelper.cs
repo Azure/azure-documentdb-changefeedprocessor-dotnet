@@ -5,11 +5,12 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 {
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
 
     internal static class DocumentCollectionHelper
     {
-        private const string DefaultUserAgentSuffix = "changefeed-2.1.1";
+        private const string DefaultUserAgentSuffix = "changefeed-2.2.0";
 
         public static DocumentCollectionInfo Canonicalize(this DocumentCollectionInfo collectionInfo)
         {
@@ -35,6 +36,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             return new ChangeFeedDocumentClient(internalClient);
         }
 
+        // TODO: this is used as both self link and alt link (search for collectionSelfLink).
+        //       The estimator needs to be fixed to use RID-based self link.
         internal static string GetCollectionSelfLink(this DocumentCollectionInfo collectionInfo)
         {
             return UriFactory.CreateDocumentCollectionUri(collectionInfo.DatabaseName, collectionInfo.CollectionName).ToString();
