@@ -426,7 +426,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             }
 
             var requestOptionsFactory = isPartitioned ?
-                (IRequestOptionsFactory)new RequestOptionsFactoryForParitionedByIdColleciton() :
+                (IRequestOptionsFactory)new RequestOptionsFactoryForParitionedByIdCollection() :
                 (IRequestOptionsFactory)new RequestOptionsFactoryForFixedCollection();
 
             return new CollectionMetadata(collection.SelfLink, isPartitioned, requestOptionsFactory);

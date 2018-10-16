@@ -6,7 +6,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using Microsoft.Azure.Documents.Client;
 
-    internal class RequestOptionsFactoryForParitionedByIdColleciton : IRequestOptionsFactory
+    internal class RequestOptionsFactoryForParitionedByIdCollection : IRequestOptionsFactory
     {
         public RequestOptions CreateRequestOptions(ILease lease)
         {
