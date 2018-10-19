@@ -115,7 +115,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 return string.Empty;
             }
 
-            int separatorIndex = sessionToken.IndexOf(':');
+            int hashSeparator = sessionToken.IndexOf('#');
+            int separatorIndex = hashSeparator > -1 ? hashSeparator : sessionToken.IndexOf(':');
             return sessionToken.Substring(separatorIndex + 1);
         }
 

@@ -264,7 +264,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                         await ctsAll.Task;
                         return r;
                     })
-                    .SetupQueryResponse("2", "200", "201", "2:201", async r =>
+                    .SetupQueryResponse("2", "200", "201", "2:-1#201", async r =>
                     {
                         cts2.SetResult(true);
                         await ctsAll.Task;
