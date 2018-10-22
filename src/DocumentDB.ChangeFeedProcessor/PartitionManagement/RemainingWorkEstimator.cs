@@ -112,24 +112,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return segments[1];
         }
 
-        internal static string ExtractLsnFromDocument(string documentLsn)
-        {
-            if (string.IsNullOrEmpty(documentLsn))
-            {
-                return string.Empty;
-            }
-
-            string[] segments = documentLsn.Split(RemainingWorkEstimator.SegmentSeparator);
-
-            if (segments.Length < 2)
-            {
-                return segments[0];
-            }
-
-            // GlobalLsn
-            return segments[1];
-        }
-
         private static Document GetFirstDocument(IFeedResponse<Document> response)
         {
             using (IEnumerator<Document> e = response.GetEnumerator())
@@ -172,7 +154,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 response = await query.ExecuteNextAsync<Document>().ConfigureAwait(false);
                 long parsedLSNFromSessionToken = TryConvertToNumber(ExtractLsnFromSessionToken(response.SessionToken));
                 long lastQueryLSN = response.Count > 0
-                    ? TryConvertToNumber(ExtractLsnFromDocument(GetFirstDocument(response).GetPropertyValue<string>(LSNPropertyName))) - 1
+                    ? TryConvertToNumber(GetFirstDocument(response).GetPropertyValue<string>(LSNPropertyName)) - 1
                     : parsedLSNFromSessionToken;
                 if (lastQueryLSN < 0)
                 {
