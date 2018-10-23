@@ -17,6 +17,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
     internal class RemainingWorkEstimator : IRemainingWorkEstimator
     {
+        private const char PKRangeIdSeparator = ':';
+        private const char SegmentSeparator = '#';
         private const string LSNPropertyName = "_lsn";
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly IChangeFeedDocumentClient feedDocumentClient;
@@ -83,6 +85,33 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return results.SelectMany(r => r).ToList().AsReadOnly();
         }
 
+        /// <summary>
+        /// Parses a Session Token and extracts the LSN.
+        /// </summary>
+        /// <remarks>
+        /// Session Token can be in two formats. Either {PartitionKeyRangeId}:{LSN} or {PartitionKeyRangeId}:{Version}#{GlobalLSN}.
+        /// </remarks>
+        /// <param name="sessionToken">A Session Token</param>
+        /// <returns>Lsn value</returns>
+        internal static string ExtractLsnFromSessionToken(string sessionToken)
+        {
+            if (string.IsNullOrEmpty(sessionToken))
+            {
+                return string.Empty;
+            }
+
+            string parsedSessionToken = sessionToken.Substring(sessionToken.IndexOf(RemainingWorkEstimator.PKRangeIdSeparator) + 1);
+            string[] segments = parsedSessionToken.Split(RemainingWorkEstimator.SegmentSeparator);
+
+            if (segments.Length < 2)
+            {
+                return segments[0];
+            }
+
+            // GlobalLsn
+            return segments[1];
+        }
+
         private static Document GetFirstDocument(IFeedResponse<Document> response)
         {
             using (IEnumerator<Document> e = response.GetEnumerator())
@@ -99,24 +128,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private static long TryConvertToNumber(string number)
         {
             long parsed = 0;
-            if (!long.TryParse(number, NumberStyles.Any, CultureInfo.InvariantCulture, out parsed))
+            if (!long.TryParse(number, NumberStyles.Number, CultureInfo.InvariantCulture, out parsed))
             {
                 Logger.WarnFormat(string.Format(CultureInfo.InvariantCulture, "Cannot parse number '{0}'.", number));
                 return 0;
             }
 
             return parsed;
-        }
-
-        private static string ExtractLsnFromSessionToken(string sessionToken)
-        {
-            if (string.IsNullOrEmpty(sessionToken))
-            {
-                return string.Empty;
-            }
-
-            int separatorIndex = sessionToken.IndexOf(':');
-            return sessionToken.Substring(separatorIndex + 1);
         }
 
         private async Task<long> GetRemainingWorkAsync(ILease existingLease)
