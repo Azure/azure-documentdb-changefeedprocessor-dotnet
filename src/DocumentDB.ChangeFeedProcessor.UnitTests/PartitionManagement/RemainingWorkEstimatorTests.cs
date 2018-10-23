@@ -264,7 +264,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                         await ctsAll.Task;
                         return r;
                     })
-                    .SetupQueryResponse("2", "200", "201", "2:201", async r =>
+                    .SetupQueryResponse("2", "200", "201", "2:-1#201", async r =>
                     {
                         cts2.SetResult(true);
                         await ctsAll.Task;
@@ -284,5 +284,28 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             Assert.Equal(2, pendingWork.Count);
         }
 
+        [Fact]
+        public void ExtractLsnFromSessionToken_ShouldParseOldSessionToken()
+        {
+            string oldToken = "0:12345";
+            string expectedLsn = "12345";
+            Assert.Equal(expectedLsn, RemainingWorkEstimator.ExtractLsnFromSessionToken(oldToken));
+        }
+
+        [Fact]
+        public void ExtractLsnFromSessionToken_ShouldParseNewSessionToken()
+        {
+            string newToken = "0:-1#12345";
+            string expectedLsn = "12345";
+            Assert.Equal(expectedLsn, RemainingWorkEstimator.ExtractLsnFromSessionToken(newToken));
+        }
+
+        [Fact]
+        public void ExtractLsnFromSessionToken_ShouldParseNewSessionTokenWithMultipleRegionalLsn()
+        {
+            string newTokenWithRegionalLsn = "0:-1#12345#Region1=1#Region2=2";
+            string expectedLsn = "12345";
+            Assert.Equal(expectedLsn, RemainingWorkEstimator.ExtractLsnFromSessionToken(newTokenWithRegionalLsn));
+        }
     }
 }
