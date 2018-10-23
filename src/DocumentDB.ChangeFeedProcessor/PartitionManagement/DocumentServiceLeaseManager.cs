@@ -28,32 +28,36 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly string containerNamePrefix;
-        private readonly DocumentCollectionInfo leaseStoreCollectionInfo;
+        private readonly DocumentCollectionInfo leaseCollectionInfo;
         private readonly IChangeFeedDocumentClient client;
         private readonly IDocumentServiceLeaseUpdater leaseUpdater;
-        private readonly string leaseStoreCollectionLink;
+        private readonly IRequestOptionsFactory requestOptionsFactory;
+        private readonly string leaseCollectionLink;
         private readonly string hostName;
 
         public DocumentServiceLeaseManager(
             IChangeFeedDocumentClient client,
             IDocumentServiceLeaseUpdater leaseUpdater,
-            DocumentCollectionInfo leaseStoreCollectionInfo,
+            DocumentCollectionInfo leaseCollectionInfo,
+            IRequestOptionsFactory requestOptionsFactory,
             string containerNamePrefix,
-            string leaseStoreCollectionLink,
+            string leaseCollectionLink,
             string hostName)
         {
             if (client == null) throw new ArgumentNullException(nameof(client));
             if (leaseUpdater == null) throw new ArgumentNullException(nameof(leaseUpdater));
-            if (leaseStoreCollectionInfo == null) throw new ArgumentNullException(nameof(leaseStoreCollectionInfo));
+            if (leaseCollectionInfo == null) throw new ArgumentNullException(nameof(leaseCollectionInfo));
+            if (requestOptionsFactory == null) throw new ArgumentException(nameof(requestOptionsFactory));
             if (containerNamePrefix == null) throw new ArgumentNullException(nameof(containerNamePrefix));
-            if (leaseStoreCollectionLink == null) throw new ArgumentNullException(nameof(leaseStoreCollectionLink));
+            if (leaseCollectionLink == null) throw new ArgumentNullException(nameof(leaseCollectionLink));
             if (string.IsNullOrEmpty(hostName)) throw new ArgumentNullException(nameof(hostName));
 
-            this.leaseStoreCollectionInfo = leaseStoreCollectionInfo;
+            this.leaseCollectionInfo = leaseCollectionInfo;
             this.containerNamePrefix = containerNamePrefix;
-            this.leaseStoreCollectionLink = leaseStoreCollectionLink;
             this.client = client;
             this.leaseUpdater = leaseUpdater;
+            this.requestOptionsFactory = requestOptionsFactory;
+            this.leaseCollectionLink = leaseCollectionLink;
             this.hostName = hostName;
         }
 
@@ -89,7 +93,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 ContinuationToken = continuationToken,
             };
 
-            bool created = await this.client.TryCreateDocumentAsync(this.leaseStoreCollectionLink, documentServiceLease).ConfigureAwait(false);
+            bool created = await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, documentServiceLease).ConfigureAwait(false);
             if (created)
             {
                 Logger.InfoFormat("Created lease for partition {0}.", partitionId);
@@ -111,6 +115,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return await this.leaseUpdater.UpdateLeaseAsync(
                 lease,
                 this.CreateDocumentUri(lease.Id),
+                this.requestOptionsFactory.CreateRequestOptions(lease),
                 serverLease =>
                 {
                     if (serverLease.Owner != lease.Owner)
@@ -133,6 +138,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return await this.leaseUpdater.UpdateLeaseAsync(
                 lease,
                 this.CreateDocumentUri(lease.Id),
+                this.requestOptionsFactory.CreateRequestOptions(lease),
                 serverLease =>
                 {
                     if (serverLease.Owner != oldOwner)
@@ -163,6 +169,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return await this.leaseUpdater.UpdateLeaseAsync(
                 refreshedLease,
                 this.CreateDocumentUri(refreshedLease.Id),
+                this.requestOptionsFactory.CreateRequestOptions(lease),
                 serverLease =>
                 {
                     if (serverLease.Owner != lease.Owner)
@@ -189,6 +196,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             await this.leaseUpdater.UpdateLeaseAsync(
                 refreshedLease,
                 this.CreateDocumentUri(refreshedLease.Id),
+                this.requestOptionsFactory.CreateRequestOptions(lease),
                 serverLease =>
                 {
                     if (serverLease.Owner != lease.Owner)
@@ -230,6 +238,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return await this.leaseUpdater.UpdateLeaseAsync(
                 lease,
                 this.CreateDocumentUri(lease.Id),
+                this.requestOptionsFactory.CreateRequestOptions(lease),
                 serverLease =>
                     {
                         if (serverLease.Owner != lease.Owner)
@@ -245,7 +254,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private async Task<DocumentServiceLease> TryGetLeaseAsync(ILease lease)
         {
             Uri documentUri = this.CreateDocumentUri(lease.Id);
-            Document document = await this.client.TryGetDocumentAsync(documentUri).ConfigureAwait(false);
+            Document document = await this.client.TryGetDocumentAsync(
+                documentUri,
+                this.requestOptionsFactory.CreateRequestOptions(lease))
+                .ConfigureAwait(false);
             return document != null ? DocumentServiceLease.FromDocument(document) : null;
         }
 
@@ -257,7 +269,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             var querySpec = new SqlQuerySpec(
                 "SELECT * FROM c WHERE STARTSWITH(c.id, @PartitionLeasePrefix)",
                 new SqlParameterCollection(new[] { new SqlParameter { Name = "@PartitionLeasePrefix", Value = prefix } }));
-            IDocumentQuery<Document> query = this.client.CreateDocumentQuery<Document>(this.leaseStoreCollectionLink, querySpec).AsDocumentQuery();
+            IDocumentQuery<Document> query = this.client.CreateDocumentQuery<Document>(
+                this.leaseCollectionLink,
+                querySpec,
+                this.requestOptionsFactory.CreateFeedOptions())
+                .AsDocumentQuery();
             var leases = new List<DocumentServiceLease>();
             while (query.HasMoreResults)
             {
@@ -279,7 +295,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         private Uri CreateDocumentUri(string leaseId)
         {
-            return UriFactory.CreateDocumentUri(this.leaseStoreCollectionInfo.DatabaseName, this.leaseStoreCollectionInfo.CollectionName, leaseId);
+            return UriFactory.CreateDocumentUri(this.leaseCollectionInfo.DatabaseName, this.leaseCollectionInfo.CollectionName, leaseId);
         }
     }
 }

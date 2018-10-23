@@ -3,6 +3,7 @@
 //----------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
@@ -30,7 +31,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var updater = new DocumentServiceLeaseUpdater(client);
             var lease = Mock.Of<ILease>();
 
-            var newLease = await updater.UpdateLeaseAsync(lease, documentUri, serverLease => null);
+            var newLease = await updater.UpdateLeaseAsync(lease, documentUri, null, serverLease => null);
 
             Assert.Null(newLease);
         }
@@ -46,11 +47,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(c => c.ReplaceDocumentAsync(
                     documentUri,
                     updatedLease,
-                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag1)))
+                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag1),
+                    default(CancellationToken)))
                 .ReturnsAsync(CreateLeaseResponse(eTag2));
             var updater = new DocumentServiceLeaseUpdater(client);
 
-            var newLease = await updater.UpdateLeaseAsync(oldLease, documentUri, serverLease => updatedLease);
+            var newLease = await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease);
 
             Assert.Equal(eTag2, newLease.ConcurrencyToken);
         }
@@ -87,11 +89,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(c => c.ReplaceDocumentAsync(
                     documentUri,
                     updatedLease,
-                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag1)))
+                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag1),
+                    default(CancellationToken)))
                 .ThrowsAsync(replaceException);
             var updater = new DocumentServiceLeaseUpdater(client);
 
-            return await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, serverLease => updatedLease));
+            return await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease));
         }
 
         [Fact]
@@ -116,11 +119,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var client = Mock.Of<IChangeFeedDocumentClient>();
             SetupReplaceConflict(client, updatedLease);
             Mock.Get(client)
-                .Setup(c => c.ReadDocumentAsync(documentUri))
+                .Setup(c => c.ReadDocumentAsync(documentUri, null, default(CancellationToken)))
                 .ThrowsAsync(readException).Verifiable();
 
             var updater = new DocumentServiceLeaseUpdater(client);
-            Exception exception = await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, serverLease => updatedLease));
+            Exception exception = await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease));
             Mock.Get(client).VerifyAll();
             return exception;
         }
@@ -136,7 +139,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             ILease updatedLease1 = CreateLease(eTag1);
             SetupReplaceConflict(client, updatedLease1);
             Mock.Get(client)
-                .Setup(c => c.ReadDocumentAsync(documentUri))
+                .Setup(c => c.ReadDocumentAsync(documentUri, null, default(CancellationToken)))
                 .ReturnsAsync(CreateLeaseResponse(eTag2));
 
             // setup pass #2
@@ -145,10 +148,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(c => c.ReplaceDocumentAsync(
                     documentUri,
                     updatedLease2,
-                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag2)))
+                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag2),
+                    default(CancellationToken)))
                 .ReturnsAsync(CreateLeaseResponse(eTag3));
 
-            ILease lease =  await updater.UpdateLeaseAsync(oldLease, documentUri, serverLease =>
+            ILease lease =  await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease =>
             {
                 if (serverLease.ConcurrencyToken == null) return updatedLease1;
                 if (serverLease.ConcurrencyToken == eTag2) return updatedLease2;
@@ -166,7 +170,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             ILease oldLease = CreateLease();
             const int retryCount = 5;
             var getDocumentSequence = Mock.Get(client)
-                               .SetupSequence(c => c.ReadDocumentAsync(documentUri));
+                .SetupSequence(c => c.ReadDocumentAsync(documentUri, null, default(CancellationToken)));
             for (int i = 0; i <= retryCount; i++)
             {
                 string eTag = i.ToString();
@@ -174,13 +178,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                     .Setup(c => c.ReplaceDocumentAsync(
                         documentUri,
                         It.Is<ILease>(lease => lease.ConcurrencyToken == eTag),
-                        It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag)))
+                        It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag),
+                        default(CancellationToken)))
                     .ThrowsAsync(DocumentExceptionHelpers.CreatePreconditionFailedException());
                 getDocumentSequence = getDocumentSequence.ReturnsAsync(CreateLeaseResponse(eTag));
             }
 
             int callbackInvokeCount = 0;
-            Exception exception = await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, serverLease =>
+            Exception exception = await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease =>
             {
                 callbackInvokeCount++;
                 if (serverLease.ConcurrencyToken == null) return CreateLease("0");
@@ -198,7 +203,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Setup(c => c.ReplaceDocumentAsync(
                     documentUri,
                     updatedLease,
-                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag1)))
+                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag1),
+                    default(CancellationToken)))
                 .ThrowsAsync(DocumentExceptionHelpers.CreatePreconditionFailedException());
         }
 

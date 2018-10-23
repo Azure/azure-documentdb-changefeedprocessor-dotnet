@@ -22,15 +22,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         internal readonly SemaphoreSlim classInitializeSyncRoot = new SemaphoreSlim(1, 1);
         internal readonly object testContextSyncRoot = new object();
         internal readonly int testCount;
-        internal readonly bool isPartitionedCollection;
+        internal readonly bool isPartitionedMonitoredCollection;
+        internal readonly bool isPartitionedLeaseCollection;
         internal volatile int executedTestCount;
         internal DocumentCollectionInfo monitoredCollectionInfo;
         internal DocumentCollectionInfo leaseCollectionInfoTemplate;
 
-        internal TestClassData(int testCount, bool isPartitionedCollection)
+        internal TestClassData(int testCount, bool isPartitionedMonitoredCollection, bool isPartitionedLeaseCollection)
         {
             this.testCount = testCount;
-            this.isPartitionedCollection = isPartitionedCollection;
+            this.isPartitionedMonitoredCollection = isPartitionedMonitoredCollection;
+            this.isPartitionedLeaseCollection = isPartitionedLeaseCollection;
         }
     }
 
@@ -75,7 +77,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     public class IntegrationTestCollection : ICollectionFixture<IntegrationTestFixture>
     {
     }
-
 
     /// <summary>
     /// Base class for intergration tests.
@@ -123,12 +124,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             get { return this.fixture.testClasses[this.GetType().Name]; }
         }
         
-        public IntegrationTest(IntegrationTestFixture fixture, Type testClassType, bool isPartitionedCollection = true)
+        public IntegrationTest(
+            IntegrationTestFixture fixture,
+            Type testClassType,
+            bool isPartitionedCollection = true,
+            bool isPartitionedLeaseCollection = false)
         {
             this.fixture = fixture;
             if (!this.fixture.testClasses.ContainsKey(testClassType.Name))
             {
-                this.fixture.testClasses[testClassType.Name] = new TestClassData(GetTestCount(testClassType), isPartitionedCollection);
+                this.fixture.testClasses[testClassType.Name] = new TestClassData(
+                    GetTestCount(testClassType),
+                    isPartitionedCollection,
+                    isPartitionedLeaseCollection);
             }
 
             TestInitializeAsync().Wait();
@@ -155,7 +163,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             this.LeaseCollectionInfo = new DocumentCollectionInfo(this.ClassData.leaseCollectionInfoTemplate);
             this.LeaseCollectionInfo.CollectionName = $"leases_{this.GetType().Name}_{Guid.NewGuid().ToString()}";
 
-            var leaseCollection = new DocumentCollection { Id = this.LeaseCollectionInfo.CollectionName };
+            var leaseCollection = new DocumentCollection
+            {
+                Id = this.LeaseCollectionInfo.CollectionName,
+            };
+
+            if (this.ClassData.isPartitionedLeaseCollection)
+            {
+                leaseCollection.PartitionKey = new PartitionKeyDefinition { Paths = { "/id" } };
+            }
+
             using (var client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))
             {
                 await IntegrationTestsHelper.CreateDocumentCollectionAsync(client, this.LeaseCollectionInfo.DatabaseName, leaseCollection, leaseOfferThroughput);
@@ -216,9 +233,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 Id = test.ClassData.monitoredCollectionInfo.CollectionName,
             };
 
-            if (test.ClassData.isPartitionedCollection)
+            if (test.ClassData.isPartitionedMonitoredCollection)
             {
-                monitoredCollection.PartitionKey = new PartitionKeyDefinition { Paths = new Collection<string> { "/id" } };
+                monitoredCollection.PartitionKey = new PartitionKeyDefinition { Paths = { "/id" } };
             }
             else
             {

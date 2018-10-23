@@ -13,9 +13,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         LeaseManagerBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation);
 
-        LeaseManagerBuilder WithLeaseCollectionLink(string leaseStoreCollectionLink);
-
         LeaseManagerBuilder WithLeaseDocumentClient(IChangeFeedDocumentClient leaseDocumentClient);
+
+        LeaseManagerBuilder WithRequestOptionsFactory(IRequestOptionsFactory requestOptionsFactory);
 
         LeaseManagerBuilder WithLeasePrefix(string leasePrefix);
     }
