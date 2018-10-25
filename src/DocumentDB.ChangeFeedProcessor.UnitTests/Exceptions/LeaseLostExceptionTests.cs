@@ -1,4 +1,5 @@
 ﻿using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Moq;
 using System;

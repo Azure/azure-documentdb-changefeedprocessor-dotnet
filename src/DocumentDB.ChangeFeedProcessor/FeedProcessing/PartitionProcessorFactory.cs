@@ -6,6 +6,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     using System;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
 

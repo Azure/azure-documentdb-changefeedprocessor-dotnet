@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
@@ -16,7 +17,7 @@ using Microsoft.Azure.Documents.Linq;
 using Moq;
 using Xunit;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagement
 {
     [Trait("Category", "Gated")]
     public class DocumentServiceLeaseManagerTests
