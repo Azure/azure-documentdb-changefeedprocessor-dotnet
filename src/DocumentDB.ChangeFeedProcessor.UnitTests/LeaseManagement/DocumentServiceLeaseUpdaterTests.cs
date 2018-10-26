@@ -15,7 +15,7 @@ using Moq;
 using Newtonsoft.Json;
 using Xunit;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagement
 {
     [Trait("Category", "Gated")]
     public class DocumentServiceLeaseUpdaterTests

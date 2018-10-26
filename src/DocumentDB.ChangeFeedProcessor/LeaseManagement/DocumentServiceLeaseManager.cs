@@ -28,39 +28,30 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     internal class DocumentServiceLeaseManager : ILeaseManager
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
-        private readonly string containerNamePrefix;
-        private readonly DocumentCollectionInfo leaseCollectionInfo;
-        private readonly IChangeFeedDocumentClient client;
-        private readonly IDocumentServiceLeaseUpdater leaseUpdater;
+        private readonly LeaseManagerParameters parameters;
         private readonly IRequestOptionsFactory requestOptionsFactory;
-        private readonly string leaseCollectionLink;
-        private readonly string hostName;
 
-        public DocumentServiceLeaseManager(
-            IChangeFeedDocumentClient client,
-            IDocumentServiceLeaseUpdater leaseUpdater,
-            DocumentCollectionInfo leaseCollectionInfo,
-            IRequestOptionsFactory requestOptionsFactory,
-            string containerNamePrefix,
-            string leaseCollectionLink,
-            string hostName)
+        protected DocumentServiceLeaseManager(LeaseManagerParameters parameters, IRequestOptionsFactory requestOptionsFactory)
         {
-            if (client == null) throw new ArgumentNullException(nameof(client));
-            if (leaseUpdater == null) throw new ArgumentNullException(nameof(leaseUpdater));
-            if (leaseCollectionInfo == null) throw new ArgumentNullException(nameof(leaseCollectionInfo));
+            if (parameters.Client == null) throw new ArgumentNullException(nameof(parameters.Client));
+            if (parameters.LeaseUpdater == null) throw new ArgumentNullException(nameof(parameters.LeaseUpdater));
+            if (parameters.LeaseCollectionInfo == null) throw new ArgumentNullException(nameof(parameters.LeaseCollectionInfo));
+            if (parameters.ContainerNamePrefix == null) throw new ArgumentNullException(nameof(parameters.ContainerNamePrefix));
+            if (parameters.LeaseCollectionLink == null) throw new ArgumentNullException(nameof(parameters.LeaseCollectionLink));
+            if (string.IsNullOrEmpty(parameters.HostName)) throw new ArgumentNullException(nameof(parameters.HostName));
             if (requestOptionsFactory == null) throw new ArgumentException(nameof(requestOptionsFactory));
-            if (containerNamePrefix == null) throw new ArgumentNullException(nameof(containerNamePrefix));
-            if (leaseCollectionLink == null) throw new ArgumentNullException(nameof(leaseCollectionLink));
-            if (string.IsNullOrEmpty(hostName)) throw new ArgumentNullException(nameof(hostName));
 
-            this.leaseCollectionInfo = leaseCollectionInfo;
-            this.containerNamePrefix = containerNamePrefix;
-            this.client = client;
-            this.leaseUpdater = leaseUpdater;
+            this.parameters = parameters;
             this.requestOptionsFactory = requestOptionsFactory;
-            this.leaseCollectionLink = leaseCollectionLink;
-            this.hostName = hostName;
+            this.LeaseStore = new DocumentServiceLeaseStore(
+                this.parameters.Client,
+                this.parameters.LeaseCollectionInfo,
+                this.parameters.ContainerNamePrefix,
+                this.parameters.LeaseCollectionLink,
+                this.requestOptionsFactory);
         }
+
+        public ILeaseStore LeaseStore { get; }
 
         public async Task<IReadOnlyList<ILease>> ListAllLeasesAsync()
         {
@@ -72,7 +63,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             var ownedLeases = new List<ILease>();
             foreach (ILease lease in await this.ListAllLeasesAsync().ConfigureAwait(false))
             {
-                if (string.Compare(lease.Owner, this.hostName, StringComparison.OrdinalIgnoreCase) == 0)
+                if (string.Compare(lease.Owner, this.parameters.HostName, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     ownedLeases.Add(lease);
                 }
@@ -94,7 +85,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 ContinuationToken = continuationToken,
             };
 
-            bool created = await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, documentServiceLease).ConfigureAwait(false);
+            bool created = await this.parameters.Client.TryCreateDocumentAsync(
+                this.parameters.LeaseCollectionLink,
+                documentServiceLease).ConfigureAwait(false) != null;
             if (created)
             {
                 Logger.InfoFormat("Created lease for partition {0}.", partitionId);
@@ -113,7 +106,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             if (string.IsNullOrEmpty(continuationToken))
                 throw new ArgumentException("continuationToken must be a non-empty string", nameof(continuationToken));
 
-            return await this.leaseUpdater.UpdateLeaseAsync(
+            return await this.parameters.LeaseUpdater.UpdateLeaseAsync(
                 lease,
                 this.CreateDocumentUri(lease.Id),
                 this.requestOptionsFactory.CreateRequestOptions(lease),
@@ -136,7 +129,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 
             string oldOwner = lease.Owner;
 
-            return await this.leaseUpdater.UpdateLeaseAsync(
+            return await this.parameters.LeaseUpdater.UpdateLeaseAsync(
                 lease,
                 this.CreateDocumentUri(lease.Id),
                 this.requestOptionsFactory.CreateRequestOptions(lease),
@@ -147,7 +140,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                         Logger.InfoFormat("Partition {0} lease was taken over by owner '{1}'", lease.PartitionId, serverLease.Owner);
                         throw new LeaseLostException(lease);
                     }
-                    serverLease.Owner = this.hostName;
+                    serverLease.Owner = this.parameters.HostName;
                     serverLease.Properties = lease.Properties;
                     return serverLease;
                 }).ConfigureAwait(false);
@@ -167,7 +160,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 throw new LeaseLostException(lease);
             }
 
-            return await this.leaseUpdater.UpdateLeaseAsync(
+            return await this.parameters.LeaseUpdater.UpdateLeaseAsync(
                 refreshedLease,
                 this.CreateDocumentUri(refreshedLease.Id),
                 this.requestOptionsFactory.CreateRequestOptions(lease),
@@ -194,7 +187,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 throw new LeaseLostException(lease);
             }
 
-            await this.leaseUpdater.UpdateLeaseAsync(
+            await this.parameters.LeaseUpdater.UpdateLeaseAsync(
                 refreshedLease,
                 this.CreateDocumentUri(refreshedLease.Id),
                 this.requestOptionsFactory.CreateRequestOptions(lease),
@@ -218,7 +211,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             Uri leaseUri = this.CreateDocumentUri(lease.Id);
             try
             {
-                await this.client.DeleteDocumentAsync(leaseUri).ConfigureAwait(false);
+                await this.parameters.Client.DeleteDocumentAsync(leaseUri).ConfigureAwait(false);
             }
             catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
@@ -230,13 +223,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             if (lease == null) throw new ArgumentNullException(nameof(lease));
 
-            if (lease.Owner != this.hostName)
+            if (lease.Owner != this.parameters.HostName)
             {
                 Logger.InfoFormat("Partition '{0}' lease was taken over by owner '{1}' before lease properties update", lease.PartitionId, lease.Owner);
                 throw new LeaseLostException(lease);
             }
 
-            return await this.leaseUpdater.UpdateLeaseAsync(
+            return await this.parameters.LeaseUpdater.UpdateLeaseAsync(
                 lease,
                 this.CreateDocumentUri(lease.Id),
                 this.requestOptionsFactory.CreateRequestOptions(lease),
@@ -255,7 +248,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         private async Task<DocumentServiceLease> TryGetLeaseAsync(ILease lease)
         {
             Uri documentUri = this.CreateDocumentUri(lease.Id);
-            Document document = await this.client.TryGetDocumentAsync(
+            Document document = await this.parameters.Client.TryGetDocumentAsync(
                 documentUri,
                 this.requestOptionsFactory.CreateRequestOptions(lease))
                 .ConfigureAwait(false);
@@ -270,8 +263,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             var querySpec = new SqlQuerySpec(
                 "SELECT * FROM c WHERE STARTSWITH(c.id, @PartitionLeasePrefix)",
                 new SqlParameterCollection(new[] { new SqlParameter { Name = "@PartitionLeasePrefix", Value = prefix } }));
-            IDocumentQuery<Document> query = this.client.CreateDocumentQuery<Document>(
-                this.leaseCollectionLink,
+            IDocumentQuery<Document> query = this.parameters.Client.CreateDocumentQuery<Document>(
+                this.parameters.LeaseCollectionLink,
                 querySpec,
                 this.requestOptionsFactory.CreateFeedOptions())
                 .AsDocumentQuery();
@@ -291,12 +284,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 
         private string GetPartitionLeasePrefix()
         {
-            return this.containerNamePrefix + "..";
+            return this.parameters.ContainerNamePrefix + "..";
         }
 
         private Uri CreateDocumentUri(string leaseId)
         {
-            return UriFactory.CreateDocumentUri(this.leaseCollectionInfo.DatabaseName, this.leaseCollectionInfo.CollectionName, leaseId);
+            return UriFactory.CreateDocumentUri(
+                this.parameters.LeaseCollectionInfo.DatabaseName,
+                this.parameters.LeaseCollectionInfo.CollectionName,
+                leaseId);
         }
     }
 }

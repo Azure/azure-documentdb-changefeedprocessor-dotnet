@@ -2,26 +2,25 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
 
-    internal class LeaseStore : ILeaseStore
+    internal class DocumentServiceLeaseStore : ILeaseStore
     {
         private readonly IChangeFeedDocumentClient client;
         private readonly DocumentCollectionInfo leaseStoreCollectionInfo;
         private readonly string containerNamePrefix;
         private readonly string leaseCollectionLink;
         private readonly IRequestOptionsFactory requestOptionsFactory;
+        private string lockETag;
 
-        public LeaseStore(
+        public DocumentServiceLeaseStore(
             IChangeFeedDocumentClient client,
             DocumentCollectionInfo leaseCollectionInfo,
             string containerNamePrefix,
@@ -53,11 +52,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
         }
 
-        public async Task<bool> LockInitializationAsync(TimeSpan lockTime)
+        public async Task<bool> AcquireInitializationLockAsync(TimeSpan lockTime)
         {
             string lockId = this.GetStoreLockName();
             var containerDocument = new Document { Id = lockId, TimeToLive = (int)lockTime.TotalSeconds };
-            return await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
+            var document = await this.client.TryCreateDocumentAsync(
+                this.leaseCollectionLink,
+                containerDocument).ConfigureAwait(false);
+
+            if (document != null)
+            {
+                this.lockETag = document.ETag;
+                return true;
+            }
+
+            return false;
         }
 
         private string GetStoreMarkerName()

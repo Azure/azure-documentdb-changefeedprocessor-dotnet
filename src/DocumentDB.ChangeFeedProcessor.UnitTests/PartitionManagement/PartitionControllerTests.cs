@@ -38,6 +38,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == new PartitionSupervisor(lease, observer, partitionProcessor, leaseRenewer));
 
             leaseManager = Mock.Of<ILeaseManager>();
+            Mock.Get(leaseManager).Reset(); // Reset implicit/by default setup of properties.
+
             Mock.Get(leaseManager)
                 .Setup(manager => manager.AcquireAsync(lease))
                 .ReturnsAsync(lease);

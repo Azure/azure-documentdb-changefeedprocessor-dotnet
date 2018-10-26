@@ -15,6 +15,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     public interface ILeaseManager
     {
         /// <summary>
+        /// Gets the instance of <see cref="ILeaseStore"/>.
+        /// </summary>
+        ILeaseStore LeaseStore { get; }
+
+        /// <summary>
         /// Checks whether lease exists and creates if does not exist.
         /// </summary>
         /// <param name="partitionId">Partition to work on</param>

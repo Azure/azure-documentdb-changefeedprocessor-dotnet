@@ -111,9 +111,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(ex => ex.ReadDocumentCollectionAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>()))
                 .ReturnsAsync(new ResourceResponse<DocumentCollection>(collection));
             Mock.Get(documentClient)
-                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>(), null, default(CancellationToken)))
-                .ReturnsAsync(new ResourceResponse<Document>(new Document()));
-            Mock.Get(documentClient)
                 .Setup(c => c.CreateDocumentQuery<Document>(collectionLink,
                     It.Is<SqlQuerySpec>(spec => spec.QueryText == "SELECT * FROM c WHERE STARTSWITH(c.id, @PartitionLeasePrefix)" &&
                                                 spec.Parameters.Count == 1 &&
@@ -128,14 +125,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         [Fact]
         public async Task UseCustomLoadBalancingStrategy()
         {
+            var leaseStore = Mock.Of<ILeaseStore>();
+            Mock.Get(leaseStore)
+                .Setup(store => store.IsInitializedAsync())
+                .Returns(Task.FromResult<bool>(true));
+
             var leaseManager = Mock.Of<ILeaseManager>();
             Mock.Get(leaseManager)
                 .Setup(manager => manager.AcquireAsync(It.IsAny<ILease>()))
                 .ReturnsAsync(Mock.Of<ILease>());
-
             Mock.Get(leaseManager)
                 .Setup(manager => manager.ReleaseAsync(It.IsAny<ILease>()))
                 .Returns(Task.FromResult(false));
+            Mock.Get(leaseManager)
+                .SetupGet(manager => manager.LeaseStore)
+                .Returns(leaseStore);
 
             var strategy = Mock.Of<IParitionLoadBalancingStrategy>();
 

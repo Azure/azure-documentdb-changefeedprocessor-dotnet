@@ -6,6 +6,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 {
     using System;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
@@ -37,7 +38,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
                 bool initialized = await this.leaseStore.IsInitializedAsync().ConfigureAwait(false);
                 if (initialized) break;
 
-                bool shouldInitialize = await this.leaseStore.LockInitializationAsync(this.lockTime).ConfigureAwait(false);
+                bool shouldInitialize = await this.leaseStore.AcquireInitializationLockAsync(this.lockTime).ConfigureAwait(false);
                 if (!shouldInitialize)
                 {
                     Logger.InfoFormat("Another instance is initializing the store");
