@@ -10,12 +10,13 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Moq;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagement
 {
     [Trait("Category", "Gated")]
-    public class LeaseStoreTests
+    public class DocumentServiceLeaseStoreTests
     {
         private static readonly DocumentCollectionInfo collectionInfo = new DocumentCollectionInfo()
         {
@@ -55,7 +56,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         }
 
         [Fact]
-        public async Task LockInitializationAsync_ShouldReturnTrue_IfLockSucceeds()
+        public async Task AcquireInitializationLockAsync_ShouldReturnTrue_IfLockSucceeds()
         {
             var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
@@ -76,7 +77,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         }
 
         [Fact]
-        public async Task LockInitializationAsync_ShouldReturnFalse_IfLockConflicts()
+        public async Task AcquireInitializationLockAsync_ShouldReturnFalse_IfLockConflicts()
         {
             var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
@@ -97,7 +98,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         }
 
         [Fact]
-        public async Task LockInitializationAsync_ShouldThrow_IfLockThrows()
+        public async Task AcquireInitializationLockAsync_ShouldThrow_IfLockThrows()
         {
             var client = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(client)
@@ -107,6 +108,80 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             var leaseStore = new DocumentServiceLeaseStore(client, collectionInfo, containerNamePrefix, leaseCollectionLink, Mock.Of<IRequestOptionsFactory>());
             Exception exception = await Record.ExceptionAsync(() => leaseStore.AcquireInitializationLockAsync(lockTime));
             Assert.IsAssignableFrom<DocumentClientException>(exception);
+        }
+
+        [Fact]
+        public async Task ReleaseInitializationLockAsync_ShouldReturnTrue_IfLockDeleted()
+        {
+            var client = Mock.Of<IChangeFeedDocumentClient>();
+            Mock.Get(client)
+                .Setup(c => c.DeleteDocumentAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>(), default(CancellationToken)))
+                .ReturnsAsync(new ResourceResponse<Document>(new Document()));
+
+            var leaseStore = new DocumentServiceLeaseStore(client, collectionInfo, containerNamePrefix, leaseCollectionLink, Mock.Of<IRequestOptionsFactory>());
+            bool isLockFoundAndReleased = await leaseStore.ReleaseInitializationLockAsync();
+            Assert.True(isLockFoundAndReleased);
+
+            Mock.Get(client)
+                .Verify(c => c.DeleteDocumentAsync(It.Is<Uri>(uri => uri.OriginalString.EndsWith("prefix.lock")), It.IsAny<RequestOptions>(), default(CancellationToken)), Times.Once);
+        }
+
+        [Fact]
+        public async Task ReleaseInitializationLockAsync_ShouldReturnFalse_IfLockNotFound()
+        {
+            var client = Mock.Of<IChangeFeedDocumentClient>();
+            Mock.Get(client)
+                .Setup(c => c.DeleteDocumentAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>(), default(CancellationToken)))
+                .ThrowsAsync(DocumentExceptionHelpers.CreateNotFoundException());
+
+            var leaseStore = new DocumentServiceLeaseStore(client, collectionInfo, containerNamePrefix, leaseCollectionLink, Mock.Of<IRequestOptionsFactory>());
+            bool isLockFoundAndReleased = await leaseStore.ReleaseInitializationLockAsync();
+            Assert.False(isLockFoundAndReleased);
+
+            Mock.Get(client)
+                .Verify(c => c.DeleteDocumentAsync(It.Is<Uri>(uri => uri.OriginalString.EndsWith("prefix.lock")), It.IsAny<RequestOptions>(), default(CancellationToken)), Times.Once);
+        }
+
+        [Fact]
+        public async Task ReleaseInitializationLockAsync_ShouldThrow_IfLockThrows()
+        {
+            var client = Mock.Of<IChangeFeedDocumentClient>();
+            Mock.Get(client)
+                .Setup(c => c.DeleteDocumentAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>(), default(CancellationToken)))
+                .ThrowsAsync(DocumentExceptionHelpers.CreateRequestRateTooLargeException());
+
+            var leaseStore = new DocumentServiceLeaseStore(client, collectionInfo, containerNamePrefix, leaseCollectionLink, Mock.Of<IRequestOptionsFactory>());
+            Exception exception = await Record.ExceptionAsync(() => leaseStore.ReleaseInitializationLockAsync());
+            Assert.IsAssignableFrom<DocumentClientException>(exception);
+        }
+
+        [Fact]
+        public async Task ReleaseInitializationLockAsync_PassesOverETag()
+        {
+            var etag = "etag";
+
+            var client = Mock.Of<IChangeFeedDocumentClient>();
+            Mock.Get(client)
+                .Setup(c => c.CreateDocumentAsync(leaseCollectionLink, It.IsAny<object>(), null, false, default(CancellationToken)))
+                .ReturnsAsync(new ResourceResponse<Document>(JsonConvert.DeserializeObject<Document>($"{{\"_etag\":\"{etag}\"}}")));
+            Mock.Get(client)
+                .Setup(c => c.DeleteDocumentAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>(), default(CancellationToken)))
+                .ReturnsAsync(new ResourceResponse<Document>(new Document()));
+
+            var leaseStore = new DocumentServiceLeaseStore(client, collectionInfo, containerNamePrefix, leaseCollectionLink, Mock.Of<IRequestOptionsFactory>());
+
+            bool isLockAcquired = await leaseStore.AcquireInitializationLockAsync(lockTime);
+            Assert.True(isLockAcquired);
+
+            bool isLockFoundAndReleased = await leaseStore.ReleaseInitializationLockAsync();
+            Assert.True(isLockFoundAndReleased);
+
+            Mock.Get(client)
+                .Verify(c => c.DeleteDocumentAsync(
+                    It.IsAny<Uri>(),
+                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == etag),
+                    default(CancellationToken)),
+                    Times.Once);
         }
 
         [Fact]

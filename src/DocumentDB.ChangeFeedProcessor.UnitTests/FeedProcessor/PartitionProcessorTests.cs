@@ -130,7 +130,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
                     .ProcessChangesAsync(It.IsAny<IChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(false))
+                .Returns(Task.CompletedTask)
                 .Callback(cancellationTokenSource.Cancel);
 
             await Assert.ThrowsAsync<TaskCanceledException>(() => sut.RunAsync(cancellationTokenSource.Token));
@@ -158,7 +158,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
                     .ProcessChangesAsync(It.IsAny<IChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(false))
+                .Returns(Task.CompletedTask)
                 .Callback(cancellationTokenSource.Cancel);
 
             await Assert.ThrowsAsync<TaskCanceledException>(() => sut.RunAsync(cancellationTokenSource.Token));
@@ -225,7 +225,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
                     .ProcessChangesAsync(It.IsAny<IChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(),It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(false))
+                .Returns(Task.CompletedTask)
                 .Callback<IChangeFeedObserverContext, IReadOnlyList<Document>, CancellationToken>((context, docs, token) => 
                 {
                     accumulator += context.FeedResponse.ResponseContinuation + ".";

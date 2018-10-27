@@ -30,5 +30,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         /// <returns>True if the lock was acquired, false otherwise.</returns>
         /// <remarks>In order for expiration time work, lease colection needs to have TTL enabled.</remarks>
         Task<bool> AcquireInitializationLockAsync(TimeSpan lockExpirationTime);
+
+        /// <summary>
+        /// Releases the lock one the lease store for initialization.
+        /// </summary>
+        /// <returns>True if the lock was acquired and was relesed, false if the lock was not acquired.</returns>
+        Task<bool> ReleaseInitializationLockAsync();
     }
 }

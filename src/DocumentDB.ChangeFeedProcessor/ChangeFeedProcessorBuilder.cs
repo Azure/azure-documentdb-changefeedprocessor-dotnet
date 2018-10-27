@@ -120,7 +120,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private string collectionResourceId;
         private DocumentCollectionInfo leaseCollectionLocation;
         private IChangeFeedDocumentClient leaseDocumentClient;
-        private ILeaseManager leaseManager;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
         private IPartitionProcessorFactory partitionProcessorFactory;
         private IHealthMonitor healthMonitor;
@@ -128,6 +127,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         internal string HostName
         {
             get; private set;
+        }
+
+        /// <summary>
+        /// Gets the lease manager.
+        /// </summary>
+        /// <remarks>
+        /// Internal for testing only, otherwise it would be private.
+        /// </remarks>
+        internal ILeaseManager LeaseManager
+        {
+            get;
+            private set;
         }
 
         /// <summary>
@@ -305,7 +316,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public ChangeFeedProcessorBuilder WithLeaseManager(ILeaseManager leaseManager)
         {
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
-            this.leaseManager = leaseManager;
+            this.LeaseManager = leaseManager;
             return this;
         }
 
@@ -451,7 +462,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             DocumentCollectionInfo collectionInfo,
             bool isPartitionKeyByIdRequiredIfPartitioned)
         {
-            if (this.leaseManager == null)
+            if (this.LeaseManager == null)
             {
                 DocumentCollection collection = await documentClient.GetDocumentCollectionAsync(collectionInfo).ConfigureAwait(false);
 
@@ -482,16 +493,22 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     leaseManagerBuilder = leaseManagerBuilder.WithLeaseDocumentClient(this.leaseDocumentClient);
                 }
 
-                this.leaseManager = await leaseManagerBuilder.BuildAsync().ConfigureAwait(false);
+                this.LeaseManager = await leaseManagerBuilder.BuildAsync().ConfigureAwait(false);
             }
 
-            return this.leaseManager;
+            return this.LeaseManager;
         }
 
         private string GetLeasePrefix()
         {
             string optionsPrefix = this.changeFeedProcessorOptions.LeasePrefix ?? string.Empty;
-            return string.Format(CultureInfo.InvariantCulture, "{0}{1}_{2}_{3}", optionsPrefix, this.feedCollectionLocation.Uri.Host, this.databaseResourceId, this.collectionResourceId);
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}{1}_{2}_{3}",
+                optionsPrefix,
+                this.feedCollectionLocation.Uri.Host,
+                this.databaseResourceId,
+                this.collectionResourceId);
         }
 
         private async Task InitializeCollectionPropertiesForBuildAsync()

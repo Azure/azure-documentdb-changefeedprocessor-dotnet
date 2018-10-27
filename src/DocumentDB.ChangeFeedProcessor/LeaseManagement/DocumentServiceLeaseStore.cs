@@ -69,6 +69,27 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             return false;
         }
 
+        public async Task<bool> ReleaseInitializationLockAsync()
+        {
+            string lockId = this.GetStoreLockName();
+            Uri documentUri = UriFactory.CreateDocumentUri(this.leaseStoreCollectionInfo.DatabaseName, this.leaseStoreCollectionInfo.CollectionName, lockId);
+            var requestOptions = new RequestOptions
+            {
+                AccessCondition = new AccessCondition { Type = AccessConditionType.IfMatch, Condition = this.lockETag },
+            };
+            var document = await this.client.TryDeleteDocumentAsync(
+                documentUri,
+                requestOptions).ConfigureAwait(false);
+
+            if (document != null)
+            {
+                this.lockETag = null;
+                return true;
+            }
+
+            return false;
+        }
+
         private string GetStoreMarkerName()
         {
             return this.containerNamePrefix + ".info";

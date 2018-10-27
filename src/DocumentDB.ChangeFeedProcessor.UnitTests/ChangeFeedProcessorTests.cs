@@ -33,7 +33,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         private static readonly Database database = new Database() {
             ResourceId = "someResource"
         };
-        private static readonly DocumentCollection collection = MockHelpers.CreateCollection("someResource");
+        private static readonly DocumentCollection collection = MockHelpers.CreateCollection("someResource", "someResourceRid");
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly IChangeFeedObserver observer;
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             var leaseStore = Mock.Of<ILeaseStore>();
             Mock.Get(leaseStore)
                 .Setup(store => store.IsInitializedAsync())
-                .Returns(Task.FromResult<bool>(true));
+                .ReturnsAsync(true);
 
             var leaseManager = Mock.Of<ILeaseManager>();
             Mock.Get(leaseManager)
@@ -105,7 +105,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .ReturnsAsync(lease);
             Mock.Get(leaseManager)
                 .Setup(manager => manager.ReleaseAsync(lease))
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
             Mock.Get(leaseManager)
                 .SetupGet(manager => manager.LeaseStore)
                 .Returns(leaseStore);
@@ -123,11 +123,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
                     .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(false))
+                .Returns(Task.CompletedTask)
                 .Callback(cancellationTokenSource.Cancel);
             Mock.Get(observer)
                 .Setup(observer => observer.OpenAsync(It.IsAny<ChangeFeedObserverContext>()))
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
 
             this.observerFactory = Mock.Of<IChangeFeedObserverFactory>();
             Mock.Get(observerFactory)

@@ -11,11 +11,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
 
     static class MockHelpers
     {
-        public static DocumentCollection CreateCollection(string id, PartitionKeyDefinition partitionKey = null)
+        public static DocumentCollection CreateCollection(
+            string id,
+            string rid,
+            PartitionKeyDefinition partitionKey = null,
+            string selfLink = "selfLink")
         {
             // Use dummy SelfLink.
             var collection = JsonConvert.DeserializeObject<DocumentCollection>(
-                "{ \"id\": \"someCollection\", \"_self\": \"dbs/sY0YAA==/colls/sY0YAN3CXwA=/\" }");
+                $"{{ \"id\": \"{id}\", \"_rid\": \"{rid}\", \"_self\": \"{selfLink}\" }}");
             if (partitionKey != null)
             {
                 collection.PartitionKey = partitionKey;
