@@ -21,6 +21,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         private readonly string containerNamePrefix;
         private readonly string leaseCollectionLink;
         private readonly IRequestOptionsFactory requestOptionsFactory;
+        private string lockETag;
 
         public DocumentServiceLeaseStore(
             IChangeFeedDocumentClient client,
@@ -54,11 +55,42 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
         }
 
-        public async Task<bool> LockInitializationAsync(TimeSpan lockTime)
+        public async Task<bool> AcquireInitializationLockAsync(TimeSpan lockTime)
         {
             string lockId = this.GetStoreLockName();
             var containerDocument = new Document { Id = lockId, TimeToLive = (int)lockTime.TotalSeconds };
-            return await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
+            var document = await this.client.TryCreateDocumentAsync(
+                this.leaseCollectionLink,
+                containerDocument).ConfigureAwait(false);
+
+            if (document != null)
+            {
+                this.lockETag = document.ETag;
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task<bool> ReleaseInitializationLockAsync()
+        {
+            string lockId = this.GetStoreLockName();
+            Uri documentUri = UriFactory.CreateDocumentUri(this.leaseStoreCollectionInfo.DatabaseName, this.leaseStoreCollectionInfo.CollectionName, lockId);
+            var requestOptions = new RequestOptions
+            {
+                AccessCondition = new AccessCondition { Type = AccessConditionType.IfMatch, Condition = this.lockETag },
+            };
+            var document = await this.client.TryDeleteDocumentAsync(
+                documentUri,
+                requestOptions).ConfigureAwait(false);
+
+            if (document != null)
+            {
+                this.lockETag = null;
+                return true;
+            }
+
+            return false;
         }
 
         private string GetStoreMarkerName()

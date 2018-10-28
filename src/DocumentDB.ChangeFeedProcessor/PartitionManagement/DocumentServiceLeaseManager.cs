@@ -88,7 +88,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             bool created = await this.parameters.Client.TryCreateDocumentAsync(
                 this.parameters.LeaseCollectionLink,
-                documentServiceLease).ConfigureAwait(false);
+                documentServiceLease).ConfigureAwait(false) != null;
             if (created)
             {
                 Logger.InfoFormat("Created lease for partition {0}.", partitionId);

@@ -48,7 +48,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .ReturnsAsync(false);
 
             Mock.Get(leaseStore)
-                .Setup(store => store.LockInitializationAsync(lockTime))
+                .Setup(store => store.AcquireInitializationLockAsync(lockTime))
                 .ReturnsAsync(true);
 
             Mock.Get(leaseStore)
@@ -77,7 +77,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .ReturnsAsync(true);
 
             Mock.Get(leaseStore)
-                .SetupSequence(store => store.LockInitializationAsync(lockTime))
+                .SetupSequence(store => store.AcquireInitializationLockAsync(lockTime))
                 .ReturnsAsync(false)
                 .ReturnsAsync(false);
 
@@ -88,7 +88,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .Verify(store => store.IsInitializedAsync(), Times.Exactly(3));
 
             Mock.Get(leaseStore)
-                .Verify(store => store.LockInitializationAsync(lockTime), Times.Exactly(2));
+                .Verify(store => store.AcquireInitializationLockAsync(lockTime), Times.Exactly(2));
 
             Mock.Get(synchronizer)
                 .Verify(s => s.CreateMissingLeasesAsync(), Times.Never);
@@ -111,7 +111,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .ReturnsAsync(false);
 
             Mock.Get(leaseStore)
-                .Setup(store => store.LockInitializationAsync(lockTime))
+                .Setup(store => store.AcquireInitializationLockAsync(lockTime))
                 .ReturnsAsync(true);
 
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, lockTime, sleepTime);
@@ -120,6 +120,60 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(leaseStore)
                 .Verify(l => l.MarkInitializedAsync(), Times.Never);
+        }
+
+        [Fact]
+        public async Task InitializeAsync_ShouldReleaseLock_OnSuccess()
+        {
+            var synchronizer = Mock.Of<IPartitionSynchronizer>();
+            Mock.Get(synchronizer)
+                .Setup(s => s.CreateMissingLeasesAsync())
+                .Returns(Task.CompletedTask);
+
+            var leaseStore = Mock.Of<ILeaseStore>();
+            Mock.Get(leaseStore)
+                .Setup(store => store.IsInitializedAsync())
+                .ReturnsAsync(false);
+            Mock.Get(leaseStore)
+                .Setup(store => store.AcquireInitializationLockAsync(lockTime))
+                .ReturnsAsync(true);
+            Mock.Get(leaseStore)
+                .Setup(store => store.MarkInitializedAsync()).
+                Returns(Task.CompletedTask);
+            Mock.Get(leaseStore)
+                .Setup(store => store.ReleaseInitializationLockAsync())
+                .ReturnsAsync(true);
+
+            var bootstrapper = new Bootstrapper(synchronizer, leaseStore, lockTime, sleepTime);
+            await bootstrapper.InitializeAsync();
+
+            Mock.Get(leaseStore).VerifyAll();
+        }
+
+        [Fact]
+        public async Task InitializeAsync_ShouldReleaseLock_OnException()
+        {
+            var synchronizer = Mock.Of<IPartitionSynchronizer>();
+            Mock.Get(synchronizer)
+                .Setup(s => s.CreateMissingLeasesAsync())
+                .ThrowsAsync(DocumentExceptionHelpers.CreateConflictException());
+
+            var leaseStore = Mock.Of<ILeaseStore>();
+            Mock.Get(leaseStore)
+                .Setup(store => store.IsInitializedAsync())
+                .ReturnsAsync(false);
+            Mock.Get(leaseStore)
+                .Setup(store => store.AcquireInitializationLockAsync(lockTime))
+                .ReturnsAsync(true);
+            Mock.Get(leaseStore)
+                .Setup(store => store.ReleaseInitializationLockAsync())
+                .ReturnsAsync(true);
+
+            var bootstrapper = new Bootstrapper(synchronizer, leaseStore, lockTime, sleepTime);
+            Exception exception = await Record.ExceptionAsync(async () => await bootstrapper.InitializeAsync());
+            Assert.IsAssignableFrom<DocumentClientException>(exception);
+
+            Mock.Get(leaseStore).VerifyAll();
         }
     }
 }

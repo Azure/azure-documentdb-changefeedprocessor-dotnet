@@ -17,7 +17,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
         public static async Task<Document> TryGetDocumentAsync(
             this IChangeFeedDocumentClient client,
             Uri documentUri,
-            RequestOptions requestOptions)
+            RequestOptions requestOptions = null)
         {
             try
             {
@@ -35,22 +35,33 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
             return null;
         }
 
-        public static async Task<bool> TryCreateDocumentAsync(this IChangeFeedDocumentClient client, string collectionLink, object document)
+        public static async Task<Document> TryCreateDocumentAsync(this IChangeFeedDocumentClient client, string collectionLink, object document)
         {
             try
             {
-                await client.CreateDocumentAsync(collectionLink, document).ConfigureAwait(false);
-                return true;
+                IResourceResponse<Document> response = await client.CreateDocumentAsync(collectionLink, document).ConfigureAwait(false);
+                return response.Resource;
             }
-            catch (DocumentClientException ex)
-            {
-                if (ex.StatusCode != HttpStatusCode.Conflict)
+            catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
                 {
-                    throw;
+                return null;    // Ignore -- document already exists.
                 }
             }
 
-            return false;
+        public static async Task<Document> TryDeleteDocumentAsync(
+            this IChangeFeedDocumentClient client,
+            Uri documentUri,
+            RequestOptions requestOptions = null)
+        {
+            try
+            {
+                IResourceResponse<Document> response = await client.DeleteDocumentAsync(documentUri, requestOptions).ConfigureAwait(false);
+                return response.Resource;
+            }
+            catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;    // Ignore -- document not found.
+            }
         }
 
         public static async Task<DocumentCollection> GetDocumentCollectionAsync(

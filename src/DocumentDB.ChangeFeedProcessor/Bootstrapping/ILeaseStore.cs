@@ -14,19 +14,27 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
     public interface ILeaseStore
     {
         /// <summary>
-        /// Checks if the lease store is initialized
+        /// Checks if the lease store is initialized.
         /// </summary>
         Task<bool> IsInitializedAsync();
 
         /// <summary>
-        /// Lock the store for bootstrapping. Only one process may lock the store for the lock time
-        /// </summary>
-        /// <param name="lockTime">Lock time</param>
-        Task<bool> LockInitializationAsync(TimeSpan lockTime);
-
-        /// <summary>
-        /// Mark the store as initialized
+        /// Mark the store as initialized.
         /// </summary>
         Task MarkInitializedAsync();
+
+        /// <summary>
+        /// Places a lock on the lease store for initialization. Only one process may own the store for the lock time.
+        /// </summary>
+        /// <param name="lockExpirationTime">The time for the lock to expire.</param>
+        /// <returns>True if the lock was acquired, false otherwise.</returns>
+        /// <remarks>In order for expiration time work, lease colection needs to have TTL enabled.</remarks>
+        Task<bool> AcquireInitializationLockAsync(TimeSpan lockExpirationTime);
+
+        /// <summary>
+        /// Releases the lock one the lease store for initialization.
+        /// </summary>
+        /// <returns>True if the lock was acquired and was relesed, false if the lock was not acquired.</returns>
+        Task<bool> ReleaseInitializationLockAsync();
     }
 }
