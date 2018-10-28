@@ -70,6 +70,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="LeaseManagement\" />
     <Folder Include="Properties\" />
   </ItemGroup>
 </Project>

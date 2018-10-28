@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
@@ -33,7 +34,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         private static readonly Database database = new Database() {
             ResourceId = "someResource"
         };
-        private static readonly DocumentCollection collection = MockHelpers.CreateCollection("someResource");
+        private static readonly DocumentCollection collection = MockHelpers.CreateCollection("someResource", "someResourceRid");
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly IChangeFeedObserver observer;
@@ -61,9 +62,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Mock.Get(leaseDocumentClient)
                 .Setup(ex => ex.ReadDocumentCollectionAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>()))
                 .ReturnsAsync(new ResourceResponse<DocumentCollection>(collection));
-            Mock.Get(leaseDocumentClient)
-                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>(), null, default(CancellationToken)))
-                .ReturnsAsync(new ResourceResponse<Document>(new Document()));
 
             var documents = new List<Document> { };
             var feedResponse = Mock.Of<IFeedResponse<Document>>();
@@ -97,14 +95,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(l => l.PartitionId)
                 .Returns("partitionId");
 
+            var leaseStore = Mock.Of<ILeaseStore>();
+            Mock.Get(leaseStore)
+                .Setup(store => store.IsInitializedAsync())
+                .ReturnsAsync(true);
+
             var leaseManager = Mock.Of<ILeaseManager>();
             Mock.Get(leaseManager)
                 .Setup(manager => manager.AcquireAsync(lease))
                 .ReturnsAsync(lease);
-
             Mock.Get(leaseManager)
                 .Setup(manager => manager.ReleaseAsync(lease))
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
+            Mock.Get(leaseManager)
+                .SetupGet(manager => manager.LeaseStore)
+                .Returns(leaseStore);
 
             this.builder
                 .WithHostName("someHost")

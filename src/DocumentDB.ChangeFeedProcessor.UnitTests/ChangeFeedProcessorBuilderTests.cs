@@ -6,7 +6,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
@@ -19,15 +21,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
     public class ChangeFeedProcessorBuilderTests
     {
         private const string collectionLink = "collectionLink";
-        private const string storeNamePrefix = "Name prefix";
         private static readonly DocumentCollectionInfo CollectionInfo = new DocumentCollectionInfo
         {
             DatabaseName = "DatabaseName",
             CollectionName = "CollectionName",
             Uri = new Uri("https://some.host.com")
         };
-        private static readonly Database database = new Database { ResourceId = "someResource" };
-        private static readonly DocumentCollection collection = MockHelpers.CreateCollection("someResource");
+        private static readonly Database database = new Database { ResourceId = "databaseRid" };
+        private static readonly DocumentCollection collection = MockHelpers.CreateCollection("colectionId", "collectionRid");
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
@@ -110,15 +111,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(ex => ex.ReadDocumentCollectionAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>()))
                 .ReturnsAsync(new ResourceResponse<DocumentCollection>(collection));
             Mock.Get(documentClient)
-                .Setup(ex => ex.ReadDocumentAsync(It.IsAny<Uri>(), null, default(CancellationToken)))
-                .ReturnsAsync(new ResourceResponse<Document>(new Document()));
-            Mock.Get(documentClient)
                 .Setup(c => c.CreateDocumentQuery<Document>(collectionLink,
                     It.Is<SqlQuerySpec>(spec => spec.QueryText == "SELECT * FROM c WHERE STARTSWITH(c.id, @PartitionLeasePrefix)" &&
                                                 spec.Parameters.Count == 1 &&
                                                 spec.Parameters[0].Name == "@PartitionLeasePrefix" &&
-                                                (string)spec.Parameters[0].Value == storeNamePrefix + ".."
-                    ), null))
+                                                (string)spec.Parameters[0].Value == $"{CollectionInfo.Uri.Host}_{database.ResourceId}_{collection.ResourceId}.."
+                    ), It.IsAny<FeedOptions>()))
                 .Returns(leaseQueryMock.As<IQueryable<Document>>().Object);
 
             return documentClient;
@@ -127,14 +125,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         [Fact]
         public async Task UseCustomLoadBalancingStrategy()
         {
+            var leaseStore = Mock.Of<ILeaseStore>();
+            Mock.Get(leaseStore)
+                .Setup(store => store.IsInitializedAsync())
+                .ReturnsAsync(true);
+
             var leaseManager = Mock.Of<ILeaseManager>();
             Mock.Get(leaseManager)
                 .Setup(manager => manager.AcquireAsync(It.IsAny<ILease>()))
                 .ReturnsAsync(Mock.Of<ILease>());
-
             Mock.Get(leaseManager)
                 .Setup(manager => manager.ReleaseAsync(It.IsAny<ILease>()))
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
+            Mock.Get(leaseManager)
+                .SetupGet(manager => manager.LeaseStore)
+                .Returns(leaseStore);
 
             var strategy = Mock.Of<IParitionLoadBalancingStrategy>();
 
@@ -182,9 +187,85 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             await this.builder.BuildEstimatorAsync();
         }
 
+        [Fact]
+        public async Task Build_PassesEnableCrossPartitionQuery_WhenLeaseCollectionIsPartitionedById()
+        {
+            var leaseCollection = MockHelpers.CreateCollection(
+                "collectionId",
+                "collectionRid",
+                new PartitionKeyDefinition { Paths = { "/id" } },
+                collectionLink);
+
+            var leaseClient = this.CreateMockDocumentClient(collection);
+            Mock.Get(leaseClient)
+                .Setup(c => c.ReadDocumentCollectionAsync(
+                    It.IsAny<Uri>(),
+                    It.IsAny<RequestOptions>()))
+                .ReturnsAsync(new ResourceResponse<DocumentCollection>(leaseCollection));
+
+            this.builder
+                .WithFeedDocumentClient(this.CreateMockDocumentClient())
+                .WithLeaseDocumentClient(leaseClient)
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>());
+            await this.builder.BuildAsync();
+
+            await this.builder.LeaseManager.ListAllLeasesAsync();
+
+            Mock.Get(leaseClient)
+                .Verify(c => c.CreateDocumentQuery<Document>(
+                    It.IsAny<string>(),
+                    It.IsAny<SqlQuerySpec>(),
+                    It.Is<FeedOptions>(opt => opt.EnableCrossPartitionQuery == true)));
+        }
+
+        [Fact]
+        public async Task Build_PassesPartitionKey_WhenLeaseCollectionIsPartitionedById()
+        {
+            var leaseCollection = MockHelpers.CreateCollection(
+                "collectionId",
+                "collectionRid",
+                new PartitionKeyDefinition { Paths = { "/id" } },
+                collectionLink);
+
+            var lease = Mock.Of<ILease>();
+            Mock.Get(lease)
+                .SetupGet(l => l.Id)
+                .Returns("leaseId");
+
+            var leaseClient = this.CreateMockDocumentClient(collection);
+            Mock.Get(leaseClient)
+                .Setup(c => c.ReadDocumentCollectionAsync(
+                    It.IsAny<Uri>(),
+                    It.IsAny<RequestOptions>()))
+                .ReturnsAsync(new ResourceResponse<DocumentCollection>(leaseCollection));
+            Mock.Get(leaseClient)
+                .Setup(c => c.ReadDocumentAsync(
+                    It.IsAny<Uri>(),
+                    It.IsAny<RequestOptions>(),
+                    It.IsAny<CancellationToken>()))
+                .Callback((Uri uri, RequestOptions options, CancellationToken token) =>
+                {
+                    if (new PartitionKey(lease.Id).Equals(options.PartitionKey))
+                        throw DocumentExceptionHelpers.CreateNotFoundException();   // Success code path: cause lease lost.
+                    throw new Exception("Failure");
+                });
+                
+            this.builder
+                .WithFeedDocumentClient(this.CreateMockDocumentClient())
+                .WithLeaseDocumentClient(leaseClient)
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>());
+            await this.builder.BuildAsync();
+
+            Exception exception = await Record.ExceptionAsync(() => this.builder.LeaseManager.ReleaseAsync(lease));
+            Assert.Equal(typeof(LeaseLostException), exception.GetType());
+        }
+
         private void SetupBuilderForPartitionedLeaseCollection(string partitionKey)
         {
-            var partitionedCollection = MockHelpers.CreateCollection("someResource", new PartitionKeyDefinition { Paths = { partitionKey } });
+            var partitionedCollection = MockHelpers.CreateCollection(
+                collection.Id,
+                collection.ResourceId,
+                new PartitionKeyDefinition { Paths = { partitionKey } });
             this.builder
                 .WithFeedDocumentClient(this.CreateMockDocumentClient())
                 .WithLeaseDocumentClient(this.CreateMockDocumentClient(partitionedCollection))

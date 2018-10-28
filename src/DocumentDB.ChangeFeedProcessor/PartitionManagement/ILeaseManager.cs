@@ -6,6 +6,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 
     /// <summary>
@@ -13,6 +14,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     /// </summary>
     public interface ILeaseManager
     {
+        /// <summary>
+        /// Gets the instance of <see cref="ILeaseStore"/>.
+        /// </summary>
+        ILeaseStore LeaseStore { get; }
+
         /// <summary>
         /// Checks whether lease exists and creates if does not exist.
         /// </summary>

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
@@ -202,7 +203,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                     d.ContinuationToken == null &&
                     d.Id == leaseId
                 ), null, false, default(CancellationToken)))
-                .ReturnsAsync(new ResourceResponse<Document>())
+                .ReturnsAsync(new ResourceResponse<Document>(new Document()))
                 .Verifiable();
 
             var lease = await leaseManager.CreateLeaseIfNotExistAsync(partitionId, null);
@@ -564,14 +565,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
         private DocumentServiceLeaseManager CreateLeaseManager(IChangeFeedDocumentClient documentClient, IDocumentServiceLeaseUpdater leaseUpdater, string hostName)
         {
-            return new DocumentServiceLeaseManager(
-                documentClient,
-                leaseUpdater,
-                collectionInfo,
-                new RequestOptionsFactoryForFixedCollection(),
-                storeNamePrefix,
-                collectionLink,
-                hostName);
+            return new LeaseManager(new LeaseManagerParameters
+            {
+                Client = documentClient,
+                LeaseUpdater = leaseUpdater,
+                LeaseCollectionInfo = collectionInfo,
+                ContainerNamePrefix = storeNamePrefix,
+                LeaseCollectionLink = collectionLink,
+                HostName = hostName,
+            });
         }
 
         private IDocumentServiceLeaseUpdater CreateLeaseUpdater(ILease expectedCachedLease)
@@ -603,6 +605,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 ContinuationToken = "oldToken",
                 Owner = leaseOwner
             };
+        }
+
+        private class LeaseManager : DocumentServiceLeaseManager
+        {
+            internal LeaseManager(LeaseManagerParameters parameters)
+                : base(parameters, new RequestOptionsFactory())
+            {
+            }
+
+            private class RequestOptionsFactory : IRequestOptionsFactory
+            {
+                public FeedOptions CreateFeedOptions() => null;
+
+                public RequestOptions CreateRequestOptions(ILease lease) => null;
+            }
         }
     }
 }

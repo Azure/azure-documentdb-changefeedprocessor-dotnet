@@ -7,7 +7,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
     using System;
     using System.Threading.Tasks;
 
-    internal interface ILeaseStore
+    /// <summary>
+    /// Represents the lease store container to deal with initialiation/cleanup of leases
+    /// for particular monitoring collection and lease container prefix.
+    /// </summary>
+    public interface ILeaseStore
     {
         /// <summary>
         /// Checks if the lease store is initialized

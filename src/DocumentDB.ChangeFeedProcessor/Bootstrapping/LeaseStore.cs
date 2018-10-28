@@ -12,7 +12,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
 
-    internal class LeaseStore : ILeaseStore
+#pragma warning disable SA1649 // File name should match first type name. Will remove in next commit. Keep for now to minimize churn.
+    internal class DocumentServiceLeaseStore : ILeaseStore
+#pragma warning restore SA1649 // File name should match first type name
     {
         private readonly IChangeFeedDocumentClient client;
         private readonly DocumentCollectionInfo leaseStoreCollectionInfo;
@@ -20,7 +22,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         private readonly string leaseCollectionLink;
         private readonly IRequestOptionsFactory requestOptionsFactory;
 
-        public LeaseStore(
+        public DocumentServiceLeaseStore(
             IChangeFeedDocumentClient client,
             DocumentCollectionInfo leaseCollectionInfo,
             string containerNamePrefix,
