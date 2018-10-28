@@ -5,19 +5,18 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Moq;
 using Newtonsoft.Json;
 using Xunit;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagement
 {
     [Trait("Category", "Gated")]
-    public class LeaseStoreTests
+    public class DocumentServiceLeaseStoreTests
     {
         private static readonly DocumentCollectionInfo collectionInfo = new DocumentCollectionInfo()
         {

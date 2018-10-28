@@ -17,7 +17,7 @@ using Microsoft.Azure.Documents.Linq;
 using Moq;
 using Xunit;
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagement
 {
     [Trait("Category", "Gated")]
     public class DocumentServiceLeaseManagerTests

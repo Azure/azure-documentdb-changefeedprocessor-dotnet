@@ -5,7 +5,6 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 {
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
     internal class LeaseManagerParameters
     {

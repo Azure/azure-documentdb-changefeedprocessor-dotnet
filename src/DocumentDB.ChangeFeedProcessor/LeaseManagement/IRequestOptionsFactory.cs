@@ -2,12 +2,13 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 {
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>
-    /// Defines request options for lease requests to use with <see cref="ILeaseManager"/>.
+    /// Defines request options for lease requests to use with <see cref="DocumentServiceLeaseManager"/> and <see cref="DocumentServiceLeaseStore"/>.
     /// </summary>
     internal interface IRequestOptionsFactory
     {

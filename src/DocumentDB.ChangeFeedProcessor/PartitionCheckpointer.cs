@@ -5,6 +5,7 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 

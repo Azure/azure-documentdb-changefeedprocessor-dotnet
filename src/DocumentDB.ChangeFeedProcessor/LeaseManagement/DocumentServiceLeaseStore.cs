@@ -2,19 +2,16 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
 
-#pragma warning disable SA1649 // File name should match first type name. Will remove in next commit. Keep for now to minimize churn.
     internal class DocumentServiceLeaseStore : ILeaseStore
-#pragma warning restore SA1649 // File name should match first type name
     {
         private readonly IChangeFeedDocumentClient client;
         private readonly DocumentCollectionInfo leaseStoreCollectionInfo;
