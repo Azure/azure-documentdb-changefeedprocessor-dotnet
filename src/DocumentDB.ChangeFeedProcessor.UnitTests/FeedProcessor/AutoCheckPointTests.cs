@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             partitionCheckpointer = Mock.Of<IPartitionCheckpointer>();
             Mock.Get(partitionCheckpointer)
                 .Setup(checkPointer => checkPointer.CheckpointPartitionAsync(It.IsAny<string>()))
-                .Returns(Task.FromResult(true));
+                .Returns(Task.CompletedTask);
 
             checkpointFrequency = new CheckpointFrequency();
             sut = new AutoCheckpointer(checkpointFrequency, changeFeedObserver);

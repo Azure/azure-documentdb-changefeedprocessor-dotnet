@@ -90,7 +90,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
                     .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(false))
+                .Returns(Task.CompletedTask)
                 .Callback(() =>
                 {
                     if (++i == 2)

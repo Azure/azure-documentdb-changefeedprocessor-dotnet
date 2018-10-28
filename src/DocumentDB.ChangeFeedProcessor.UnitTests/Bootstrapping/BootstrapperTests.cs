@@ -41,7 +41,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Bootstrapping
             var synchronizer = Mock.Of<IPartitionSynchronizer>();
             Mock.Get(synchronizer)
                 .Setup(s => s.CreateMissingLeasesAsync())
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
 
             var leaseStore = Mock.Of<ILeaseStore>();
             Mock.Get(leaseStore)
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Bootstrapping
 
             Mock.Get(leaseStore)
                 .Setup(store => store.MarkInitializedAsync())
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
 
             var bootstrapper = new Bootstrapper(synchronizer, leaseStore, lockTime, sleepTime);
             await bootstrapper.InitializeAsync().ConfigureAwait(false);

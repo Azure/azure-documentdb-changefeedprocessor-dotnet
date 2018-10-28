@@ -123,11 +123,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
                     .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(false))
+                .Returns(Task.CompletedTask)
                 .Callback(cancellationTokenSource.Cancel);
             Mock.Get(observer)
                 .Setup(observer => observer.OpenAsync(It.IsAny<ChangeFeedObserverContext>()))
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
 
             this.observerFactory = Mock.Of<IChangeFeedObserverFactory>();
             Mock.Get(observerFactory)
