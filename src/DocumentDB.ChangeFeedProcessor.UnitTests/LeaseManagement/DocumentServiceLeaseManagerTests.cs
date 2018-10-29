@@ -504,6 +504,31 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         }
 
         [Fact]
+        public async Task DeleteAsync_PassesParttionKeyIfPeaseCollectionIsPartitioned()
+        {
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            var cachedLease = CreateCachedLease(owner);
+
+            var requestOptionsFactory = Mock.Of<IRequestOptionsFactory>();
+            Mock.Get(requestOptionsFactory)
+                .Setup(factory => factory.CreateRequestOptions(It.IsAny<ILease>()))
+                .Returns(new RequestOptions { PartitionKey = new PartitionKey(cachedLease.Id) });
+
+            var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner, requestOptionsFactory);
+            Mock.Get(documentClient)
+                .Setup(c => c.DeleteDocumentAsync(
+                    documentUri,
+                    It.Is<RequestOptions>(options => new PartitionKey(cachedLease.Id).Equals(options.PartitionKey)),
+                    default(CancellationToken)))
+                .ReturnsAsync(Mock.Of<IResourceResponse<Document>>());
+
+            await leaseManager.DeleteAsync(cachedLease);
+
+            Mock.Get(documentClient).VerifyAll();
+        }
+
+        [Fact]
         public async Task UpdateAsync_UpdatesLease_WhenLeaseOwnershipDoesNotChange()
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
@@ -563,7 +588,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                 .ReturnsAsync(storedLease);
         }
 
-        private DocumentServiceLeaseManager CreateLeaseManager(IChangeFeedDocumentClient documentClient, IDocumentServiceLeaseUpdater leaseUpdater, string hostName)
+        private DocumentServiceLeaseManager CreateLeaseManager(
+            IChangeFeedDocumentClient documentClient,
+            IDocumentServiceLeaseUpdater leaseUpdater,
+            string hostName,
+            IRequestOptionsFactory requestOptionsFactory = null)
         {
             return new LeaseManager(new LeaseManagerParameters
             {
@@ -573,7 +602,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                 ContainerNamePrefix = storeNamePrefix,
                 LeaseCollectionLink = collectionLink,
                 HostName = hostName,
-            });
+            },
+            requestOptionsFactory);
         }
 
         private IDocumentServiceLeaseUpdater CreateLeaseUpdater(ILease expectedCachedLease)
@@ -609,8 +639,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
 
         private class LeaseManager : DocumentServiceLeaseManager
         {
-            internal LeaseManager(LeaseManagerParameters parameters)
-                : base(parameters, new RequestOptionsFactory())
+            internal LeaseManager(LeaseManagerParameters parameters, IRequestOptionsFactory requestOptionsFactory)
+                : base(parameters, requestOptionsFactory ?? new RequestOptionsFactory())
             {
             }
 
