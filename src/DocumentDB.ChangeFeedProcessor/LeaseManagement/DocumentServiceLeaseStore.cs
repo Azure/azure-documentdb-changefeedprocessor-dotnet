@@ -73,10 +73,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string lockId = this.GetStoreLockName();
             Uri documentUri = UriFactory.CreateDocumentUri(this.leaseStoreCollectionInfo.DatabaseName, this.leaseStoreCollectionInfo.CollectionName, lockId);
-            var requestOptions = new RequestOptions
-            {
-                AccessCondition = new AccessCondition { Type = AccessConditionType.IfMatch, Condition = this.lockETag },
-            };
+
+            var requestOptions = this.requestOptionsFactory.CreateRequestOptions(
+                DocumentServiceLease.FromDocument(new Document { Id = lockId }));
+            requestOptions = requestOptions ?? new RequestOptions();
+            requestOptions.AccessCondition = new AccessCondition { Type = AccessConditionType.IfMatch, Condition = this.lockETag };
+
             var document = await this.client.TryDeleteDocumentAsync(
                 documentUri,
                 requestOptions).ConfigureAwait(false);
