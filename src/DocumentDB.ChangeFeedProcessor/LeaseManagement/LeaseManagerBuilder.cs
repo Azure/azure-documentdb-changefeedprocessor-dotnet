@@ -72,7 +72,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 throw new InvalidOperationException(nameof(this.parameters.LeaseCollectionInfo) + " was not specified");
             if (this.parameters.LeaseCollectionLink == null)
                 throw new InvalidOperationException(nameof(this.parameters.LeaseCollectionLink) + " was not specified");
-            if (this.leaseManagerFactory == null) throw new InvalidOperationException(nameof(this.leaseManagerFactory) + " was not specified");
+            if (this.leaseManagerFactory == null)
+                throw new InvalidOperationException(nameof(this.leaseManagerFactory) + " was not specified");
 
             this.parameters.Client = this.parameters.Client ?? this.parameters.LeaseCollectionInfo.CreateDocumentClient();
             this.parameters.LeaseUpdater = new DocumentServiceLeaseUpdater(this.parameters.Client);

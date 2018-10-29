@@ -8,7 +8,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>
-    /// Used to create DocumentServiceLeaseManager for partitioned lease collections, when partition key is defined as /id.
+    /// Used to create DocumentServiceLeaseManager for not partitioned lease collections.
     /// </summary>
     internal class FixedCollectionLeaseManagerFactory : ILeaseManagerFactory
     {

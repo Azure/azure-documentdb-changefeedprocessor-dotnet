@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         /// Reads the list of Partition Key Ranges.
         /// </summary>
         /// <param name="partitionKeyRangesOrCollectionLink">Partition Key Ranges or Collection Self Link.</param>
-        /// <param name="options">The <see cref="Microsoft.Azure.Documents.Client.RequestOptions"/>for this request.</param>
+        /// <param name="options">The <see cref="Microsoft.Azure.Documents.Client.FeedOptions"/>for this request.</param>
         /// <returns>A list of <see cref="PartitionKeyRange"/>.</returns>
         public async Task<IFeedResponse<PartitionKeyRange>> ReadPartitionKeyRangeFeedAsync(string partitionKeyRangesOrCollectionLink, FeedOptions options = null)
         {
