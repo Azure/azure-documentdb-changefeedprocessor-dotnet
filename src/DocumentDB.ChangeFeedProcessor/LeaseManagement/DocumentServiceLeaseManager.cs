@@ -210,7 +210,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             Uri leaseUri = this.CreateDocumentUri(lease.Id);
             try
             {
-                await this.parameters.Client.DeleteDocumentAsync(leaseUri).ConfigureAwait(false);
+                await this.parameters.Client.DeleteDocumentAsync(
+                    leaseUri,
+                    this.requestOptionsFactory.CreateRequestOptions(lease)).ConfigureAwait(false);
             }
             catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {

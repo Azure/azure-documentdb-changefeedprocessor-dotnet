@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Moq;
@@ -182,6 +183,31 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                     It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == etag),
                     default(CancellationToken)),
                     Times.Once);
+        }
+
+        [Fact]
+        public async Task ReleaseInitializationLockAsync_ShouldPassPartitionKey_IfLeaseCollectionPartitioned()
+        {
+            var client = Mock.Of<IChangeFeedDocumentClient>();
+            Mock.Get(client)
+                .Setup(c => c.DeleteDocumentAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>(), default(CancellationToken)))
+                .ReturnsAsync(new ResourceResponse<Document>(new Document()));
+
+            var pkValue = "pk";
+            var requestOptionsFactory = Mock.Of<IRequestOptionsFactory>();
+            Mock.Get(requestOptionsFactory)
+                .Setup(factory => factory.CreateRequestOptions(It.IsAny<ILease>()))
+                .Returns(new RequestOptions { PartitionKey = new PartitionKey(pkValue)});
+
+            var leaseStore = new DocumentServiceLeaseStore(client, collectionInfo, containerNamePrefix, leaseCollectionLink, requestOptionsFactory);
+            bool isLockFoundAndReleased = await leaseStore.ReleaseInitializationLockAsync();
+            Assert.True(isLockFoundAndReleased);
+
+            Mock.Get(client)
+                .Verify(c => c.DeleteDocumentAsync(
+                    It.Is<Uri>(uri => uri.OriginalString.EndsWith("prefix.lock")),
+                    It.Is<RequestOptions>(options => new PartitionKey(pkValue).Equals(options.PartitionKey)),
+                    default(CancellationToken)));
         }
 
         [Fact]
