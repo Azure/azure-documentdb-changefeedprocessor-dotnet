@@ -503,6 +503,31 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
+        public async Task DeleteAsync_PassesParttionKeyIfPeaseCollectionIsPartitioned()
+        {
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            var cachedLease = CreateCachedLease(owner);
+
+            var requestOptionsFactory = Mock.Of<IRequestOptionsFactory>();
+            Mock.Get(requestOptionsFactory)
+                .Setup(factory => factory.CreateRequestOptions(It.IsAny<ILease>()))
+                .Returns(new RequestOptions { PartitionKey = new PartitionKey(cachedLease.Id) });
+
+            var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
+            var leaseManager = CreateLeaseManager(documentClient, leaseUpdater, owner, requestOptionsFactory);
+            Mock.Get(documentClient)
+                .Setup(c => c.DeleteDocumentAsync(
+                    documentUri,
+                    It.Is<RequestOptions>(options => new PartitionKey(cachedLease.Id).Equals(options.PartitionKey)),
+                    default(CancellationToken)))
+                .ReturnsAsync(Mock.Of<IResourceResponse<Document>>());
+
+            await leaseManager.DeleteAsync(cachedLease);
+
+            Mock.Get(documentClient).VerifyAll();
+        }
+
+        [Fact]
         public async Task UpdateAsync_UpdatesLease_WhenLeaseOwnershipDoesNotChange()
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
@@ -562,7 +587,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 .ReturnsAsync(storedLease);
         }
 
-        private DocumentServiceLeaseManager CreateLeaseManager(IChangeFeedDocumentClient documentClient, IDocumentServiceLeaseUpdater leaseUpdater, string hostName)
+        private DocumentServiceLeaseManager CreateLeaseManager(
+            IChangeFeedDocumentClient documentClient,
+            IDocumentServiceLeaseUpdater leaseUpdater,
+            string hostName,
+            IRequestOptionsFactory requestOptionsFactory = null)
         {
             return new DocumentServiceLeaseManager(
                 documentClient,
