@@ -217,7 +217,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             Uri leaseUri = this.CreateDocumentUri(lease.Id);
             try
             {
-                await this.parameters.Client.DeleteDocumentAsync(
+                await this.client.DeleteDocumentAsync(
                     leaseUri,
                     this.requestOptionsFactory.CreateRequestOptions(lease)).ConfigureAwait(false);
             }

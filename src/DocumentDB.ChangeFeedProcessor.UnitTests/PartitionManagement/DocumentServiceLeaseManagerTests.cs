@@ -503,7 +503,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
-        public async Task DeleteAsync_PassesParttionKeyIfPeaseCollectionIsPartitioned()
+        public async Task DeleteAsync_PassesParttionKeyIfLeaseCollectionIsPartitioned()
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
@@ -597,7 +597,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 documentClient,
                 leaseUpdater,
                 collectionInfo,
-                new RequestOptionsFactoryForFixedCollection(),
+                requestOptionsFactory ?? Mock.Of<IRequestOptionsFactory>(),
                 storeNamePrefix,
                 collectionLink,
                 hostName);
