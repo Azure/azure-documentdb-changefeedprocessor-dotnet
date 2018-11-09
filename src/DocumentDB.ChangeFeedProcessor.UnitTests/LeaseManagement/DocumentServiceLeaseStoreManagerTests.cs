@@ -20,7 +20,7 @@ using Xunit;
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagement
 {
     [Trait("Category", "Gated")]
-    public class DocumentServiceLeaseManagerTests
+    public class DocumentServiceLeaseStoreManagerTests
     {
         private const string storeNamePrefix = "Name prefix";
         private const string collectionLink = "Collection link";
