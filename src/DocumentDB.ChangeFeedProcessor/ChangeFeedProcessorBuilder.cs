@@ -350,7 +350,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             if (this.leaseCollectionLocation == null && this.LeaseStoreManager == null)
             {
-                throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
                 throw new InvalidOperationException($"Either {nameof(this.leaseCollectionLocation)} or {nameof(this.LeaseStoreManager)} must be specified");
             }
 
@@ -377,9 +376,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new InvalidOperationException(nameof(this.feedCollectionLocation) + " was not specified");
             }
 
-            if (this.leaseCollectionLocation == null)
+            if (this.leaseCollectionLocation == null && this.LeaseStoreManager == null)
             {
-                throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
+                throw new InvalidOperationException($"Either {nameof(this.leaseCollectionLocation)} or {nameof(this.LeaseStoreManager)} must be specified");
             }
 
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
@@ -411,7 +410,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         private IPartitionManager BuildPartitionManager(ILeaseStoreManager leaseStoreManager)
         {
-            this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
             string feedCollectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
             var factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedProcessorOptions.CheckpointFrequency);
             var synchronizer = new PartitionSynchronizer(
@@ -453,12 +451,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }
 
-        private async Task<ILeaseStoreManager> GetLeaseStoreManagerAsync(DocumentCollectionInfo collectionInfo, bool isPartitionKeyByIdRequiredIfPartitioned)
+        private async Task<ILeaseStoreManager> GetLeaseStoreManagerAsync(
+            DocumentCollectionInfo collectionInfo,
+            bool isPartitionKeyByIdRequiredIfPartitioned)
         {
             if (this.LeaseStoreManager == null)
             {
-                this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
-
+                var leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
                 var collection = await this.leaseDocumentClient.GetDocumentCollectionAsync(collectionInfo).ConfigureAwait(false);
 
                 bool isPartitioned =
@@ -483,10 +482,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     .WithRequestOptionsFactory(requestOptionsFactory)
                     .WithHostName(this.HostName);
 
-                if (this.leaseDocumentClient != null)
-                {
-                    leaseStoreManagerBuilder = leaseStoreManagerBuilder.WithLeaseDocumentClient(this.leaseDocumentClient);
-                }
+                leaseStoreManagerBuilder = leaseStoreManagerBuilder.WithLeaseDocumentClient(leaseDocumentClient);
 
                 this.LeaseStoreManager = await leaseStoreManagerBuilder.BuildAsync().ConfigureAwait(false);
             }

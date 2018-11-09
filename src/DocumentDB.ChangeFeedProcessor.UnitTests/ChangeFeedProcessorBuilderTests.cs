@@ -169,6 +169,31 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
 
         [Fact]
+        public async Task BuildThrowsWhenNoneOfLeaseCollectionInfoOrLeaseStoreManagerSpecified()
+        {
+            var builder = new ChangeFeedProcessorBuilder()
+                .WithHostName("host")
+                .WithFeedCollection(CollectionInfo)
+                .WithFeedDocumentClient(CreateMockDocumentClient())
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>());
+
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BuildAsync());
+        }
+
+        [Fact]
+        public async Task BuildWhenOnlyLeaseStoreManagerSpecified()
+        {
+            var builder = new ChangeFeedProcessorBuilder()
+                .WithHostName("host")
+                .WithFeedCollection(CollectionInfo)
+                .WithFeedDocumentClient(CreateMockDocumentClient())
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>())
+                .WithLeaseStoreManager(Mock.Of<ILeaseStoreManager>());
+
+            await builder.BuildAsync();
+        }
+
+        [Fact]
         public async Task BuildEstimatorThrowsWhenLeaseCollectionPartitionedNotById()
         {
             SetupBuilderForPartitionedLeaseCollection("/not_id");
@@ -180,6 +205,30 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         {
             SetupBuilderForPartitionedLeaseCollection("/id");
             await this.builder.BuildEstimatorAsync();
+        }
+
+        [Fact]
+        public async Task BuildEstimatorThrowsWhenNoneOfLeaseCollectionInfoOrLeaseStoreManagerSpecified()
+        {
+            var builder = new ChangeFeedProcessorBuilder()
+                .WithHostName("host")
+                .WithFeedCollection(CollectionInfo)
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>());
+
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await builder.BuildEstimatorAsync());
+        }
+
+        [Fact]
+        public async Task BuildEstimatorWhenOnlyLeaseStoreManagerSpecified()
+        {
+            var builder = new ChangeFeedProcessorBuilder()
+                .WithHostName("host")
+                .WithFeedCollection(CollectionInfo)
+                .WithFeedDocumentClient(CreateMockDocumentClient())
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>())
+                .WithLeaseStoreManager(Mock.Of<ILeaseStoreManager>());
+
+            await builder.BuildEstimatorAsync();
         }
 
         [Fact]
