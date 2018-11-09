@@ -25,7 +25,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     /// ChangeFeed.federation|database_rid|collection_rid..partitionId2
     ///                                         ...
     /// </summary>
-    internal class DocumentServiceLeaseManager : ILeaseStoreManager
+    internal class DocumentServiceLeaseStoreManager : ILeaseStoreManager
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly DocumentServiceLeaseStoreManagerSettings settings;
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         private readonly IDocumentServiceLeaseUpdater leaseUpdater;
         private readonly ILeaseStore leaseStore;
 
-        public DocumentServiceLeaseManager(
+        public DocumentServiceLeaseStoreManager(
             DocumentServiceLeaseStoreManagerSettings settings,
             IChangeFeedDocumentClient leaseDocumentClient,
             IRequestOptionsFactory requestOptionsFactory)
@@ -43,12 +43,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DocumentServiceLeaseManager"/> class.
+        /// Initializes a new instance of the <see cref="DocumentServiceLeaseStoreManager"/> class.
         /// </summary>
         /// <remarks>
         /// Internal only for testing purposes, otherwise would be private.
         /// </remarks>
-        internal DocumentServiceLeaseManager(
+        internal DocumentServiceLeaseStoreManager(
             DocumentServiceLeaseStoreManagerSettings settings,
             IChangeFeedDocumentClient leaseDocumentClient,
             IRequestOptionsFactory requestOptionsFactory,

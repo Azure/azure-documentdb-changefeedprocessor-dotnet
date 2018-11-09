@@ -476,7 +476,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     (IRequestOptionsFactory)new SinglePartitionRequestOptionsFactory();
 
                 string leasePrefix = this.GetLeasePrefix();
-                var leaseStoreManagerBuilder = new LeaseManagerBuilder()
+                var leaseStoreManagerBuilder = new DocumentServiceLeaseStoreManagerBuilder()
                     .WithLeasePrefix(leasePrefix)
                     .WithLeaseCollection(this.leaseCollectionLocation)
                     .WithLeaseCollectionLink(collection.SelfLink)

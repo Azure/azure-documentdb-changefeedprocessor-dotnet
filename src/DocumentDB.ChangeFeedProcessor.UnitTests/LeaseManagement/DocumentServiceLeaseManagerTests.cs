@@ -571,7 +571,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                 .ReturnsAsync(storedLease);
         }
 
-        private DocumentServiceLeaseManager CreateLeaseStoreManager(
+        private DocumentServiceLeaseStoreManager CreateLeaseStoreManager(
             IChangeFeedDocumentClient documentClient,
             string hostName,
             IDocumentServiceLeaseUpdater leaseUpdater = null,
@@ -587,12 +587,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
 
             // Make sure we test both constructors.
             return leaseUpdater != null ?
-                new DocumentServiceLeaseManager(
+                new DocumentServiceLeaseStoreManager(
                     settings,
                     documentClient,
                     requestOptionsFactory ?? Mock.Of<IRequestOptionsFactory>(),
                     leaseUpdater) :
-                new DocumentServiceLeaseManager(
+                new DocumentServiceLeaseStoreManager(
                     settings,
                     documentClient,
                     requestOptionsFactory ?? Mock.Of<IRequestOptionsFactory>());

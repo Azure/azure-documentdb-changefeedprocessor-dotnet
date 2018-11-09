@@ -13,13 +13,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     /// Provides flexible way to build lease manager constructor parameters.
     /// For the actual creation of lease manager instance, delegates to lease manager factory.
     /// </summary>
-    internal class LeaseManagerBuilder
+    internal class DocumentServiceLeaseStoreManagerBuilder
     {
         private DocumentServiceLeaseStoreManagerSettings settings = new DocumentServiceLeaseStoreManagerSettings();
         private IChangeFeedDocumentClient client;
         private IRequestOptionsFactory requestOptionsFactory;
 
-        public LeaseManagerBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation)
+        public DocumentServiceLeaseStoreManagerBuilder WithLeaseCollection(DocumentCollectionInfo leaseCollectionLocation)
         {
             if (leaseCollectionLocation == null) throw new ArgumentNullException(nameof(leaseCollectionLocation));
 
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             return this;
         }
 
-        public LeaseManagerBuilder WithLeaseDocumentClient(IChangeFeedDocumentClient leaseDocumentClient)
+        public DocumentServiceLeaseStoreManagerBuilder WithLeaseDocumentClient(IChangeFeedDocumentClient leaseDocumentClient)
         {
             if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
 
@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             return this;
         }
 
-        public LeaseManagerBuilder WithLeasePrefix(string leasePrefix)
+        public DocumentServiceLeaseStoreManagerBuilder WithLeasePrefix(string leasePrefix)
         {
             if (leasePrefix == null) throw new ArgumentNullException(nameof(leasePrefix));
 
@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             return this;
         }
 
-        public LeaseManagerBuilder WithLeaseCollectionLink(string leaseCollectionLink)
+        public DocumentServiceLeaseStoreManagerBuilder WithLeaseCollectionLink(string leaseCollectionLink)
         {
             if (leaseCollectionLink == null) throw new ArgumentNullException(nameof(leaseCollectionLink));
 
@@ -51,7 +51,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             return this;
         }
 
-        public LeaseManagerBuilder WithRequestOptionsFactory(IRequestOptionsFactory requestOptionsFactory)
+        public DocumentServiceLeaseStoreManagerBuilder WithRequestOptionsFactory(IRequestOptionsFactory requestOptionsFactory)
         {
             if (requestOptionsFactory == null) throw new ArgumentNullException(nameof(requestOptionsFactory));
 
@@ -59,7 +59,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             return this;
         }
 
-        public LeaseManagerBuilder WithHostName(string hostName)
+        public DocumentServiceLeaseStoreManagerBuilder WithHostName(string hostName)
         {
             if (hostName == null) throw new ArgumentNullException(nameof(hostName));
 
@@ -78,7 +78,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 
             this.client = this.client ?? this.settings.LeaseCollectionInfo.CreateDocumentClient();
 
-            var leaseStoreManager = new DocumentServiceLeaseManager(this.settings, this.client, this.requestOptionsFactory);
+            var leaseStoreManager = new DocumentServiceLeaseStoreManager(this.settings, this.client, this.requestOptionsFactory);
             return Task.FromResult<ILeaseStoreManager>(leaseStoreManager);
         }
     }
