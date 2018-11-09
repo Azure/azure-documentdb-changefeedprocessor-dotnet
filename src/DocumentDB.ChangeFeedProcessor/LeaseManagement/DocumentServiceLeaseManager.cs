@@ -25,16 +25,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     /// ChangeFeed.federation|database_rid|collection_rid..partitionId2
     ///                                         ...
     /// </summary>
-    internal class DocumentServiceLeaseManager : ILeaseManager
+    internal class DocumentServiceLeaseManager : ILeaseStoreManager
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
-        private readonly LeaseManagerSettings settings;
+        private readonly DocumentServiceLeaseStoreManagerSettings settings;
         private readonly IChangeFeedDocumentClient client;
         private readonly IRequestOptionsFactory requestOptionsFactory;
         private readonly IDocumentServiceLeaseUpdater leaseUpdater;
+        private readonly ILeaseStore leaseStore;
 
         public DocumentServiceLeaseManager(
-            LeaseManagerSettings settings,
+            DocumentServiceLeaseStoreManagerSettings settings,
             IChangeFeedDocumentClient leaseDocumentClient,
             IRequestOptionsFactory requestOptionsFactory)
             : this(settings, leaseDocumentClient, requestOptionsFactory, new DocumentServiceLeaseUpdater(leaseDocumentClient))
@@ -48,7 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         /// Internal only for testing purposes, otherwise would be private.
         /// </remarks>
         internal DocumentServiceLeaseManager(
-            LeaseManagerSettings settings,
+            DocumentServiceLeaseStoreManagerSettings settings,
             IChangeFeedDocumentClient leaseDocumentClient,
             IRequestOptionsFactory requestOptionsFactory,
             IDocumentServiceLeaseUpdater leaseUpdater) // For testing purposes only.
@@ -66,7 +67,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             this.client = leaseDocumentClient;
             this.requestOptionsFactory = requestOptionsFactory;
             this.leaseUpdater = leaseUpdater;
-            this.LeaseStore = new DocumentServiceLeaseStore(
+            this.leaseStore = new DocumentServiceLeaseStore(
                 this.client,
                 this.settings.LeaseCollectionInfo,
                 this.settings.ContainerNamePrefix,
@@ -74,17 +75,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 this.requestOptionsFactory);
         }
 
-        public ILeaseStore LeaseStore { get; }
-
-        public async Task<IReadOnlyList<ILease>> ListAllLeasesAsync()
+        public async Task<IReadOnlyList<ILease>> GetAllLeasesAsync()
         {
             return await this.ListDocumentsAsync(this.GetPartitionLeasePrefix()).ConfigureAwait(false);
         }
 
-        public async Task<IEnumerable<ILease>> ListOwnedLeasesAsync()
+        public async Task<IEnumerable<ILease>> GetOwnedLeasesAsync()
         {
             var ownedLeases = new List<ILease>();
-            foreach (ILease lease in await this.ListAllLeasesAsync().ConfigureAwait(false))
+            foreach (ILease lease in await this.GetAllLeasesAsync().ConfigureAwait(false))
             {
                 if (string.Compare(lease.Owner, this.settings.HostName, StringComparison.OrdinalIgnoreCase) == 0)
                 {
@@ -268,6 +267,26 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                         serverLease.Properties = lease.Properties;
                         return serverLease;
                     }).ConfigureAwait(false);
+        }
+
+        public Task<bool> IsInitializedAsync()
+        {
+            return this.leaseStore.IsInitializedAsync();
+        }
+
+        public Task MarkInitializedAsync()
+        {
+            return this.leaseStore.MarkInitializedAsync();
+        }
+
+        public Task<bool> AcquireInitializationLockAsync(TimeSpan lockExpirationTime)
+        {
+            return this.leaseStore.AcquireInitializationLockAsync(lockExpirationTime);
+        }
+
+        public Task<bool> ReleaseInitializationLockAsync()
+        {
+            return this.leaseStore.ReleaseInitializationLockAsync();
         }
 
         private async Task<DocumentServiceLease> TryGetLeaseAsync(ILease lease)

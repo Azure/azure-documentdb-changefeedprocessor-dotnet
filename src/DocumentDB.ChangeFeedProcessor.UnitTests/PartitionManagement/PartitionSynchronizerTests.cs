@@ -45,8 +45,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             ILeaseManager leaseManager = Mock.Of<ILeaseManager>(m => 
                 m.CreateLeaseIfNotExistAsync("20", lastKnowToken) == Task.FromResult(lease20) && 
                 m.CreateLeaseIfNotExistAsync("30", lastKnowToken) == Task.FromResult(lease30));
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
-            var sut = new PartitionSynchronizer(documentClient, "collectionlink", leaseManager, 1, int.MaxValue);
+            var sut = new PartitionSynchronizer(documentClient, "collectionlink", leaseContainer, leaseManager, 1, int.MaxValue);
             IEnumerable<ILease> result = await sut.SplitPartitionAsync(lease);
             Assert.NotNull(result);
             Assert.Equal(new [] { lease20, lease30 }, result);
@@ -78,8 +79,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             ILeaseManager leaseManager = Mock.Of<ILeaseManager>(m =>
                 m.CreateLeaseIfNotExistAsync("20", lastKnowToken) == Task.FromResult(lease20) &&
                 m.CreateLeaseIfNotExistAsync("30", lastKnowToken) == Task.FromResult<ILease>(null));
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
-            var sut = new PartitionSynchronizer(documentClient, "collectionlink", leaseManager, 1, int.MaxValue);
+            var sut = new PartitionSynchronizer(documentClient, "collectionlink", leaseContainer, leaseManager, 1, int.MaxValue);
             IEnumerable<ILease> result = await sut.SplitPartitionAsync(lease);
             Assert.NotNull(result);
             Assert.Equal(new[] { lease20 }, result);

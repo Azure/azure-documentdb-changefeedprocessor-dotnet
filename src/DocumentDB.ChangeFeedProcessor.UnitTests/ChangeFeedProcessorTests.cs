@@ -95,27 +95,24 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Returns("partitionId");
 
             var leaseStore = Mock.Of<ILeaseStore>();
-            Mock.Get(leaseStore)
+
+            var leaseStoreManager = Mock.Of<ILeaseStoreManager>();
+            Mock.Get(leaseStoreManager)
                 .Setup(store => store.IsInitializedAsync())
                 .ReturnsAsync(true);
-
-            var leaseManager = Mock.Of<ILeaseManager>();
-            Mock.Get(leaseManager)
+            Mock.Get(leaseStoreManager)
                 .Setup(manager => manager.AcquireAsync(lease))
                 .ReturnsAsync(lease);
-            Mock.Get(leaseManager)
+            Mock.Get(leaseStoreManager)
                 .Setup(manager => manager.ReleaseAsync(lease))
                 .Returns(Task.CompletedTask);
-            Mock.Get(leaseManager)
-                .SetupGet(manager => manager.LeaseStore)
-                .Returns(leaseStore);
 
             this.builder
                 .WithHostName("someHost")
                 .WithFeedDocumentClient(documentClient)
                 .WithFeedCollection(collectionInfo)
                 .WithProcessorOptions(new ChangeFeedProcessorOptions())
-                .WithLeaseManager(leaseManager)
+                .WithLeaseStoreManager(leaseStoreManager)
                 .WithLeaseCollection(collectionInfo)
                 .WithLeaseDocumentClient(leaseDocumentClient);
 

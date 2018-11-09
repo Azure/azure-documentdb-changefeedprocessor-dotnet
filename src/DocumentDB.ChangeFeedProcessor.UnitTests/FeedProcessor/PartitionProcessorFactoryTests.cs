@@ -40,7 +40,7 @@
 
             this.fixture.Register(() => new PartitionKey(this.fixture.Create<string>()));
 
-            var leaseManager = Mock.Of<ILeaseManager>();
+            var leaseCheckpointer = Mock.Of<ILeaseCheckpointer>();
             var lease = Mock.Of<ILease>();
 
             Mock.Get(lease)
@@ -50,7 +50,7 @@
                 .Setup(l => l.ContinuationToken)
                 .Returns(leaseContinuationToken);
 
-            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, leaseManager, this.collectionSelfLink);
+            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, leaseCheckpointer, this.collectionSelfLink);
             var processor = sut.Create(lease, this.observer);
 
             Mock.Get(this.docClient)

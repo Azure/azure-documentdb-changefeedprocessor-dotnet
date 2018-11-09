@@ -135,7 +135,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// <remarks>
         /// Internal for testing only, otherwise it would be private.
         /// </remarks>
-        internal ILeaseManager LeaseManager
+        internal ILeaseStoreManager LeaseStoreManager
         {
             get;
             private set;
@@ -309,14 +309,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Sets the <see cref="ILeaseManager"/> to be used to manage leases.
+        /// Sets the <see cref="ILeaseStoreManager"/> to be used to manage leases.
         /// </summary>
-        /// <param name="leaseManager">The instance of <see cref="ILeaseManager"/> to use.</param>
+        /// <param name="leaseStoreManager">The instance of <see cref="ILeaseStoreManager"/> to use.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithLeaseManager(ILeaseManager leaseManager)
+        public ChangeFeedProcessorBuilder WithLeaseStoreManager(ILeaseStoreManager leaseStoreManager)
         {
-            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
-            this.LeaseManager = leaseManager;
+            if (leaseStoreManager == null) throw new ArgumentNullException(nameof(leaseStoreManager));
+            this.LeaseStoreManager = leaseStoreManager;
             return this;
         }
 
@@ -348,10 +348,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new InvalidOperationException(nameof(this.feedCollectionLocation) + " was not specified");
             }
 
-            if (this.leaseCollectionLocation == null && this.LeaseManager == null)
+            if (this.leaseCollectionLocation == null && this.LeaseStoreManager == null)
             {
                 throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
-                throw new InvalidOperationException($"Either {nameof(this.leaseCollectionLocation)} or {nameof(this.LeaseManager)} must be specified");
+                throw new InvalidOperationException($"Either {nameof(this.leaseCollectionLocation)} or {nameof(this.LeaseStoreManager)} must be specified");
             }
 
             if (this.observerFactory == null)
@@ -361,8 +361,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
-            ILeaseManager leaseManager = await this.GetLeaseManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
-            IPartitionManager partitionManager = this.BuildPartitionManager(leaseManager);
+            ILeaseStoreManager leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
+            IPartitionManager partitionManager = this.BuildPartitionManager(leaseStoreManager);
             return new ChangeFeedProcessor(partitionManager);
         }
 
@@ -384,10 +384,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
-            var leaseManager = await this.GetLeaseManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
+            var leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
 
             IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(
-                leaseManager,
+                leaseStoreManager,
                 this.feedDocumentClient,
                 this.feedCollectionLocation.GetCollectionSelfLink(),
                 this.feedCollectionLocation.ConnectionPolicy.MaxConnectionLimit);
@@ -409,17 +409,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return documentCollection.ResourceId;
         }
 
-        private IPartitionManager BuildPartitionManager(ILeaseManager leaseManager)
+        private IPartitionManager BuildPartitionManager(ILeaseStoreManager leaseStoreManager)
         {
             this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
             string feedCollectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
             var factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedProcessorOptions.CheckpointFrequency);
-            var synchronizer = new PartitionSynchronizer(this.feedDocumentClient, feedCollectionSelfLink, leaseManager, this.changeFeedProcessorOptions.DegreeOfParallelism, this.changeFeedProcessorOptions.QueryPartitionsMaxBatchSize);
-            var bootstrapper = new Bootstrapper(synchronizer, leaseManager.LeaseStore, this.lockTime, this.sleepTime);
+            var synchronizer = new PartitionSynchronizer(
+                this.feedDocumentClient,
+                feedCollectionSelfLink,
+                leaseStoreManager,
+                leaseStoreManager,
+                this.changeFeedProcessorOptions.DegreeOfParallelism,
+                this.changeFeedProcessorOptions.QueryPartitionsMaxBatchSize);
+            var bootstrapper = new Bootstrapper(synchronizer, leaseStoreManager, this.lockTime, this.sleepTime);
             var partitionObserverFactory = new PartitionSupervisorFactory(
                 factory,
-                leaseManager,
-                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseManager, feedCollectionSelfLink),
+                leaseStoreManager,
+                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseStoreManager, feedCollectionSelfLink),
                 this.changeFeedProcessorOptions);
 
             if (this.loadBalancingStrategy == null)
@@ -431,7 +437,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     this.changeFeedProcessorOptions.LeaseExpirationInterval);
             }
 
-            IPartitionController partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
+            IPartitionController partitionController = new PartitionController(leaseStoreManager, leaseStoreManager, partitionObserverFactory, synchronizer);
 
             if (this.healthMonitor == null)
             {
@@ -441,15 +447,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             partitionController = new HealthMonitoringPartitionControllerDecorator(partitionController, this.healthMonitor);
             var partitionLoadBalancer = new PartitionLoadBalancer(
                 partitionController,
-                leaseManager,
+                leaseStoreManager,
                 this.loadBalancingStrategy,
                 this.changeFeedProcessorOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }
 
-        private async Task<ILeaseManager> GetLeaseManagerAsync(DocumentCollectionInfo collectionInfo, bool isPartitionKeyByIdRequiredIfPartitioned)
+        private async Task<ILeaseStoreManager> GetLeaseStoreManagerAsync(DocumentCollectionInfo collectionInfo, bool isPartitionKeyByIdRequiredIfPartitioned)
         {
-            if (this.LeaseManager == null)
+            if (this.LeaseStoreManager == null)
             {
                 this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
 
@@ -470,7 +476,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     (IRequestOptionsFactory)new SinglePartitionRequestOptionsFactory();
 
                 string leasePrefix = this.GetLeasePrefix();
-                var leaseManagerBuilder = new LeaseManagerBuilder()
+                var leaseStoreManagerBuilder = new LeaseManagerBuilder()
                     .WithLeasePrefix(leasePrefix)
                     .WithLeaseCollection(this.leaseCollectionLocation)
                     .WithLeaseCollectionLink(collection.SelfLink)
@@ -479,13 +485,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
                 if (this.leaseDocumentClient != null)
                 {
-                    leaseManagerBuilder = leaseManagerBuilder.WithLeaseDocumentClient(this.leaseDocumentClient);
+                    leaseStoreManagerBuilder = leaseStoreManagerBuilder.WithLeaseDocumentClient(this.leaseDocumentClient);
                 }
 
-                this.LeaseManager = await leaseManagerBuilder.BuildAsync().ConfigureAwait(false);
+                this.LeaseStoreManager = await leaseStoreManagerBuilder.BuildAsync().ConfigureAwait(false);
             }
 
-            return this.LeaseManager;
+            return this.LeaseStoreManager;
         }
 
         private string GetLeasePrefix()

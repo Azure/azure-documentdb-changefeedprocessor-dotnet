@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             IReadOnlyList<ILease> leases = new List<ILease>(0);
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>(),
                 collectionSelfLink,
                 1);
@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             IReadOnlyList<ILease> leases = new List<ILease> { Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100") };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponse("1", "100", "101", "1:106"),
                 collectionSelfLink,
@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100")
             };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponse("1", "100", null, "1:100"),
                 collectionSelfLink,
@@ -71,7 +71,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
             };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponse("1", "100", "101", "1:106")
                     .SetupQueryResponse("2", "200", "201", "2:201"),
@@ -90,7 +90,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
             };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponse("1", "100", "101", "1:103")
                     .SetupQueryResponseFailure("2", "200"),
@@ -109,7 +109,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
             };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponse("1", "100", "101", "1:103")
                     .SetupQueryResponseFailure("2", "200", new InvalidOperationException()),
@@ -126,7 +126,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100")
             };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponseFailure("1", "100"),
                 collectionSelfLink,
@@ -139,10 +139,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         public async Task EstimateTotal_ShouldPropagateExecption_IfUnknownExceptionHappened()
         {
             IReadOnlyList<ILease> leases = new List<ILease>(0);
-            var leaseManager = new Mock<ILeaseManager>();
-            leaseManager.Setup(m => m.ListAllLeasesAsync()).ThrowsAsync(new InvalidOperationException());
+            var leaseContainer = new Mock<ILeaseContainer>();
+            leaseContainer.Setup(m => m.GetAllLeasesAsync()).ThrowsAsync(new InvalidOperationException());
             var sut = new RemainingWorkEstimator(
-                leaseManager.Object,
+                leaseContainer.Object,
                 Mock.Of<IChangeFeedDocumentClient>(),
                 collectionSelfLink,
                 1);
@@ -154,7 +154,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         {
             IReadOnlyList<ILease> leases = new List<ILease> { Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100") };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponse("1", "100", "101", "1:106"),
                 collectionSelfLink,
@@ -174,7 +174,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
             };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponse("1", "100", "101", "1:103")
                     .SetupQueryResponseFailure("2", "200"),
@@ -194,7 +194,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100")
             };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponseFailure("1", "100"),
                 collectionSelfLink,
@@ -211,7 +211,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 Mock.Of<ILease>(l => l.PartitionId == "1" && l.ContinuationToken == "100")
             };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponse("1", "100", null, "1:100"),
                 collectionSelfLink,
@@ -231,7 +231,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 Mock.Of<ILease>(l => l.PartitionId == "2" && l.ContinuationToken == "200")
             };
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponse("1", "100", "101", "1:106")
                     .SetupQueryResponse("2", "200", "201", "2:201"),
@@ -257,7 +257,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             TaskCompletionSource<bool> cts2 = new TaskCompletionSource<bool>();
             TaskCompletionSource<bool> ctsAll = new TaskCompletionSource<bool>();
             var sut = new RemainingWorkEstimator(
-                Mock.Of<ILeaseManager>(m => m.ListAllLeasesAsync() == Task.FromResult(leases)),
+                Mock.Of<ILeaseContainer>(m => m.GetAllLeasesAsync() == Task.FromResult(leases)),
                 Mock.Of<IChangeFeedDocumentClient>()
                     .SetupQueryResponse("1", "100", "101", "1:106", async r =>
                     {

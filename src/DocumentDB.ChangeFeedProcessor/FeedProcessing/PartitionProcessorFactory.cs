@@ -13,19 +13,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     {
         private readonly IChangeFeedDocumentClient documentClient;
         private readonly ChangeFeedProcessorOptions changeFeedProcessorOptions;
-        private readonly ILeaseManager leaseManager;
+        private readonly ILeaseCheckpointer leaseCheckpointer;
         private readonly string collectionSelfLink;
 
-        public PartitionProcessorFactory(IChangeFeedDocumentClient documentClient, ChangeFeedProcessorOptions changeFeedProcessorOptions, ILeaseManager leaseManager, string collectionSelfLink)
+        public PartitionProcessorFactory(
+            IChangeFeedDocumentClient documentClient,
+            ChangeFeedProcessorOptions changeFeedProcessorOptions,
+            ILeaseCheckpointer leaseCheckpointer,
+            string collectionSelfLink)
         {
             if (documentClient == null) throw new ArgumentNullException(nameof(documentClient));
             if (changeFeedProcessorOptions == null) throw new ArgumentNullException(nameof(changeFeedProcessorOptions));
-            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
+            if (leaseCheckpointer == null) throw new ArgumentNullException(nameof(leaseCheckpointer));
             if (collectionSelfLink == null) throw new ArgumentNullException(nameof(collectionSelfLink));
 
             this.documentClient = documentClient;
             this.changeFeedProcessorOptions = changeFeedProcessorOptions;
-            this.leaseManager = leaseManager;
+            this.leaseCheckpointer = leaseCheckpointer;
             this.collectionSelfLink = collectionSelfLink;
         }
 
@@ -48,7 +52,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 SessionToken = this.changeFeedProcessorOptions.SessionToken,
             };
 
-            var checkpointer = new PartitionCheckpointer(this.leaseManager, lease);
+            var checkpointer = new PartitionCheckpointer(this.leaseCheckpointer, lease);
             return new PartitionProcessor(observer, this.documentClient, settings, checkpointer);
         }
     }

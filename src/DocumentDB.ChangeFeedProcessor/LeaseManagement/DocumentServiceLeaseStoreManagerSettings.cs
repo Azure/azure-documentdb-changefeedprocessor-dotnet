@@ -4,7 +4,7 @@
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 {
-    internal class LeaseManagerSettings
+    internal class DocumentServiceLeaseStoreManagerSettings
     {
         internal DocumentCollectionInfo LeaseCollectionInfo { get; set; }
 

@@ -125,21 +125,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         [Fact]
         public async Task UseCustomLoadBalancingStrategy()
         {
-            var leaseStore = Mock.Of<ILeaseStore>();
-            Mock.Get(leaseStore)
+            var leaseStoreManager = Mock.Of<ILeaseStoreManager>();
+            Mock.Get(leaseStoreManager)
                 .Setup(store => store.IsInitializedAsync())
                 .ReturnsAsync(true);
-
-            var leaseManager = Mock.Of<ILeaseManager>();
-            Mock.Get(leaseManager)
+            Mock.Get(leaseStoreManager)
                 .Setup(manager => manager.AcquireAsync(It.IsAny<ILease>()))
                 .ReturnsAsync(Mock.Of<ILease>());
-            Mock.Get(leaseManager)
+            Mock.Get(leaseStoreManager)
                 .Setup(manager => manager.ReleaseAsync(It.IsAny<ILease>()))
                 .Returns(Task.CompletedTask);
-            Mock.Get(leaseManager)
-                .SetupGet(manager => manager.LeaseStore)
-                .Returns(leaseStore);
 
             var strategy = Mock.Of<IParitionLoadBalancingStrategy>();
 
@@ -148,7 +143,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithFeedDocumentClient(this.CreateMockDocumentClient())
                 .WithLeaseDocumentClient(this.CreateMockDocumentClient())
                 .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>())
-                .WithLeaseManager(leaseManager);
+                .WithLeaseStoreManager(leaseStoreManager);
 
             var processor = await this.builder.BuildAsync();
             await processor.StartAsync();
@@ -209,7 +204,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>());
             await this.builder.BuildAsync();
 
-            await this.builder.LeaseManager.ListAllLeasesAsync();
+            await this.builder.LeaseStoreManager.GetAllLeasesAsync();
 
             Mock.Get(leaseClient)
                 .Verify(c => c.CreateDocumentQuery<Document>(
@@ -256,7 +251,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>());
             await this.builder.BuildAsync();
 
-            Exception exception = await Record.ExceptionAsync(() => this.builder.LeaseManager.ReleaseAsync(lease));
+            Exception exception = await Record.ExceptionAsync(() => this.builder.LeaseStoreManager.ReleaseAsync(lease));
             Assert.Equal(typeof(LeaseLostException), exception.GetType());
         }
 

@@ -23,14 +23,22 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly IChangeFeedDocumentClient documentClient;
         private readonly string collectionSelfLink;
+        private readonly ILeaseContainer leaseContainer;
         private readonly ILeaseManager leaseManager;
         private readonly int degreeOfParallelism;
         private readonly int maxBatchSize;
 
-        public PartitionSynchronizer(IChangeFeedDocumentClient documentClient, string collectionSelfLink, ILeaseManager leaseManager, int degreeOfParallelism, int maxBatchSize)
+        public PartitionSynchronizer(
+            IChangeFeedDocumentClient documentClient,
+            string collectionSelfLink,
+            ILeaseContainer leaseContainer,
+            ILeaseManager leaseManager,
+            int degreeOfParallelism,
+            int maxBatchSize)
         {
             this.documentClient = documentClient;
             this.collectionSelfLink = collectionSelfLink;
+            this.leaseContainer = leaseContainer;
             this.leaseManager = leaseManager;
             this.degreeOfParallelism = degreeOfParallelism;
             this.maxBatchSize = maxBatchSize;
@@ -116,7 +124,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         private async Task CreateLeasesAsync(HashSet<string> partitionIds)
         {
             // Get leases after getting ranges, to make sure that no other hosts checked in continuation for split partition after we got leases.
-            IEnumerable<ILease> leases = await this.leaseManager.ListAllLeasesAsync().ConfigureAwait(false);
+            IEnumerable<ILease> leases = await this.leaseContainer.GetAllLeasesAsync().ConfigureAwait(false);
             var existingPartitionIds = new HashSet<string>(leases.Select(lease => lease.PartitionId));
             var addedPartitionIds = new HashSet<string>(partitionIds);
             addedPartitionIds.ExceptWith(existingPartitionIds);

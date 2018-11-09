@@ -4,7 +4,6 @@
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 {
-    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
@@ -15,48 +14,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     public interface ILeaseManager
     {
         /// <summary>
-        /// Gets the instance of <see cref="ILeaseStore"/>.
-        /// </summary>
-        ILeaseStore LeaseStore { get; }
-
-        /// <summary>
-        /// Checks whether lease exists and creates if does not exist.
+        /// Checks whether the lease exists and creates it if it does not exist.
         /// </summary>
         /// <param name="partitionId">Partition to work on</param>
         /// <param name="continuationToken">Continuation token if it exists</param>
         Task<ILease> CreateLeaseIfNotExistAsync(string partitionId, string continuationToken);
 
         /// <summary>
-        /// Get all the leases.
+        /// Delete the lease.
         /// </summary>
-        /// <returns>Enumerable of all the leases</returns>
-        Task<IReadOnlyList<ILease>> ListAllLeasesAsync();
+        /// <param name="lease">Lease to remove</param>
+        Task DeleteAsync(ILease lease);
 
         /// <summary>
-        /// Get all the leases owned by the current host.
-        /// </summary>
-        /// <returns>Enumerable of all the leases owned by the current host</returns>
-        Task<IEnumerable<ILease>> ListOwnedLeasesAsync();
-
-        /// <summary>
-        /// Renew the lease.
-        /// </summary>
-        /// <param name="lease">Lease to renew</param>
-        /// <returns>Updated renewed lease</returns>
-        /// <exception cref="LeaseLostException">Thrown if other host acquired the lease or lease was deleted</exception>
-        Task<ILease> RenewAsync(ILease lease);
-
-        /// <summary>
-        /// Update the lease.
-        /// </summary>
-        /// <param name="lease">Lease to renew</param>
-        /// <param name="continuationToken">Continuation token</param>
-        /// <returns>Updated renewed lease</returns>
-        /// <exception cref="LeaseLostException">Thrown if other host acquired the lease or lease was deleted</exception>
-        Task<ILease> CheckpointAsync(ILease lease, string continuationToken);
-
-        /// <summary>
-        /// Acquire lease.
+        /// Acquire ownership of the lease.
         /// </summary>
         /// <param name="lease">Lease to acquire</param>
         /// <returns>Updated acquired lease</returns>
@@ -64,17 +35,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         Task<ILease> AcquireAsync(ILease lease);
 
         /// <summary>
-        /// Release lease.
+        /// Release ownership of the lease.
         /// </summary>
         /// <param name="lease">Lease to acquire</param>
         /// <exception cref="LeaseLostException">Thrown if other host acquired the lease or lease was deleted</exception>
         Task ReleaseAsync(ILease lease);
 
         /// <summary>
-        /// Delete lease.
+        /// Renew the lease. Leases are periodically renewed to prevent expiration.
         /// </summary>
-        /// <param name="lease">Lease to remove</param>
-        Task DeleteAsync(ILease lease);
+        /// <param name="lease">Lease to renew</param>
+        /// <returns>Updated renewed lease</returns>
+        /// <exception cref="LeaseLostException">Thrown if other host acquired the lease or lease was deleted</exception>
+        Task<ILease> RenewAsync(ILease lease);
 
         /// <summary>
         /// Replace properties from the specified lease.

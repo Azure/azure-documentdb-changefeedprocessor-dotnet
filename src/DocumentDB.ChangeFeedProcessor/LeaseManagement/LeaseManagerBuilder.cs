@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     /// </summary>
     internal class LeaseManagerBuilder
     {
-        private LeaseManagerSettings settings = new LeaseManagerSettings();
+        private DocumentServiceLeaseStoreManagerSettings settings = new DocumentServiceLeaseStoreManagerSettings();
         private IChangeFeedDocumentClient client;
         private IRequestOptionsFactory requestOptionsFactory;
 
@@ -67,7 +67,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             return this;
         }
 
-        public Task<ILeaseManager> BuildAsync()
+        public Task<ILeaseStoreManager> BuildAsync()
         {
             if (this.settings.LeaseCollectionInfo == null)
                 throw new InvalidOperationException(nameof(this.settings.LeaseCollectionInfo) + " was not specified");
@@ -78,8 +78,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 
             this.client = this.client ?? this.settings.LeaseCollectionInfo.CreateDocumentClient();
 
-            var leaseManager = new DocumentServiceLeaseManager(this.settings, this.client, this.requestOptionsFactory);
-            return Task.FromResult<ILeaseManager>(leaseManager);
+            var leaseStoreManager = new DocumentServiceLeaseManager(this.settings, this.client, this.requestOptionsFactory);
+            return Task.FromResult<ILeaseStoreManager>(leaseStoreManager);
         }
     }
 }

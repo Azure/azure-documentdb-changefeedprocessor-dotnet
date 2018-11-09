@@ -39,17 +39,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             leaseManager = Mock.Of<ILeaseManager>();
             Mock.Get(leaseManager).Reset(); // Reset implicit/by default setup of properties.
-
             Mock.Get(leaseManager)
                 .Setup(manager => manager.AcquireAsync(lease))
                 .ReturnsAsync(lease);
-
             Mock.Get(leaseManager)
                 .Setup(manager => manager.ReleaseAsync(lease))
                 .Returns(Task.CompletedTask);
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
             synchronizer = Mock.Of<IPartitionSynchronizer>();
-            sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            sut = new PartitionController(leaseContainer, leaseManager, partitionSupervisorFactory, synchronizer);
         }
 
         [Fact]
