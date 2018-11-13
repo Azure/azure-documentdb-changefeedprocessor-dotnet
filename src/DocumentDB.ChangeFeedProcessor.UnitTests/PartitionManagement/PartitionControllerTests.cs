@@ -8,6 +8,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Moq;
     using Xunit;
@@ -37,16 +38,17 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == new PartitionSupervisor(lease, observer, partitionProcessor, leaseRenewer));
 
             leaseManager = Mock.Of<ILeaseManager>();
+            Mock.Get(leaseManager).Reset(); // Reset implicit/by default setup of properties.
             Mock.Get(leaseManager)
                 .Setup(manager => manager.AcquireAsync(lease))
                 .ReturnsAsync(lease);
-
             Mock.Get(leaseManager)
                 .Setup(manager => manager.ReleaseAsync(lease))
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
             synchronizer = Mock.Of<IPartitionSynchronizer>();
-            sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            sut = new PartitionController(leaseContainer, leaseManager, partitionSupervisorFactory, synchronizer);
         }
 
         [Fact]
@@ -120,7 +122,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(leaseManager)
                 .Setup(manager => manager.ReleaseAsync(lease))
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
 
             Exception actualException = await Record.ExceptionAsync(() => sut.AddOrUpdateLeaseAsync(lease)).ConfigureAwait(false);
             Assert.IsType<NullReferenceException>(actualException);
@@ -215,7 +217,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(leaseManager)
                 .Setup(manager => manager.ReleaseAsync(lease))
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
 
             Exception actualException = await Record.ExceptionAsync(() => sut.AddOrUpdateLeaseAsync(lease)).ConfigureAwait(false);
             Assert.IsType<NullReferenceException>(actualException);
@@ -236,7 +238,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(leaseManager)
                 .Setup(manager => manager.ReleaseAsync(lease))
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
 
             Exception actualException = await Record.ExceptionAsync(() => sut.AddOrUpdateLeaseAsync(lease)).ConfigureAwait(false);
             Assert.IsType<NullReferenceException>(actualException);
@@ -260,7 +262,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             Mock.Get(leaseManager)
                 .Setup(manager => manager.ReleaseAsync(lease))
-                .Returns(Task.FromResult(false));
+                .Returns(Task.CompletedTask);
 
             Exception actualException = await Record.ExceptionAsync(() => sut.AddOrUpdateLeaseAsync(lease)).ConfigureAwait(false);
             Assert.IsType<NullReferenceException>(actualException);

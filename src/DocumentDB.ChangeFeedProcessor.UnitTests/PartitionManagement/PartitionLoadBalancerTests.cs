@@ -7,6 +7,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Moq;
     using Xunit;
@@ -14,7 +15,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     [Trait("Category", "Gated")]
     public class PartitionLoadBalancerTests
     {
-        private readonly ILeaseManager leaseManager = Mock.Of<ILeaseManager>();
+        private readonly ILeaseContainer leaseContainer = Mock.Of<ILeaseContainer>();
         private readonly IParitionLoadBalancingStrategy strategy = Mock.Of<IParitionLoadBalancingStrategy>();
 
         [Fact]
@@ -24,14 +25,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             // long acquire interval to ensure that only 1 load balancing iteration is performed in a test run
             var leaseAcquireInterval = TimeSpan.FromHours(1);
-            var loadBalancer = new PartitionLoadBalancer(controller, this.leaseManager, this.strategy, leaseAcquireInterval);
+            var loadBalancer = new PartitionLoadBalancer(controller, this.leaseContainer, this.strategy, leaseAcquireInterval);
 
             Mock.Get(this.strategy)
                 .Setup(s => s.SelectLeasesToTake(It.IsAny<IEnumerable<ILease>>()))
                 .Returns(new[] { Mock.Of<ILease>(), Mock.Of<ILease>() });
 
-            Mock.Get(this.leaseManager)
-                .Setup(m => m.ListAllLeasesAsync())
+            Mock.Get(this.leaseContainer)
+                .Setup(m => m.GetAllLeasesAsync())
                 .ReturnsAsync(new[] { Mock.Of<ILease>(), Mock.Of<ILease>() });
 
             loadBalancer.Start();
@@ -40,8 +41,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             Mock.Get(this.strategy)
                 .Verify(s => s.SelectLeasesToTake(It.IsAny<IEnumerable<ILease>>()), Times.Once);
 
-            Mock.Get(this.leaseManager)
-                .Verify(m => m.ListAllLeasesAsync(), Times.Once);
+            Mock.Get(this.leaseContainer)
+                .Verify(m => m.GetAllLeasesAsync(), Times.Once);
 
             Assert.Equal(2, controller.HitCount);
         }

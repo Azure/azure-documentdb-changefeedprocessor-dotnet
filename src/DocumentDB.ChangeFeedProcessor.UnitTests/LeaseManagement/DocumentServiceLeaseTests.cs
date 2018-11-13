@@ -1,13 +1,13 @@
 ﻿//----------------------------------------------------------------
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagement
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Runtime.Serialization.Formatters.Binary;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Xunit;
 
     [Trait("Category", "Gated")]

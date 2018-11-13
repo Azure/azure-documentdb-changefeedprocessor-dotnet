@@ -11,6 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
 
@@ -20,13 +21,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> currentlyOwnedPartitions = new ConcurrentDictionary<string, TaskCompletionSource<bool>>();
 
+        private readonly ILeaseContainer leaseContainer;
         private readonly ILeaseManager leaseManager;
         private readonly IPartitionSupervisorFactory partitionSupervisorFactory;
         private readonly IPartitionSynchronizer synchronizer;
         private readonly CancellationTokenSource shutdownCts = new CancellationTokenSource();
 
-        public PartitionController(ILeaseManager leaseManager, IPartitionSupervisorFactory partitionSupervisorFactory, IPartitionSynchronizer synchronizer)
+        public PartitionController(
+            ILeaseContainer leaseContainer,
+            ILeaseManager leaseManager,
+            IPartitionSupervisorFactory partitionSupervisorFactory,
+            IPartitionSynchronizer synchronizer)
         {
+            this.leaseContainer = leaseContainer;
             this.leaseManager = leaseManager;
             this.partitionSupervisorFactory = partitionSupervisorFactory;
             this.synchronizer = synchronizer;
@@ -75,7 +82,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             Logger.Debug("Starting renew leases assigned to this host on initialize.");
             var addLeaseTasks = new List<Task>();
-            foreach (ILease lease in await this.leaseManager.ListOwnedLeasesAsync().ConfigureAwait(false))
+            foreach (ILease lease in await this.leaseContainer.GetOwnedLeasesAsync().ConfigureAwait(false))
             {
                 Logger.InfoFormat("Acquired lease for PartitionId '{0}' on startup.", lease.PartitionId);
                 addLeaseTasks.Add(this.AddOrUpdateLeaseAsync(lease));

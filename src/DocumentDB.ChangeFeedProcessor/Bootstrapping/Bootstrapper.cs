@@ -6,6 +6,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 {
     using System;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
@@ -37,17 +38,29 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
                 bool initialized = await this.leaseStore.IsInitializedAsync().ConfigureAwait(false);
                 if (initialized) break;
 
-                bool shouldInitialize = await this.leaseStore.LockInitializationAsync(this.lockTime).ConfigureAwait(false);
-                if (!shouldInitialize)
+                bool isLockAcquired = await this.leaseStore.AcquireInitializationLockAsync(this.lockTime).ConfigureAwait(false);
+
+                try
                 {
-                    Logger.InfoFormat("Another instance is initializing the store");
-                    await Task.Delay(this.sleepTime).ConfigureAwait(false);
-                    continue;
+                    if (!isLockAcquired)
+                    {
+                        Logger.InfoFormat("Another instance is initializing the store");
+                        await Task.Delay(this.sleepTime).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    Logger.InfoFormat("Initializing the store");
+                    await this.synchronizer.CreateMissingLeasesAsync().ConfigureAwait(false);
+                    await this.leaseStore.MarkInitializedAsync().ConfigureAwait(false);
+                }
+                finally
+                {
+                    if (isLockAcquired)
+                    {
+                        await this.leaseStore.ReleaseInitializationLockAsync().ConfigureAwait(false);
+                    }
                 }
 
-                Logger.InfoFormat("Initializing the store");
-                await this.synchronizer.CreateMissingLeasesAsync().ConfigureAwait(false);
-                await this.leaseStore.MarkInitializedAsync().ConfigureAwait(false);
                 break;
             }
 

@@ -9,9 +9,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
-    using System.Net;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.Client;
 
@@ -22,18 +22,22 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private const string LSNPropertyName = "_lsn";
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly IChangeFeedDocumentClient feedDocumentClient;
-        private readonly ILeaseManager leaseManager;
+        private readonly ILeaseContainer leaseContainer;
         private readonly string collectionSelfLink;
         private readonly int degreeOfParallelism;
 
-        public RemainingWorkEstimator(ILeaseManager leaseManager, IChangeFeedDocumentClient feedDocumentClient, string collectionSelfLink, int degreeOfParallelism)
+        public RemainingWorkEstimator(
+            ILeaseContainer leaseContainer,
+            IChangeFeedDocumentClient feedDocumentClient,
+            string collectionSelfLink,
+            int degreeOfParallelism)
         {
-            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
+            if (leaseContainer == null) throw new ArgumentNullException(nameof(leaseContainer));
             if (string.IsNullOrEmpty(collectionSelfLink)) throw new ArgumentNullException(nameof(collectionSelfLink));
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
             if (degreeOfParallelism < 1) throw new ArgumentException("Degree of parallelism is out of range", nameof(degreeOfParallelism));
 
-            this.leaseManager = leaseManager;
+            this.leaseContainer = leaseContainer;
             this.collectionSelfLink = collectionSelfLink;
             this.feedDocumentClient = feedDocumentClient;
             this.degreeOfParallelism = degreeOfParallelism;
@@ -49,7 +53,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
         public async Task<IReadOnlyList<RemainingPartitionWork>> GetEstimatedRemainingWorkPerPartitionAsync()
         {
-            IReadOnlyList<ILease> leases = await this.leaseManager.ListAllLeasesAsync().ConfigureAwait(false);
+            IReadOnlyList<ILease> leases = await this.leaseContainer.GetAllLeasesAsync().ConfigureAwait(false);
             if (leases == null || leases.Count == 0)
             {
                 return new List<RemainingPartitionWork>().AsReadOnly();

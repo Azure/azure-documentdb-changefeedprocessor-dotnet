@@ -4,6 +4,7 @@
     using AutoFixture;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
     using Moq;
@@ -39,7 +40,7 @@
 
             this.fixture.Register(() => new PartitionKey(this.fixture.Create<string>()));
 
-            var leaseManager = Mock.Of<ILeaseManager>();
+            var leaseCheckpointer = Mock.Of<ILeaseCheckpointer>();
             var lease = Mock.Of<ILease>();
 
             Mock.Get(lease)
@@ -49,7 +50,7 @@
                 .Setup(l => l.ContinuationToken)
                 .Returns(leaseContinuationToken);
 
-            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, leaseManager, this.collectionSelfLink);
+            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, leaseCheckpointer, this.collectionSelfLink);
             var processor = sut.Create(lease, this.observer);
 
             Mock.Get(this.docClient)

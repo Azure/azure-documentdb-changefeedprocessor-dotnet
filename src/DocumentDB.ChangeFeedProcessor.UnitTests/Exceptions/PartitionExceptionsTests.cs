@@ -70,7 +70,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
             Mock.Get(observer)
                 .Setup(feedObserver => feedObserver
                     .ProcessChangesAsync(It.IsAny<ChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(false))
+                .Returns(Task.CompletedTask)
                 .Callback(cancellationTokenSource.Cancel);
 
             var checkPointer = new Mock<IPartitionCheckpointer>();

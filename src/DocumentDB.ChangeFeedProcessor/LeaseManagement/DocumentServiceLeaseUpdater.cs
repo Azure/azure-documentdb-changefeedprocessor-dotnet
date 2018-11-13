@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft Corporation.  Licensed under the MIT license.
 //----------------------------------------------------------------
 
-namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
+namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 {
     using System;
     using System.Net;
@@ -11,6 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
 
     internal class DocumentServiceLeaseUpdater : IDocumentServiceLeaseUpdater
@@ -25,7 +26,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             this.client = client;
         }
 
-        public async Task<ILease> UpdateLeaseAsync(ILease cachedLease, Uri documentUri, Func<ILease, ILease> updateLease)
+        // Note: requestOptions are only used for read and not for update.
+        public async Task<ILease> UpdateLeaseAsync(ILease cachedLease, Uri documentUri, RequestOptions requestOptions, Func<ILease, ILease> updateLease)
         {
             ILease lease = cachedLease;
             for (int retryCount = RetryCountOnConflict; retryCount >= 0; retryCount--)
@@ -47,7 +49,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 Document document;
                 try
                 {
-                    IResourceResponse<Document> response = await this.client.ReadDocumentAsync(documentUri).ConfigureAwait(false);
+                    IResourceResponse<Document> response = await this.client.ReadDocumentAsync(
+                        documentUri, requestOptions).ConfigureAwait(false);
                     document = response.Resource;
                 }
                 catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.NotFound)

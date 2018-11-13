@@ -8,27 +8,31 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 
     internal class PartitionLoadBalancer : IPartitionLoadBalancer
     {
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly IPartitionController partitionController;
-        private readonly ILeaseManager leaseManager;
+        private readonly ILeaseContainer leaseContainer;
         private readonly IParitionLoadBalancingStrategy partitionLoadBalancingStrategy;
         private readonly TimeSpan leaseAcquireInterval;
         private readonly CancellationTokenSource cancellationTokenSource;
         private Task runTask;
 
-        public PartitionLoadBalancer(IPartitionController partitionController, ILeaseManager leaseManager, IParitionLoadBalancingStrategy partitionLoadBalancingStrategy, TimeSpan leaseAcquireInterval)
+        public PartitionLoadBalancer(
+            IPartitionController partitionController,
+            ILeaseContainer leaseContainer,
+            IParitionLoadBalancingStrategy partitionLoadBalancingStrategy,
+            TimeSpan leaseAcquireInterval)
         {
             if (partitionController == null) throw new ArgumentNullException(nameof(partitionController));
-            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
+            if (leaseContainer == null) throw new ArgumentNullException(nameof(leaseContainer));
             if (partitionLoadBalancingStrategy == null) throw new ArgumentNullException(nameof(partitionLoadBalancingStrategy));
 
             this.partitionController = partitionController;
-            this.leaseManager = leaseManager;
+            this.leaseContainer = leaseContainer;
             this.partitionLoadBalancingStrategy = partitionLoadBalancingStrategy;
             this.leaseAcquireInterval = leaseAcquireInterval;
             this.cancellationTokenSource = new CancellationTokenSource();
@@ -63,7 +67,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 {
                     try
                     {
-                        IEnumerable<ILease> allLeases = await this.leaseManager.ListAllLeasesAsync().ConfigureAwait(false);
+                        IEnumerable<ILease> allLeases = await this.leaseContainer.GetAllLeasesAsync().ConfigureAwait(false);
                         IEnumerable<ILease> leasesToTake = this.partitionLoadBalancingStrategy.SelectLeasesToTake(allLeases);
 
                         foreach (ILease lease in leasesToTake)

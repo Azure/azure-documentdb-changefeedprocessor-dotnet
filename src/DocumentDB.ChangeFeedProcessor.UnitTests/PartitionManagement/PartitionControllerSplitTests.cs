@@ -9,7 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Moq;
     using Xunit;
@@ -34,8 +34,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
             var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
             var leaseManager = Mock.Of<ILeaseManager>(manager => manager.AcquireAsync(lease) == Task.FromResult(lease));
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
-            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            var sut = new PartitionController(leaseContainer, leaseManager, partitionSupervisorFactory, synchronizer);
 
             //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -59,8 +60,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
             var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
             var leaseManager = Mock.Of<ILeaseManager>(manager => manager.AcquireAsync(lease) == Task.FromResult(lease));
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
-            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            var sut = new PartitionController(leaseContainer, leaseManager, partitionSupervisorFactory, synchronizer);
 
             //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -87,8 +89,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
             var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
             var leaseManager = Mock.Of<ILeaseManager>(manager => manager.AcquireAsync(lease) == Task.FromResult(lease));
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
-            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            var sut = new PartitionController(leaseContainer, leaseManager, partitionSupervisorFactory, synchronizer);
 
             //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -109,8 +112,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var partitionSupervisor = Mock.Of<IPartitionSupervisor>(o => o.RunAsync(It.IsAny<CancellationToken>()) == Task.FromException(new PartitionSplitException("message", LastContinuationToken)));
             var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => f.Create(lease) == partitionSupervisor);
             var leaseManager = Mock.Of<ILeaseManager>();
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
-            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            var sut = new PartitionController(leaseContainer, leaseManager, partitionSupervisorFactory, synchronizer);
 
             //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -142,8 +146,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f =>
                 f.Create(lease) == partitionSupervisor && f.Create(leaseChild1) == partitionSupervisor1 && f.Create(leaseChild2) == partitionSupervisor2);
             var leaseManager = Mock.Of<ILeaseManager>(manager => manager.AcquireAsync(lease) == Task.FromResult(lease));
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
-            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            var sut = new PartitionController(leaseContainer, leaseManager, partitionSupervisorFactory, synchronizer);
 
             //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -182,8 +187,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var partitionSupervisorFactory = Mock.Of<IPartitionSupervisorFactory>(f => 
                 f.Create(lease) == partitionSupervisor && f.Create(leaseChild1) == partitionSupervisor1 && f.Create(leaseChild2) == partitionSupervisor2);
             var leaseManager = Mock.Of<ILeaseManager>(manager => manager.AcquireAsync(lease) == Task.FromResult(lease));
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
-            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            var sut = new PartitionController(leaseContainer, leaseManager, partitionSupervisorFactory, synchronizer);
 
             //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -221,8 +227,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var leaseManager = Mock.Of<ILeaseManager>(manager =>
                 manager.AcquireAsync(lease) == Task.FromResult(lease)
             );
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
-            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            var sut = new PartitionController(leaseContainer, leaseManager, partitionSupervisorFactory, synchronizer);
 
             //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);
@@ -250,8 +257,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 manager.AcquireAsync(lease) == Task.FromResult(lease) &&
                 manager.AcquireAsync(leaseChild2) == Task.FromException<ILease>(new LeaseLostException())
                 );
+            var leaseContainer = Mock.Of<ILeaseContainer>();
 
-            var sut = new PartitionController(leaseManager, partitionSupervisorFactory, synchronizer);
+            var sut = new PartitionController(leaseContainer, leaseManager, partitionSupervisorFactory, synchronizer);
 
             //act
             await sut.AddOrUpdateLeaseAsync(lease).ConfigureAwait(false);

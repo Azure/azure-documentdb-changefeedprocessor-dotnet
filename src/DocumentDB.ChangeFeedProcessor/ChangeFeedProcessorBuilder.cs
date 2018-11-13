@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
@@ -119,7 +120,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private string collectionResourceId;
         private DocumentCollectionInfo leaseCollectionLocation;
         private IChangeFeedDocumentClient leaseDocumentClient;
-        private ILeaseManager leaseManager;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
         private IPartitionProcessorFactory partitionProcessorFactory;
         private IHealthMonitor healthMonitor;
@@ -127,6 +127,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         internal string HostName
         {
             get; private set;
+        }
+
+        /// <summary>
+        /// Gets the lease manager.
+        /// </summary>
+        /// <remarks>
+        /// Internal for testing only, otherwise it would be private.
+        /// </remarks>
+        internal ILeaseStoreManager LeaseStoreManager
+        {
+            get;
+            private set;
         }
 
         /// <summary>
@@ -297,14 +309,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Sets the <see cref="ILeaseManager"/> to be used to manage leases.
+        /// Sets the <see cref="ILeaseStoreManager"/> to be used to manage leases.
         /// </summary>
-        /// <param name="leaseManager">The instance of <see cref="ILeaseManager"/> to use.</param>
+        /// <param name="leaseStoreManager">The instance of <see cref="ILeaseStoreManager"/> to use.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithLeaseManager(ILeaseManager leaseManager)
+        public ChangeFeedProcessorBuilder WithLeaseStoreManager(ILeaseStoreManager leaseStoreManager)
         {
-            if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
-            this.leaseManager = leaseManager;
+            if (leaseStoreManager == null) throw new ArgumentNullException(nameof(leaseStoreManager));
+            this.LeaseStoreManager = leaseStoreManager;
             return this;
         }
 
@@ -336,9 +348,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new InvalidOperationException(nameof(this.feedCollectionLocation) + " was not specified");
             }
 
-            if (this.leaseCollectionLocation == null)
+            if (this.leaseCollectionLocation == null && this.LeaseStoreManager == null)
             {
-                throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
+                throw new InvalidOperationException($"Either {nameof(this.leaseCollectionLocation)} or {nameof(this.LeaseStoreManager)} must be specified");
             }
 
             if (this.observerFactory == null)
@@ -348,9 +360,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
-            ILeaseManager leaseManager = await this.GetLeaseManagerAsync().ConfigureAwait(false);
-
-            IPartitionManager partitionManager = await this.BuildPartitionManagerAsync(leaseManager).ConfigureAwait(false);
+            ILeaseStoreManager leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
+            IPartitionManager partitionManager = this.BuildPartitionManager(leaseStoreManager);
             return new ChangeFeedProcessor(partitionManager);
         }
 
@@ -365,16 +376,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new InvalidOperationException(nameof(this.feedCollectionLocation) + " was not specified");
             }
 
-            if (this.leaseCollectionLocation == null)
+            if (this.leaseCollectionLocation == null && this.LeaseStoreManager == null)
             {
-                throw new InvalidOperationException(nameof(this.leaseCollectionLocation) + " was not specified");
+                throw new InvalidOperationException($"Either {nameof(this.leaseCollectionLocation)} or {nameof(this.LeaseStoreManager)} must be specified");
             }
 
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
-            ILeaseManager leaseManager = await this.GetLeaseManagerAsync().ConfigureAwait(false);
+            var leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
 
-            IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(leaseManager, this.feedDocumentClient, this.feedCollectionLocation.GetCollectionSelfLink(), this.feedCollectionLocation.ConnectionPolicy.MaxConnectionLimit);
+            IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(
+                leaseStoreManager,
+                this.feedDocumentClient,
+                this.feedCollectionLocation.GetCollectionSelfLink(),
+                this.feedCollectionLocation.ConnectionPolicy.MaxConnectionLimit);
             return remainingWorkEstimator;
         }
 
@@ -393,67 +408,98 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             return documentCollection.ResourceId;
         }
 
-        private async Task<IPartitionManager> BuildPartitionManagerAsync(ILeaseManager leaseManager)
+        private IPartitionManager BuildPartitionManager(ILeaseStoreManager leaseStoreManager)
         {
-            this.leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
-
-            DocumentCollection leaseCollection = await this.leaseDocumentClient.GetDocumentCollectionAsync(this.leaseCollectionLocation).ConfigureAwait(false);
-            string leaseStoreCollectionLink = leaseCollection.SelfLink;
-
-            string collectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
+            string feedCollectionSelfLink = this.feedCollectionLocation.GetCollectionSelfLink();
             var factory = new CheckpointerObserverFactory(this.observerFactory, this.changeFeedProcessorOptions.CheckpointFrequency);
-            var synchronizer = new PartitionSynchronizer(this.feedDocumentClient, collectionSelfLink, leaseManager, this.changeFeedProcessorOptions.DegreeOfParallelism, this.changeFeedProcessorOptions.QueryPartitionsMaxBatchSize);
-            var leaseStore = new LeaseStore(this.leaseDocumentClient, this.leaseCollectionLocation, this.GetLeasePrefix(), leaseStoreCollectionLink);
-            var bootstrapper = new Bootstrapper(synchronizer, leaseStore, this.lockTime, this.sleepTime);
+            var synchronizer = new PartitionSynchronizer(
+                this.feedDocumentClient,
+                feedCollectionSelfLink,
+                leaseStoreManager,
+                leaseStoreManager,
+                this.changeFeedProcessorOptions.DegreeOfParallelism,
+                this.changeFeedProcessorOptions.QueryPartitionsMaxBatchSize);
+            var bootstrapper = new Bootstrapper(synchronizer, leaseStoreManager, this.lockTime, this.sleepTime);
             var partitionObserverFactory = new PartitionSupervisorFactory(
                 factory,
-                leaseManager,
-                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseManager, collectionSelfLink),
+                leaseStoreManager,
+                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseStoreManager, feedCollectionSelfLink),
                 this.changeFeedProcessorOptions);
 
             if (this.loadBalancingStrategy == null)
             {
-                this.loadBalancingStrategy = new EqualPartitionsBalancingStrategy(this.HostName, this.changeFeedProcessorOptions.MinPartitionCount, this.changeFeedProcessorOptions.MaxPartitionCount, this.changeFeedProcessorOptions.LeaseExpirationInterval);
+                this.loadBalancingStrategy = new EqualPartitionsBalancingStrategy(
+                    this.HostName,
+                    this.changeFeedProcessorOptions.MinPartitionCount,
+                    this.changeFeedProcessorOptions.MaxPartitionCount,
+                    this.changeFeedProcessorOptions.LeaseExpirationInterval);
             }
 
-            IPartitionController partitionController = new PartitionController(leaseManager, partitionObserverFactory, synchronizer);
+            IPartitionController partitionController = new PartitionController(leaseStoreManager, leaseStoreManager, partitionObserverFactory, synchronizer);
 
             if (this.healthMonitor == null)
             {
                 this.healthMonitor = new TraceHealthMonitor();
             }
 
-            long unhealtinessDuration = Math.Max(15 * this.changeFeedProcessorOptions.LeaseExpirationInterval.Ticks, DefaultUnhealthinessDuration);
             partitionController = new HealthMonitoringPartitionControllerDecorator(partitionController, this.healthMonitor);
-            var partitionLoadBalancer = new PartitionLoadBalancer(partitionController, leaseManager, this.loadBalancingStrategy, this.changeFeedProcessorOptions.LeaseAcquireInterval);
+            var partitionLoadBalancer = new PartitionLoadBalancer(
+                partitionController,
+                leaseStoreManager,
+                this.loadBalancingStrategy,
+                this.changeFeedProcessorOptions.LeaseAcquireInterval);
             return new PartitionManager(bootstrapper, partitionController, partitionLoadBalancer);
         }
 
-        private async Task<ILeaseManager> GetLeaseManagerAsync()
+        private async Task<ILeaseStoreManager> GetLeaseStoreManagerAsync(
+            DocumentCollectionInfo collectionInfo,
+            bool isPartitionKeyByIdRequiredIfPartitioned)
         {
-            if (this.leaseManager == null)
+            if (this.LeaseStoreManager == null)
             {
-                string leasePrefix = this.GetLeasePrefix();
-                var leaseManagerBuilder = new LeaseManagerBuilder()
-                    .WithLeasePrefix(leasePrefix)
-                    .WithLeaseCollection(this.leaseCollectionLocation)
-                    .WithHostName(this.HostName);
+                var leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
+                var collection = await this.leaseDocumentClient.GetDocumentCollectionAsync(collectionInfo).ConfigureAwait(false);
 
-                if (this.leaseDocumentClient != null)
+                bool isPartitioned =
+                    collection.PartitionKey != null &&
+                    collection.PartitionKey.Paths != null &&
+                    collection.PartitionKey.Paths.Count > 0;
+                if (isPartitioned && isPartitionKeyByIdRequiredIfPartitioned &&
+                    (collection.PartitionKey.Paths.Count != 1 || collection.PartitionKey.Paths[0] != "/id"))
                 {
-                    leaseManagerBuilder = leaseManagerBuilder.WithLeaseDocumentClient(this.leaseDocumentClient);
+                    throw new ArgumentException("The lease collection, if partitioned, must have partition key equal to id.");
                 }
 
-                this.leaseManager = await leaseManagerBuilder.BuildAsync().ConfigureAwait(false);
+                var requestOptionsFactory = isPartitioned ?
+                    (IRequestOptionsFactory)new PartitionedByIdCollectionRequestOptionsFactory() :
+                    (IRequestOptionsFactory)new SinglePartitionRequestOptionsFactory();
+
+                string leasePrefix = this.GetLeasePrefix();
+                var leaseStoreManagerBuilder = new DocumentServiceLeaseStoreManagerBuilder()
+                    .WithLeasePrefix(leasePrefix)
+                    .WithLeaseCollection(this.leaseCollectionLocation)
+                    .WithLeaseCollectionLink(collection.SelfLink)
+                    .WithRequestOptionsFactory(requestOptionsFactory)
+                    .WithHostName(this.HostName);
+
+                leaseStoreManagerBuilder = leaseStoreManagerBuilder.WithLeaseDocumentClient(leaseDocumentClient);
+
+                this.LeaseStoreManager = await leaseStoreManagerBuilder.BuildAsync().ConfigureAwait(false);
             }
 
-            return this.leaseManager;
+            return this.LeaseStoreManager;
         }
 
         private string GetLeasePrefix()
         {
             string optionsPrefix = this.changeFeedProcessorOptions.LeasePrefix ?? string.Empty;
-            return string.Format(CultureInfo.InvariantCulture, "{0}{1}_{2}_{3}", optionsPrefix, this.feedCollectionLocation.Uri.Host, this.databaseResourceId, this.collectionResourceId);
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}{1}_{2}_{3}",
+                optionsPrefix,
+                this.feedCollectionLocation.Uri.Host,
+                this.databaseResourceId,
+                this.collectionResourceId);
         }
 
         private async Task InitializeCollectionPropertiesForBuildAsync()
