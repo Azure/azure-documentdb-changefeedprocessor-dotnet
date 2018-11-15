@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 FeedPollDelay = TimeSpan.FromMilliseconds(16),
                 MaxItemCount = 5,
                 PartitionKeyRangeId = "keyRangeId",
-                RequestContinuation = "initialToken"
+                StartContinuation = "initialToken"
             };
 
             var document = new Document();
@@ -103,7 +103,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                         It.Is<string>(s => s == processorSettings.CollectionSelfLink),
                         It.Is<ChangeFeedOptions>(options =>
                             options.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId &&
-                            options.RequestContinuation == processorSettings.RequestContinuation)),
+                            options.RequestContinuation == processorSettings.StartContinuation)),
                     Times.Once);
         }
 

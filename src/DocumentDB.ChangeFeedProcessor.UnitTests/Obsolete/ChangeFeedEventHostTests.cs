@@ -40,7 +40,7 @@
             Assert.Equal(1, processorOptions.MaxItemCount);
             Assert.True(processorOptions.StartFromBeginning);
             Assert.Equal(startTime, processorOptions.StartTime);
-            Assert.Equal("RequestContinuation", processorOptions.RequestContinuation);
+            Assert.Equal("RequestContinuation", processorOptions.StartContinuation);
             Assert.Equal("SessionToken", processorOptions.SessionToken);
             Assert.Equal(TimeSpan.FromSeconds(2), processorOptions.LeaseRenewInterval);
             Assert.Equal(TimeSpan.FromSeconds(3), processorOptions.LeaseAcquireInterval);

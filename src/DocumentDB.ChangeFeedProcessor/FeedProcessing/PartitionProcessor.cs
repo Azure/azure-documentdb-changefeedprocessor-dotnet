@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 PartitionKeyRangeId = settings.PartitionKeyRangeId,
                 SessionToken = settings.SessionToken,
                 StartFromBeginning = settings.StartFromBeginning,
-                RequestContinuation = settings.RequestContinuation,
+                RequestContinuation = settings.StartContinuation,
                 StartTime = settings.StartTime,
             };
 
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
-            string lastContinuation = this.settings.RequestContinuation;
+            string lastContinuation = this.settings.StartContinuation;
 
             while (!cancellationToken.IsCancellationRequested)
             {

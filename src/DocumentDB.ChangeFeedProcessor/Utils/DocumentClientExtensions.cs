@@ -43,10 +43,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
                 return response.Resource;
             }
             catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
-                {
+            {
                 return null;    // Ignore -- document already exists.
-                }
             }
+        }
 
         public static async Task<Document> TryDeleteDocumentAsync(
             this IChangeFeedDocumentClient client,

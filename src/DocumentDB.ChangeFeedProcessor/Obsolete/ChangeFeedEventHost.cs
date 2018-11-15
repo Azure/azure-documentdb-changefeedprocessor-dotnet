@@ -241,7 +241,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 MaxItemCount = feedOptions.MaxItemCount,
                 StartFromBeginning = feedOptions.StartFromBeginning,
                 StartTime = feedOptions.StartTime,
-                RequestContinuation = feedOptions.RequestContinuation,
+                StartContinuation = feedOptions.RequestContinuation,
                 SessionToken = feedOptions.SessionToken,
 
                 LeaseRenewInterval = hostOptions.LeaseRenewInterval,
