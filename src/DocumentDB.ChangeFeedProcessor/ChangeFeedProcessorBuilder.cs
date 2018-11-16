@@ -458,7 +458,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             if (this.LeaseStoreManager == null)
             {
                 var leaseDocumentClient = this.leaseDocumentClient ?? this.leaseCollectionLocation.CreateDocumentClient();
-                var collection = await this.leaseDocumentClient.GetDocumentCollectionAsync(collectionInfo).ConfigureAwait(false);
+                var collection = await leaseDocumentClient.GetDocumentCollectionAsync(collectionInfo).ConfigureAwait(false);
 
                 bool isPartitioned =
                     collection.PartitionKey != null &&

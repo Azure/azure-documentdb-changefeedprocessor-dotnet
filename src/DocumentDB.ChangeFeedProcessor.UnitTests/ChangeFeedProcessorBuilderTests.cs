@@ -232,7 +232,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
 
         [Fact]
-        public async Task Build_PassesEnableCrossPartitionQuery_WhenLeaseCollectionIsPartitionedById()
+        public async Task BuildPassesEnableCrossPartitionQuery_WhenLeaseCollectionIsPartitionedById()
         {
             var leaseCollection = MockHelpers.CreateCollection(
                 "collectionId",
@@ -263,7 +263,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
 
         [Fact]
-        public async Task Build_PassesPartitionKey_WhenLeaseCollectionIsPartitionedById()
+        public async Task BuildPassesPartitionKey_WhenLeaseCollectionIsPartitionedById()
         {
             var leaseCollection = MockHelpers.CreateCollection(
                 "collectionId",
