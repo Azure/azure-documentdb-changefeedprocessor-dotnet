@@ -14,9 +14,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 
         public int? MaxItemCount { get; set; }
 
-        public string RequestContinuation { get; set; }
-
         public TimeSpan FeedPollDelay { get; set; }
+
+        public string StartContinuation { get; set; }
 
         public bool StartFromBeginning { get; set; }
 

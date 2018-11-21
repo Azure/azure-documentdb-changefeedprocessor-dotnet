@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 MaxItemCount = 5,
                 FeedPollDelay = TimeSpan.FromMilliseconds(16),
                 PartitionKeyRangeId = "keyRangeId",
-                RequestContinuation = "initialToken"
+                StartContinuation = "initialToken"
             };
 
             var document = new Document();

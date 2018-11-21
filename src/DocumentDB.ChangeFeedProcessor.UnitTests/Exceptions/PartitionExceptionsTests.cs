@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
                 FeedPollDelay = TimeSpan.FromMilliseconds(16),
                 MaxItemCount = 5,
                 PartitionKeyRangeId = "keyRangeId",
-                RequestContinuation = "initialToken"
+                StartContinuation = "initialToken"
             };
 
             var document = new Document();

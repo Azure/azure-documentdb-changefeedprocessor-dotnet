@@ -5,6 +5,7 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
+    using Microsoft.Azure.Documents.Client;
 
     /// <summary>
     /// Options to control various aspects of partition distribution happening within <see cref="ChangeFeedProcessor"/> instance.
@@ -67,14 +68,25 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public int? MaxItemCount { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether change feed in the Azure Cosmos DB service should start from beginning (true) or from current (false).
-        /// By default it's start from current (false).
+        /// Gets or sets the start request continuation token to start looking for changes after.
         /// </summary>
-        public bool StartFromBeginning { get; set; }
+        /// <remarks>
+        /// This is only used when lease store is not initialized and is ignored if a lease for partition exists and has continuation token.
+        /// If this is specified, both StartTime and StartFromBeginning are ignored.
+        /// </remarks>
+        /// <seealso cref="ChangeFeedOptions.RequestContinuation"/>
+        public string StartContinuation { get; set; }
 
         /// <summary>
-        /// Gets or sets the time (exclusive) to start looking for changes after. If this is specified, StartFromBeginning is ignored.
+        /// Gets or sets the time (exclusive) to start looking for changes after.
         /// </summary>
+        /// <remarks>
+        /// This is only used when:
+        /// (1) Lease store is not initialized and is ignored if a lease for partition exists and has continuation token.
+        /// (2) StartContinuation is not specified.
+        /// If this is specified, StartFromBeginning is ignored.
+        /// </remarks>
+        /// <seealso cref="ChangeFeedOptions.StartTime"/>
         public DateTime? StartTime
         {
             get
@@ -91,14 +103,22 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether change feed in the Azure Cosmos DB service should start from beginning (true) or from current (false).
+        /// By default it's start from current (false).
+        /// </summary>
+        /// <remarks>
+        /// This is only used when:
+        /// (1) Lease store is not initialized and is ignored if a lease for partition exists and has continuation token.
+        /// (2) StartContinuation is not specified.
+        /// (3) StartTime is not specified.
+        /// </remarks>
+        /// <seealso cref="ChangeFeedOptions.StartFromBeginning"/>
+        public bool StartFromBeginning { get; set; }
+
+        /// <summary>
         /// Gets or sets the session token for use with session consistency in the Azure Cosmos DB service.
         /// </summary>
         public string SessionToken { get; set; }
-
-        /// <summary>
-        /// Gets or sets the request continuation token in the Azure Cosmos DB service.
-        /// </summary>
-        internal string RequestContinuation { get; set; }
 
         /// <summary>
         /// Gets or sets the minimum partition count for the host.

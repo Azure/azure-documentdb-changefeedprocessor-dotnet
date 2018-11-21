@@ -38,7 +38,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly IChangeFeedObserver observer;
         private readonly IChangeFeedObserverFactory observerFactory;
+        private readonly ILease lease;
+        private readonly ILeaseStoreManager leaseStoreManager;
         private readonly ChangeFeedProcessorBuilder builder = new ChangeFeedProcessorBuilder();
+
+        private Action<string, ChangeFeedOptions> createDocumentChangeFeedQueryCallback = (string s, ChangeFeedOptions o) => { };
 
         public ChangeFeedProcessorTests()
         {
@@ -70,6 +74,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Mock.Get(feedResponse)
                 .Setup(response => response.GetEnumerator())
                 .Returns(documents.GetEnumerator());
+
             var documentQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
             Mock.Get(documentQuery)
                 .Setup(query => query.HasMoreResults)
@@ -77,10 +82,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Mock.Get(documentQuery)
                 .Setup(query => query.ExecuteNextAsync<Document>(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => feedResponse)
-                .Callback(() => cancellationTokenSource.Cancel());
+                .Callback(cancellationTokenSource.Cancel);
+
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             Mock.Get(documentClient)
-                .Setup(ex => ex.CreateDocumentChangeFeedQuery(collectionLink, It.IsAny<ChangeFeedOptions>()))
+                .Setup(ex => ex.CreateDocumentChangeFeedQuery(It.IsAny<string>(), It.IsAny<ChangeFeedOptions>()))
+                .Callback((string s, ChangeFeedOptions o) => this.createDocumentChangeFeedQueryCallback(s, o))
                 .Returns(documentQuery);
             Mock.Get(documentClient)
                 .Setup(ex => ex.ReadDatabaseAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>()))
@@ -89,21 +96,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .Setup(ex => ex.ReadDocumentCollectionAsync(It.IsAny<Uri>(), It.IsAny<RequestOptions>()))
                 .ReturnsAsync(new ResourceResponse<DocumentCollection>(collection));
 
-            var lease = Mock.Of<ILease>();
-            Mock.Get(lease)
+            this.lease = Mock.Of<ILease>();
+            Mock.Get(this.lease)
                 .Setup(l => l.PartitionId)
                 .Returns("partitionId");
 
             var leaseStore = Mock.Of<ILeaseStore>();
 
-            var leaseStoreManager = Mock.Of<ILeaseStoreManager>();
-            Mock.Get(leaseStoreManager)
+            this.leaseStoreManager = Mock.Of<ILeaseStoreManager>();
+            Mock.Get(this.leaseStoreManager)
                 .Setup(store => store.IsInitializedAsync())
                 .ReturnsAsync(true);
-            Mock.Get(leaseStoreManager)
+            Mock.Get(this.leaseStoreManager)
                 .Setup(manager => manager.AcquireAsync(lease))
                 .ReturnsAsync(lease);
-            Mock.Get(leaseStoreManager)
+            Mock.Get(this.leaseStoreManager)
                 .Setup(manager => manager.ReleaseAsync(lease))
                 .Returns(Task.CompletedTask);
 
@@ -150,6 +157,35 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             this.builder.WithObserverFactory(this.observerFactory);
             var processor = await this.builder.BuildAsync();
             await processor.StartAsync();
+        }
+
+        [Fact]
+        public async Task PassesStartContinuation_WhenLeaseDoesNotHaveContinuation()
+        {
+            Mock.Get(this.leaseStoreManager)
+                .Setup(manager => manager.GetOwnedLeasesAsync())
+                .ReturnsAsync(new List<ILease> { this.lease });
+
+            var startContinuation = "start";
+            this.createDocumentChangeFeedQueryCallback = (string collectionLink, ChangeFeedOptions options) => 
+            {
+                Assert.Equal(options.RequestContinuation, startContinuation);
+                throw new InjectedException();
+            };
+
+            this.builder
+                .WithObserverFactory(this.observerFactory)
+                .WithProcessorOptions(new ChangeFeedProcessorOptions { StartContinuation = startContinuation });
+            var processor = await this.builder.BuildAsync();
+
+            // Since CreateDocumentChangeFeedQueryCallback always throws, 
+            // processor.StartAsync never goes to async mode, everything is within sync "StartAsync/RunAsync" code path.
+            var exception = await Record.ExceptionAsync(async () => await processor.StartAsync());
+            Assert.IsType<InjectedException>(exception);
+        }
+
+        private class InjectedException : Exception
+        {
         }
     }
 }
