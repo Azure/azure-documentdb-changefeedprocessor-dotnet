@@ -67,7 +67,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return stolenLease == null ? Enumerable.Empty<ILease>() : new[] { stolenLease };
         }
 
-        private static ILease GetLeaseToSteal(Dictionary<string, int> workerToPartitionCount, int target, int partitionsNeededForMe, Dictionary<string, ILease> allPartitions)
+        private static ILease GetLeaseToSteal(
+            Dictionary<string, int> workerToPartitionCount,
+            int target,
+            int partitionsNeededForMe,
+            Dictionary<string, ILease> allPartitions)
         {
             KeyValuePair<string, int> workerToStealFrom = FindWorkerWithMostPartitions(workerToPartitionCount);
             if (workerToStealFrom.Value > target - (partitionsNeededForMe > 1 ? 1 : 0))
@@ -113,7 +117,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             return target;
         }
 
-        private void CategorizeLeases(IEnumerable<ILease> allLeases, Dictionary<string, ILease> allPartitions, List<ILease> expiredLeases, Dictionary<string, int> workerToPartitionCount)
+        private void CategorizeLeases(
+            IEnumerable<ILease> allLeases,
+            Dictionary<string, ILease> allPartitions,
+            List<ILease> expiredLeases,
+            Dictionary<string, int> workerToPartitionCount)
         {
             foreach (ILease lease in allLeases)
             {
