@@ -158,7 +158,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         }
 
         /// <summary>
-        /// Reads the list of Offers.
+        /// Reads the feed (sequence) of <see cref="Offer"/> for the database account.
         /// </summary>
         /// <param name="options">The <see cref="Microsoft.Azure.Documents.Client.FeedOptions"/>for this request.</param>
         /// <returns>A list of <see cref="Offer"/>.</returns>

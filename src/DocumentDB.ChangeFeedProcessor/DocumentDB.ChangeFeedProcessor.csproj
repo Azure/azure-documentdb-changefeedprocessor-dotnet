@@ -21,7 +21,7 @@
     <AssemblyName>Microsoft.Azure.Documents.ChangeFeedProcessor</AssemblyName>
 
     <PackageId>Microsoft.Azure.DocumentDB.ChangeFeedProcessor</PackageId>
-    <PackageVersion>2.2.4</PackageVersion>
+    <PackageVersion>2.2.5</PackageVersion>
     <Title>Microsoft Azure Cosmos DB Change Feed Processor library</Title>
     <Authors>Microsoft</Authors>
     <PackageLicenseUrl>http://go.microsoft.com/fwlink/?LinkID=509837</PackageLicenseUrl>
@@ -44,9 +44,9 @@
     <!--CS1587:XML comment is not placed on a valid language element 
     LibLog files have misplaced comments, but we cannot touch them.-->
     <NoWarn>1587</NoWarn>
-    <Version>2.2.4</Version>
-    <AssemblyVersion>2.2.4.0</AssemblyVersion>
-    <FileVersion>2.2.4.0</FileVersion>
+    <Version>2.2.5</Version>
+    <AssemblyVersion>2.2.5.0</AssemblyVersion>
+    <FileVersion>2.2.5.0</FileVersion>
     <PackageReleaseNotes>The change log for this project is available at https://docs.microsoft.com/azure/cosmos-db/sql-api-sdk-dotnet-changefeed.
 </PackageReleaseNotes>
   </PropertyGroup>
