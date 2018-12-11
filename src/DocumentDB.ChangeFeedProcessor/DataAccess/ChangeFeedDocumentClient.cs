@@ -156,5 +156,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         {
             return this.documentClient.CreateDocumentQuery<T>(documentCollectionUri, querySpec, feedOptions);
         }
+
+        /// <summary>
+        /// Reads the list of Offers.
+        /// </summary>
+        /// <param name="options">The <see cref="Microsoft.Azure.Documents.Client.FeedOptions"/>for this request.</param>
+        /// <returns>A list of <see cref="Offer"/>.</returns>
+        public async Task<IFeedResponse<Offer>> ReadOffersFeedAsync(FeedOptions options = null)
+        {
+            return await this.documentClient.ReadOffersFeedAsync(options).ConfigureAwait(false);
+        }
     }
 }

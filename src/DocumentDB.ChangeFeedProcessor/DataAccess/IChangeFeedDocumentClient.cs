@@ -120,5 +120,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
         /// <param name="feedOptions">Options for the query.</param>
         /// <returns>The query result set.</returns>
         IQueryable<T> CreateDocumentQuery<T>(string documentCollectionUri, SqlQuerySpec querySpec, FeedOptions feedOptions = null);
+
+        /// <summary>
+        /// Reads the list of Offers.
+        /// </summary>
+        /// <param name="options">The <see cref="Microsoft.Azure.Documents.Client.FeedOptions"/>for this request.</param>
+        /// <returns>A list of <see cref="Offer"/>.</returns>
+        Task<IFeedResponse<Offer>> ReadOffersFeedAsync(FeedOptions options = null);
     }
 }
