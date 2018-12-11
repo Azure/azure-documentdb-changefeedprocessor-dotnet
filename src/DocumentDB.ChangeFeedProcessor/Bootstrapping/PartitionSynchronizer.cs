@@ -27,6 +27,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         private readonly ILeaseManager leaseManager;
         private readonly int degreeOfParallelism;
         private readonly int maxBatchSize;
+        private bool? hasContainerProvisionedThroughput;
 
         public PartitionSynchronizer(
             IChangeFeedDocumentClient documentClient,
@@ -63,7 +64,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             Logger.InfoFormat("Partition {0} is gone due to split", partitionId);
             List<PartitionKeyRange> ranges = await this.EnumPartitionKeyRangesAsync().ConfigureAwait(false);
             List<string> addedPartitionIds = ranges.Where(range => range.Parents.Contains(partitionId)).Select(range => range.Id).ToList();
-            if (addedPartitionIds.Count < 2)
+            if (addedPartitionIds.Count < 2 && await this.HasProvisionedThroughput().ConfigureAwait(false))
             {
                 Logger.ErrorFormat("Partition {0} had split but we failed to find at least 2 child partitions", partitionId);
                 throw new InvalidOperationException();
@@ -112,6 +113,34 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             while (!string.IsNullOrEmpty(response.ResponseContinuation));
 
             return partitionKeyRanges;
+        }
+
+        private async Task<bool> HasProvisionedThroughput()
+        {
+            if (this.hasContainerProvisionedThroughput.HasValue)
+            {
+                return this.hasContainerProvisionedThroughput.Value;
+            }
+
+            IFeedResponse<Offer> response = null;
+            var offers = new List<Offer>();
+            do
+            {
+                var feedOptions = new FeedOptions
+                {
+                    MaxItemCount = this.maxBatchSize,
+                    RequestContinuation = response?.ResponseContinuation,
+                };
+                response = await this.documentClient.ReadOffersFeedAsync(feedOptions).ConfigureAwait(false);
+                IEnumerator<Offer> enumerator = response.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    offers.Add(enumerator.Current);
+                }
+            }
+            while (!string.IsNullOrEmpty(response.ResponseContinuation));
+            this.hasContainerProvisionedThroughput = offers.Any(x => x.ResourceId == this.collectionSelfLink);
+            return this.hasContainerProvisionedThroughput.Value;
         }
 
         /// <summary>
