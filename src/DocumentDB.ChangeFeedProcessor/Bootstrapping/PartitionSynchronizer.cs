@@ -27,7 +27,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         private readonly ILeaseManager leaseManager;
         private readonly int degreeOfParallelism;
         private readonly int maxBatchSize;
-        private bool? collectionHasProvisionedThroughput;
+
+        // Whether the collection has its own provisioned throughput or is using the Shared Throughput at the database level
+        private bool? hasCollectionProvisionedThroughput;
 
         public PartitionSynchronizer(
             IChangeFeedDocumentClient documentClient,
@@ -65,7 +67,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             List<PartitionKeyRange> ranges = await this.EnumPartitionKeyRangesAsync().ConfigureAwait(false);
             List<string> addedPartitionIds = ranges.Where(range => range.Parents.Contains(partitionId)).Select(range => range.Id).ToList();
             if (addedPartitionIds.Count == 0
-                || (addedPartitionIds.Count < 2 && await this.CollectionHasProvisionedThroughput().ConfigureAwait(false)))
+                || (addedPartitionIds.Count < 2 && await this.HasCollectionProvisionedThroughput().ConfigureAwait(false)))
             {
                 Logger.ErrorFormat("Partition {0} had split but we failed to find at least 2 child partitions", partitionId);
                 throw new InvalidOperationException();
@@ -116,11 +118,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             return partitionKeyRanges;
         }
 
-        private async Task<bool> CollectionHasProvisionedThroughput()
+        private async Task<bool> HasCollectionProvisionedThroughput()
         {
-            if (this.collectionHasProvisionedThroughput.HasValue)
+            if (this.hasCollectionProvisionedThroughput.HasValue)
             {
-                return this.collectionHasProvisionedThroughput.Value;
+                return this.hasCollectionProvisionedThroughput.Value;
             }
 
             IFeedResponse<Offer> response = null;
@@ -140,8 +142,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             }
             while (!string.IsNullOrEmpty(response.ResponseContinuation));
 
-            this.collectionHasProvisionedThroughput = offers.Any(x => x.ResourceId == this.collectionSelfLink);
-            return this.collectionHasProvisionedThroughput.Value;
+            this.hasCollectionProvisionedThroughput = offers.Any(x => x.ResourceId == this.collectionSelfLink);
+            return this.hasCollectionProvisionedThroughput.Value;
         }
 
         /// <summary>
