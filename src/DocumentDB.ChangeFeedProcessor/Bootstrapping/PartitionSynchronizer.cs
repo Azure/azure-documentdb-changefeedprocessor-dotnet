@@ -28,9 +28,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
         private readonly int degreeOfParallelism;
         private readonly int maxBatchSize;
 
-        // Whether the collection has its own provisioned throughput or is using the Shared Throughput at the database level
-        private bool? hasCollectionProvisionedThroughput;
-
         public PartitionSynchronizer(
             IChangeFeedDocumentClient documentClient,
             string collectionSelfLink,
@@ -65,11 +62,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
 
             Logger.InfoFormat("Partition {0} is gone due to split", partitionId);
 
-            // After split the childs are all available
+            // After split the childs are either all or none available
             List<PartitionKeyRange> ranges = await this.EnumPartitionKeyRangesAsync().ConfigureAwait(false);
             List<string> addedPartitionIds = ranges.Where(range => range.Parents.Contains(partitionId)).Select(range => range.Id).ToList();
-            if (addedPartitionIds.Count == 0
-                || (addedPartitionIds.Count < 2 && await this.HasCollectionProvisionedThroughput().ConfigureAwait(false)))
+            if (addedPartitionIds.Count == 0)
             {
                 Logger.ErrorFormat("Partition {0} had split but we failed to find at least 2 child partitions", partitionId);
                 throw new InvalidOperationException();
@@ -118,34 +114,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             while (!string.IsNullOrEmpty(response.ResponseContinuation));
 
             return partitionKeyRanges;
-        }
-
-        private async Task<bool> HasCollectionProvisionedThroughput()
-        {
-            if (this.hasCollectionProvisionedThroughput.HasValue)
-            {
-                return this.hasCollectionProvisionedThroughput.Value;
-            }
-
-            IFeedResponse<Offer> response = null;
-            var offers = new List<Offer>();
-            do
-            {
-                var feedOptions = new FeedOptions
-                {
-                    MaxItemCount = this.maxBatchSize,
-                    RequestContinuation = response?.ResponseContinuation,
-                };
-                response = await this.documentClient.ReadOffersFeedAsync(feedOptions).ConfigureAwait(false);
-                foreach (Offer offer in response)
-                {
-                    offers.Add(offer);
-                }
-            }
-            while (!string.IsNullOrEmpty(response.ResponseContinuation));
-
-            this.hasCollectionProvisionedThroughput = offers.Any(x => x.ResourceLink == this.collectionSelfLink);
-            return this.hasCollectionProvisionedThroughput.Value;
         }
 
         /// <summary>
