@@ -64,6 +64,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             string lastContinuationToken = lease.ContinuationToken;
 
             Logger.InfoFormat("Partition {0} is gone due to split", partitionId);
+
+            // After split the childs are all available
             List<PartitionKeyRange> ranges = await this.EnumPartitionKeyRangesAsync().ConfigureAwait(false);
             List<string> addedPartitionIds = ranges.Where(range => range.Parents.Contains(partitionId)).Select(range => range.Id).ToList();
             if (addedPartitionIds.Count == 0
@@ -142,7 +144,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             }
             while (!string.IsNullOrEmpty(response.ResponseContinuation));
 
-            this.hasCollectionProvisionedThroughput = offers.Any(x => x.ResourceId == this.collectionSelfLink);
+            this.hasCollectionProvisionedThroughput = offers.Any(x => x.ResourceLink == this.collectionSelfLink);
             return this.hasCollectionProvisionedThroughput.Value;
         }
 

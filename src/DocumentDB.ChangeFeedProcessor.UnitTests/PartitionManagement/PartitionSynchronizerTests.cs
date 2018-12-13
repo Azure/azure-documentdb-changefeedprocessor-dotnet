@@ -13,6 +13,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 using Microsoft.Azure.Documents.Client;
 using Moq;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManagement
@@ -103,13 +104,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
                 }
             };
 
-            IEnumerable<Offer> offers = new[]
+            IEnumerable <Offer> offers = new[]
             {
-                new Offer
-                {
-                    Id = "1",
-                    ResourceId = collectionLink
-                }
+                JsonConvert.DeserializeObject<Offer>("{ \"id\":\"1\", \"resource\":\""+ collectionLink + "\"}")
             };
 
             var lease = Mock.Of<ILease>(l => l.PartitionId == "10" && l.ContinuationToken == lastKnowToken);
@@ -147,11 +144,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             IEnumerable<Offer> offers = new[]
             {
-                new Offer
-                {
-                    Id = "1",
-                    ResourceId = databaseLink
-                }
+                JsonConvert.DeserializeObject<Offer>("{ \"id\":\"1\", \"resource\":\""+ databaseLink + "\"}")
             };
 
             var lease = Mock.Of<ILease>(l => l.PartitionId == "10" && l.ContinuationToken == lastKnowToken);
@@ -182,13 +175,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
             IEnumerable<PartitionKeyRange> keyRanges = Enumerable.Empty<PartitionKeyRange>();
 
-            IEnumerable<Offer>offers = new[]
+            IEnumerable<Offer> offers = new[]
             {
-                new Offer
-                {
-                    Id = "1", 
-                    ResourceId = databaseLink
-                }
+                JsonConvert.DeserializeObject<Offer>("{ \"id\":\"1\", \"resource\":\""+ databaseLink + "\"}")
             };
 
             var lease = Mock.Of<ILease>(l => l.PartitionId == "10" && l.ContinuationToken == lastKnowToken);
