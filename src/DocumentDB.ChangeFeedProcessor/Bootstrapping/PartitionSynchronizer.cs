@@ -67,7 +67,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping
             List<string> addedPartitionIds = ranges.Where(range => range.Parents.Contains(partitionId)).Select(range => range.Id).ToList();
             if (addedPartitionIds.Count == 0)
             {
-                Logger.ErrorFormat("Partition {0} had split but we failed to find at least 2 child partitions", partitionId);
+                Logger.ErrorFormat("Partition {0} had split but we failed to find at least one child partition", partitionId);
                 throw new InvalidOperationException();
             }
 
