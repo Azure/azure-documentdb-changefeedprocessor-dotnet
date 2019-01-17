@@ -175,6 +175,70 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                     Times.Once);
         }
 
+        [Fact]
+        public async Task Run_ShouldThrow_IfObserverThrows()
+        {
+            Mock.Get(documentQuery)
+                .Reset();
+
+            Mock.Get(documentQuery)
+                .SetupSequence(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)))
+                .ReturnsAsync(feedResponse);
+
+            Mock.Get(observer)
+                .SetupSequence(feedObserver => feedObserver
+                    .ProcessChangesAsync(It.IsAny<IChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
+                .Throws(new CustomException())
+                .Returns(Task.CompletedTask);
+
+            Exception exception = await Record.ExceptionAsync(() => sut.RunAsync(cancellationTokenSource.Token));
+            Assert.IsAssignableFrom<CustomException>(exception);
+
+            Mock.Get(documentQuery)
+                .Verify(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)), Times.Once);
+
+            Mock.Get(observer)
+                .Verify(feedObserver => feedObserver
+                        .ProcessChangesAsync(
+                            It.Is<IChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents)),
+                            It.IsAny<CancellationToken>()),
+                    Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_ShouldThrow_IfObserverThrowsDocumentClientException()
+        {
+            // If the user code throws a DCE, we should bubble it up to stop the Observer and not treat it as a DCE from the Feed Query
+
+            Mock.Get(documentQuery)
+                .Reset();
+
+            Mock.Get(documentQuery)
+                .Setup(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)))
+                .ReturnsAsync(feedResponse)
+                .Callback(() => cancellationTokenSource.Cancel());
+
+            Mock.Get(observer)
+                .Setup(feedObserver => feedObserver
+                    .ProcessChangesAsync(It.IsAny<IChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
+                .Throws(DocumentExceptionHelpers.CreateRequestRateTooLargeException());
+
+            Exception exception = await Record.ExceptionAsync(() => sut.RunAsync(cancellationTokenSource.Token));
+            Assert.IsAssignableFrom<DocumentClientException>(exception);
+
+            Mock.Get(documentQuery)
+                .Verify(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)), Times.Once);
+
+            Mock.Get(observer)
+                .Verify(feedObserver => feedObserver
+                        .ProcessChangesAsync(
+                            It.Is<IChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
+                            It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents)),
+                            It.IsAny<CancellationToken>()),
+                    Times.Once);
+        }
+
         /// <summary>
         /// (1) Read normal feed
         /// (2) Get 400 with 
@@ -249,6 +313,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                     Times.Exactly(3));
 
             Assert.Equal("token.token2.token3.", accumulator);
+        }
+
+        private class CustomException : Exception
+        {
         }
     }
 }
