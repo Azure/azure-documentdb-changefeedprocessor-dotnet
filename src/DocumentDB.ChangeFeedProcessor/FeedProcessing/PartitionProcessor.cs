@@ -49,7 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             while (!cancellationToken.IsCancellationRequested)
             {
                 TimeSpan delay = this.settings.FeedPollDelay;
-
+                bool internalDocumentClientException = false;
                 try
                 {
                     do
@@ -58,7 +58,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                         lastContinuation = response.ResponseContinuation;
                         if (response.Count > 0)
                         {
-                            await this.DispatchChanges(response, cancellationToken).ConfigureAwait(false);
+                            try
+                            {
+                                await this.DispatchChanges(response, cancellationToken).ConfigureAwait(false);
+                            }
+                            catch (DocumentClientException)
+                            {
+                                internalDocumentClientException = true;
+                                throw;
+                            }
                         }
                     }
                     while (this.query.HasMoreResults && !cancellationToken.IsCancellationRequested);
@@ -70,6 +78,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 }
                 catch (DocumentClientException clientException)
                 {
+                    if (internalDocumentClientException)
+                    {
+                        throw;
+                    }
+
                     this.logger.WarnException("exception: partition '{0}'", clientException, this.settings.PartitionKeyRangeId);
                     DocDbError docDbError = ExceptionClassifier.ClassifyClientException(clientException);
                     switch (docDbError)
