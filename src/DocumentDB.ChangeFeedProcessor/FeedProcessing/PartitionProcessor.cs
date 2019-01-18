@@ -49,7 +49,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             while (!cancellationToken.IsCancellationRequested)
             {
                 TimeSpan delay = this.settings.FeedPollDelay;
-                bool internalDocumentClientException = false;
                 try
                 {
                     do
@@ -58,15 +57,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                         lastContinuation = response.ResponseContinuation;
                         if (response.Count > 0)
                         {
-                            try
-                            {
-                                await this.DispatchChanges(response, cancellationToken).ConfigureAwait(false);
-                            }
-                            catch (DocumentClientException)
-                            {
-                                internalDocumentClientException = true;
-                                throw;
-                            }
+                            await this.DispatchChanges(response, cancellationToken).ConfigureAwait(false);
                         }
                     }
                     while (this.query.HasMoreResults && !cancellationToken.IsCancellationRequested);
@@ -78,11 +69,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 }
                 catch (DocumentClientException clientException)
                 {
-                    if (internalDocumentClientException)
-                    {
-                        throw;
-                    }
-
                     this.logger.WarnException("exception: partition '{0}'", clientException, this.settings.PartitionKeyRangeId);
                     DocDbError docDbError = ExceptionClassifier.ClassifyClientException(clientException);
                     switch (docDbError)
@@ -138,7 +124,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 }
             }
 
-            return this.observer.ProcessChangesAsync(context, docs, cancellationToken);
+            try
+            {
+                return this.observer.ProcessChangesAsync(context, docs, cancellationToken);
+            }
+            catch (Exception userException) when (!(this.observer is AutoCheckpointer))
+            {
+                throw new UserException(userException);
+            }
         }
     }
 }

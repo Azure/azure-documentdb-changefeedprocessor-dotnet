@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
     using Microsoft.Azure.Documents.Client;
@@ -192,7 +193,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Returns(Task.CompletedTask);
 
             Exception exception = await Record.ExceptionAsync(() => sut.RunAsync(cancellationTokenSource.Token));
-            Assert.IsAssignableFrom<CustomException>(exception);
+            Assert.IsAssignableFrom<UserException>(exception);
 
             Mock.Get(documentQuery)
                 .Verify(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)), Times.Once);
@@ -225,7 +226,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Throws(DocumentExceptionHelpers.CreateRequestRateTooLargeException());
 
             Exception exception = await Record.ExceptionAsync(() => sut.RunAsync(cancellationTokenSource.Token));
-            Assert.IsAssignableFrom<DocumentClientException>(exception);
+            Assert.IsAssignableFrom<UserException>(exception);
 
             Mock.Get(documentQuery)
                 .Verify(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)), Times.Once);

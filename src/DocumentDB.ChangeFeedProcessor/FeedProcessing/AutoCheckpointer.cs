@@ -8,6 +8,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 
     internal class AutoCheckpointer : IChangeFeedObserver
     {
@@ -39,7 +40,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 
         public async Task ProcessChangesAsync(IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
-            await this.observer.ProcessChangesAsync(context, docs, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await this.observer.ProcessChangesAsync(context, docs, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception userException)
+            {
+                throw new UserException(userException);
+            }
+
             this.processedDocCount += docs.Count;
 
             if (this.IsCheckpointNeeded())

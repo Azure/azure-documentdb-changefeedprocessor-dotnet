@@ -8,6 +8,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 
     internal class ChangeFeedObserverAdapter<T> : FeedProcessing.IChangeFeedObserver
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -35,7 +36,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
 
         public Task ProcessChangesAsync(FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
-            return this.observer.ProcessChangesAsync(new ChangeFeedObserverContextAdapter(context), docs);
+            try
+            {
+                return this.observer.ProcessChangesAsync(new ChangeFeedObserverContextAdapter(context), docs);
+            }
+            catch (Exception userException)
+            {
+                throw new UserException(userException);
+            }
         }
     }
 
@@ -66,7 +74,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
 
         public Task ProcessChangesAsync(FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
-            return this.observer.ProcessChangesAsync(new ChangeFeedObserverContextAdapter(context), docs);
+            try
+            {
+                return this.observer.ProcessChangesAsync(new ChangeFeedObserverContextAdapter(context), docs);
+            }
+            catch (Exception userException)
+            {
+                throw new UserException(userException);
+            }
         }
     }
 }
