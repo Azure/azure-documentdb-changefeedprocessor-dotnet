@@ -8,7 +8,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
 
     internal class ChangeFeedObserverAdapter<T> : FeedProcessing.IChangeFeedObserver
 #pragma warning disable CS0618 // Type or member is obsolete

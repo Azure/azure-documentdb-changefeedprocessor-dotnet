@@ -49,6 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             while (!cancellationToken.IsCancellationRequested)
             {
                 TimeSpan delay = this.settings.FeedPollDelay;
+
                 try
                 {
                     do
