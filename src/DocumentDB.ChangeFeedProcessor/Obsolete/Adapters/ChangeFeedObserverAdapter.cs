@@ -36,14 +36,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
 
         public Task ProcessChangesAsync(FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
-            try
-            {
-                return this.observer.ProcessChangesAsync(new ChangeFeedObserverContextAdapter(context), docs);
-            }
-            catch (Exception userException)
-            {
-                throw new UserException(userException);
-            }
+            return this.observer.ProcessChangesAsync(new ChangeFeedObserverContextAdapter(context), docs);
         }
     }
 
@@ -74,14 +67,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Obsolete.Adapters
 
         public Task ProcessChangesAsync(FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
-            try
-            {
-                return this.observer.ProcessChangesAsync(new ChangeFeedObserverContextAdapter(context), docs);
-            }
-            catch (Exception userException)
-            {
-                throw new UserException(userException);
-            }
+            return this.observer.ProcessChangesAsync(new ChangeFeedObserverContextAdapter(context), docs);
         }
     }
 }

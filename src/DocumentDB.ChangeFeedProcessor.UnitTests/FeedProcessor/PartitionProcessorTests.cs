@@ -71,7 +71,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 
             observer = Mock.Of<IChangeFeedObserver>();
             var checkPointer = new Mock<IPartitionCheckpointer>();
-            sut = new PartitionProcessor(observer, docClient, processorSettings, checkPointer.Object);
+            sut = new PartitionProcessor(new ChangeFeedObserver(observer), docClient, processorSettings, checkPointer.Object);
         }
 
         [Fact]

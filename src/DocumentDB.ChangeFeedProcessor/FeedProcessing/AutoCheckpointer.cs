@@ -40,14 +40,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 
         public async Task ProcessChangesAsync(IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
         {
-            try
-            {
-                await this.observer.ProcessChangesAsync(context, docs, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception userException)
-            {
-                throw new UserException(userException);
-            }
+            await this.observer.ProcessChangesAsync(context, docs, cancellationToken).ConfigureAwait(false);
 
             this.processedDocCount += docs.Count;
 

@@ -124,14 +124,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 }
             }
 
-            try
-            {
-                return this.observer.ProcessChangesAsync(context, docs, cancellationToken);
-            }
-            catch (Exception userException) when (!(this.observer is AutoCheckpointer))
-            {
-                throw new UserException(userException);
-            }
+            return this.observer.ProcessChangesAsync(context, docs, cancellationToken);
         }
     }
 }
