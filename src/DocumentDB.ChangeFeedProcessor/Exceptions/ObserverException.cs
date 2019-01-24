@@ -18,9 +18,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions
         /// <summary>
         /// Initializes a new instance of the <see cref="ObserverException" /> class using the specified internal exception.
         /// </summary>
-        /// <param name="internalException"><see cref="Exception"/> thrown by the user code.</param>
-        public ObserverException(Exception internalException)
-            : base(ObserverException.DefaultMessage, internalException)
+        /// <param name="originalException"><see cref="Exception"/> thrown by the user code.</param>
+        public ObserverException(Exception originalException)
+            : base(ObserverException.DefaultMessage, originalException)
         {
         }
 
