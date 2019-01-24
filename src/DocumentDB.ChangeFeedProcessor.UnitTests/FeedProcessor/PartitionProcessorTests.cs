@@ -71,7 +71,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 
             observer = Mock.Of<IChangeFeedObserver>();
             var checkPointer = new Mock<IPartitionCheckpointer>();
-            sut = new PartitionProcessor(new ChangeFeedObserver(observer), docClient, processorSettings, checkPointer.Object);
+            sut = new PartitionProcessor(new FeedProcessing.ObserverExceptionWrappingChangeFeedObserverDecorator(observer), docClient, processorSettings, checkPointer.Object);
         }
 
         [Fact]
@@ -193,7 +193,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Returns(Task.CompletedTask);
 
             Exception exception = await Record.ExceptionAsync(() => sut.RunAsync(cancellationTokenSource.Token));
-            Assert.IsAssignableFrom<UserException>(exception);
+            Assert.IsAssignableFrom<ObserverException>(exception);
+            Assert.IsAssignableFrom<CustomException>(exception.InnerException);
 
             Mock.Get(documentQuery)
                 .Verify(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)), Times.Once);
@@ -226,7 +227,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Throws(DocumentExceptionHelpers.CreateRequestRateTooLargeException());
 
             Exception exception = await Record.ExceptionAsync(() => sut.RunAsync(cancellationTokenSource.Token));
-            Assert.IsAssignableFrom<UserException>(exception);
+            Assert.IsAssignableFrom<ObserverException>(exception);
+            Assert.IsAssignableFrom<DocumentClientException>(exception.InnerException);
 
             Mock.Get(documentQuery)
                 .Verify(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)), Times.Once);

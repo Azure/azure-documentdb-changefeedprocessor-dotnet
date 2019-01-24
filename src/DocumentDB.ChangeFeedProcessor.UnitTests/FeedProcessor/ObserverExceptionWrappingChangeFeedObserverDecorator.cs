@@ -15,26 +15,27 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
     using Moq;
     using Xunit;
 
-    public class ChangeFeedObserverTests
+    [Trait("Category", "Gated")]
+    public class ObserverExceptionWrappingChangeFeedObserverDecorator
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly IChangeFeedObserver observer;
         private readonly IChangeFeedObserverContext changeFeedObserverContext;
-        private readonly ChangeFeedObserver observerWrapper;
+        private readonly FeedProcessing.ObserverExceptionWrappingChangeFeedObserverDecorator observerWrapper;
         private readonly List<Document> documents;
 
-        public ChangeFeedObserverTests()
+        public ObserverExceptionWrappingChangeFeedObserverDecorator()
         {
             this.observer = Mock.Of<IChangeFeedObserver>();
             this.changeFeedObserverContext = Mock.Of<IChangeFeedObserverContext>();
-            this.observerWrapper = new ChangeFeedObserver(observer);
+            this.observerWrapper = new FeedProcessing.ObserverExceptionWrappingChangeFeedObserverDecorator(observer);
 
             var document = new Document();
             documents = new List<Document> { document };
         }
 
         [Fact]
-        public async Task Run_ShouldCallOpenAsync()
+        public async Task OpenAsync_ShouldCallOpenAsync()
         {
             await observerWrapper.OpenAsync(this.changeFeedObserverContext);
 
@@ -45,7 +46,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         }
 
         [Fact]
-        public async Task Run_ShouldCallCloseAsync()
+        public async Task CloseAsync_ShouldCallCloseAsync()
         {
             await observerWrapper.CloseAsync(this.changeFeedObserverContext, ChangeFeedObserverCloseReason.Shutdown);
 
@@ -57,7 +58,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         }
 
         [Fact]
-        public async Task Run_ShouldPassDocumentsToProcessChangesAsync()
+        public async Task ProcessChangesAsync_ShouldPassDocumentsToProcessChangesAsync()
         {
             await observerWrapper.ProcessChangesAsync(this.changeFeedObserverContext, this.documents, cancellationTokenSource.Token);
 
@@ -71,7 +72,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         }
 
         [Fact]
-        public async Task Run_ShouldThrow_IfObserverThrows()
+        public async Task ProcessChangesAsync_ShouldThrow_IfObserverThrows()
         {
             Mock.Get(observer)
                 .SetupSequence(feedObserver => feedObserver
@@ -79,7 +80,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Throws(new Exception());
 
             Exception exception = await Record.ExceptionAsync(() => observerWrapper.ProcessChangesAsync(this.changeFeedObserverContext, this.documents, cancellationTokenSource.Token));
-            Assert.IsAssignableFrom<UserException>(exception);
+            Assert.IsAssignableFrom<ObserverException>(exception);
+            Assert.IsAssignableFrom<Exception>(exception.InnerException);
 
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
@@ -91,7 +93,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         }
 
         [Fact]
-        public async Task Run_ShouldThrow_IfObserverThrowsDocumentClientException()
+        public async Task ProcessChangesAsync_ShouldThrow_IfObserverThrowsDocumentClientException()
         {
             Mock.Get(observer)
                 .SetupSequence(feedObserver => feedObserver
@@ -99,7 +101,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Throws(DocumentExceptionHelpers.CreateRequestRateTooLargeException());
 
             Exception exception = await Record.ExceptionAsync(() => observerWrapper.ProcessChangesAsync(this.changeFeedObserverContext, this.documents, cancellationTokenSource.Token));
-            Assert.IsAssignableFrom<UserException>(exception);
+            Assert.IsAssignableFrom<ObserverException>(exception);
+            Assert.IsAssignableFrom<DocumentClientException>(exception.InnerException);
 
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver

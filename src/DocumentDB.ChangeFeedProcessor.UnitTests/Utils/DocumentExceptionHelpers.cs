@@ -26,10 +26,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
 
         public static Exception CreateRequestRateTooLargeException()
         {
-            return CreateException("Microsoft.Azure.Documents.RequestRateTooLargeException", 1);
+            return CreateException("Microsoft.Azure.Documents.RequestRateTooLargeException", 1, "Request throttled", true);
         }
 
-        public static Exception CreateException(string exceptionType, int subStatusCode, string message = "")
+        public static Exception CreateException(string exceptionType, int subStatusCode, string message = "", bool includeRetryAfter = false)
         {
             Type t = typeof(DocumentClientException)
                 .Assembly.GetType(exceptionType);
@@ -37,7 +37,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
             HttpResponseHeaders httpResponseHeaders = CreateResponseHeaders();
             httpResponseHeaders.TryAddWithoutValidation("x-ms-substatus", subStatusCode.ToString());
             httpResponseHeaders.TryAddWithoutValidation("x-ms-activity-id", "activityId");
-            httpResponseHeaders.TryAddWithoutValidation("x-ms-retry-after-ms", "100");
+            if (includeRetryAfter)
+            {
+                httpResponseHeaders.TryAddWithoutValidation("x-ms-retry-after-ms", "100");
+            }
 
             object ex = t.GetConstructor(
                 BindingFlags.Public | BindingFlags.Instance,

@@ -9,12 +9,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
 
-    internal class ChangeFeedObserver : IChangeFeedObserver
+    internal class ObserverExceptionWrappingChangeFeedObserverDecorator : IChangeFeedObserver
     {
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private IChangeFeedObserver changeFeedObserver;
 
-        public ChangeFeedObserver(IChangeFeedObserver changeFeedObserver)
+        public ObserverExceptionWrappingChangeFeedObserverDecorator(IChangeFeedObserver changeFeedObserver)
         {
             this.changeFeedObserver = changeFeedObserver;
         }
@@ -27,7 +29,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             }
             catch (Exception userException)
             {
-                throw new UserException(userException);
+                Logger.WarnException("Exception happened on Observer.CloseAsync", userException);
+                throw new ObserverException(userException);
             }
         }
 
@@ -39,7 +42,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             }
             catch (Exception userException)
             {
-                throw new UserException(userException);
+                Logger.WarnException("Exception happened on Observer.OpenAsync", userException);
+                throw new ObserverException(userException);
             }
         }
 
@@ -51,7 +55,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             }
             catch (Exception userException)
             {
-                throw new UserException(userException);
+                Logger.WarnException("Exception happened on Observer.ProcessChangesAsync", userException);
+                throw new ObserverException(userException);
             }
         }
     }

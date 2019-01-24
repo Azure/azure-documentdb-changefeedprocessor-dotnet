@@ -9,7 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     {
         public IChangeFeedObserver CreateObserver()
         {
-            return new ChangeFeedObserver(new T());
+            return new T();
         }
     }
 }

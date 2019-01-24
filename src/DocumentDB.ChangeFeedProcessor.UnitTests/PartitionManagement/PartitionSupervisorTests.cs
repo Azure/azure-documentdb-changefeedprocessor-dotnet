@@ -113,7 +113,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             Mock.Get(observer)
                 .Verify(feedObserver => feedObserver
                     .CloseAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
-                        ChangeFeedObserverCloseReason.ObserverError));
+                        ChangeFeedObserverCloseReason.Unknown));
         }
 
         [Fact]
