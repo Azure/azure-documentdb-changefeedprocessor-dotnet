@@ -6,6 +6,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
@@ -78,6 +79,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                             throw new PartitionNotFoundException("Partition not found.", lastContinuation);
                         case DocDbError.PartitionSplit:
                             throw new PartitionSplitException("Partition split.", lastContinuation);
+                        case DocDbError.Undefined:
+                            throw;
                         case DocDbError.TransientError:
                             // Retry on transient (429) errors
                             break;
@@ -96,7 +99,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                             this.logger.WarnFormat("Reducing maxItemCount, new value: {0}.", this.options.MaxItemCount);
                             break;
                         default:
-                            this.logger.FatalException("Unknown DocumentClientException while consuming Change Feed.", clientException);
+                            this.logger.Fatal($"Unrecognized DocDbError enum value {docDbError}");
+                            Debug.Fail($"Unrecognized DocDbError enum value {docDbError}");
                             throw;
                     }
 

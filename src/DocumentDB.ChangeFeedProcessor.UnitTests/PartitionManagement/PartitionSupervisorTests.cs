@@ -117,6 +117,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
+        public async Task RunObserver_ShouldCloseWithObserverError_IfObserverFailed()
+        {
+            Mock.Get(partitionProcessor)
+                .Setup(processor => processor.RunAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new ObserverException(new Exception()));
+
+            Exception exception = await Record.ExceptionAsync(() => sut.RunAsync(shutdownToken.Token)).ConfigureAwait(false);
+
+            Mock.Get(observer)
+                .Verify(feedObserver => feedObserver
+                    .CloseAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
+                        ChangeFeedObserverCloseReason.ObserverError));
+        }
+
+        [Fact]
         public async Task RunObserver_ShouldPassPartitionToObserver_WhenExecuted()
         {
             Mock.Get(observer)

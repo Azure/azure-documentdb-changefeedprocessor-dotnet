@@ -16,7 +16,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
     using Xunit;
 
     [Trait("Category", "Gated")]
-    public class ObserverExceptionWrappingChangeFeedObserverDecorator
+    public class ObserverExceptionWrappingChangeFeedObserverDecoratorTests
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly IChangeFeedObserver observer;
@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         private readonly FeedProcessing.ObserverExceptionWrappingChangeFeedObserverDecorator observerWrapper;
         private readonly List<Document> documents;
 
-        public ObserverExceptionWrappingChangeFeedObserverDecorator()
+        public ObserverExceptionWrappingChangeFeedObserverDecoratorTests()
         {
             this.observer = Mock.Of<IChangeFeedObserver>();
             this.changeFeedObserverContext = Mock.Of<IChangeFeedObserverContext>();
