@@ -63,7 +63,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             {
                 closeReason = ChangeFeedObserverCloseReason.Shutdown;
             }
-            catch (Exception ex) when (ex is ObserverException)
+            catch (ObserverException)
             {
                 closeReason = ChangeFeedObserverCloseReason.ObserverError;
                 throw;
