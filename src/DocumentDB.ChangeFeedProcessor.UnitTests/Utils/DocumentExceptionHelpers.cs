@@ -9,7 +9,7 @@ using Microsoft.Azure.Documents;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
 {
-    public static class DocumentExceptionHelpers
+    internal static class DocumentExceptionHelpers
     {
         public static Exception CreateNotFoundException()
         {
@@ -26,10 +26,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
 
         public static Exception CreateRequestRateTooLargeException()
         {
-            return CreateException("Microsoft.Azure.Documents.RequestRateTooLargeException", 1);
+            return CreateException("Microsoft.Azure.Documents.RequestRateTooLargeException", 1, "Request throttled", 100);
         }
 
-        public static Exception CreateException(string exceptionType, int subStatusCode, string message = "")
+        public static Exception CreateException(string exceptionType, int subStatusCode, string message = "", int retryAfter = 0)
         {
             Type t = typeof(DocumentClientException)
                 .Assembly.GetType(exceptionType);
@@ -37,6 +37,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
             HttpResponseHeaders httpResponseHeaders = CreateResponseHeaders();
             httpResponseHeaders.TryAddWithoutValidation("x-ms-substatus", subStatusCode.ToString());
             httpResponseHeaders.TryAddWithoutValidation("x-ms-activity-id", "activityId");
+            if (retryAfter > 0)
+            {
+                httpResponseHeaders.TryAddWithoutValidation("x-ms-retry-after-ms", retryAfter.ToString());
+            }
 
             object ex = t.GetConstructor(
                 BindingFlags.Public | BindingFlags.Instance,

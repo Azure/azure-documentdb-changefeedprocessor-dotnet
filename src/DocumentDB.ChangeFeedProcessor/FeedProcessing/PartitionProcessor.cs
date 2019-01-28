@@ -6,6 +6,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
@@ -80,6 +81,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                             throw new PartitionSplitException("Partition split.", lastContinuation);
                         case DocDbError.Undefined:
                             throw;
+                        case DocDbError.TransientError:
+                            // Retry on transient (429) errors
+                            break;
                         case DocDbError.MaxItemCountTooLarge:
                             if (!this.options.MaxItemCount.HasValue)
                             {
@@ -94,6 +98,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                             this.options.MaxItemCount /= 2;
                             this.logger.WarnFormat("Reducing maxItemCount, new value: {0}.", this.options.MaxItemCount);
                             break;
+                        default:
+                            this.logger.Fatal($"Unrecognized DocDbError enum value {docDbError}");
+                            Debug.Fail($"Unrecognized DocDbError enum value {docDbError}");
+                            throw;
                     }
 
                     if (clientException.RetryAfter != TimeSpan.Zero)
