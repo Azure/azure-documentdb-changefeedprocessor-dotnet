@@ -60,11 +60,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             if (expiredLeases.Count > 0)
             {
-                return expiredLeases.Take(partitionsNeededForMe);
+                var leasesToTake = expiredLeases.Take(partitionsNeededForMe).ToList();
+                foreach (var lease in leasesToTake)
+                {
+                    lease.AcquireReason = this.IsExpired(lease) ? AcquireReason.Expired : AcquireReason.NoOwner;
+                }
+
+                return leasesToTake;
             }
 
             ILease stolenLease = GetLeaseToSteal(workerToPartitionCount, target, partitionsNeededForMe, allPartitions);
-            return stolenLease == null ? Enumerable.Empty<ILease>() : new[] { stolenLease };
+            if (stolenLease == null)
+                return Enumerable.Empty<ILease>();
+
+            stolenLease.AcquireReason = AcquireReason.ForceSteal;
+            return new[] { stolenLease };
         }
 
         private static ILease GetLeaseToSteal(

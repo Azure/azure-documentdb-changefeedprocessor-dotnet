@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             var updater = new DocumentServiceLeaseUpdater(client);
             var lease = Mock.Of<ILease>();
 
-            var newLease = await updater.UpdateLeaseAsync(lease, documentUri, null, serverLease => null);
+            var newLease = await updater.UpdateLeaseAsync(lease, documentUri, null, serverLease => null, true);
 
             Assert.Null(newLease);
         }
@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                 .ReturnsAsync(CreateLeaseResponse(eTag2));
             var updater = new DocumentServiceLeaseUpdater(client);
 
-            var newLease = await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease);
+            var newLease = await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease, true);
 
             Assert.Equal(eTag2, newLease.ConcurrencyToken);
         }
@@ -95,7 +95,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                 .ThrowsAsync(replaceException);
             var updater = new DocumentServiceLeaseUpdater(client);
 
-            return await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease));
+            return await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease, true));
         }
 
         [Fact]
@@ -124,7 +124,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                 .ThrowsAsync(readException).Verifiable();
 
             var updater = new DocumentServiceLeaseUpdater(client);
-            Exception exception = await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease));
+            Exception exception = await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease, true));
             Mock.Get(client).VerifyAll();
             return exception;
         }
@@ -158,7 +158,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                 if (serverLease.ConcurrencyToken == null) return updatedLease1;
                 if (serverLease.ConcurrencyToken == eTag2) return updatedLease2;
                 throw new InvalidOperationException();
-            });
+            }, true);
 
             Assert.Equal(eTag3, lease.ConcurrencyToken);
         }
@@ -191,7 +191,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                 callbackInvokeCount++;
                 if (serverLease.ConcurrencyToken == null) return CreateLease("0");
                 return CreateLease((int.Parse(serverLease.ConcurrencyToken) + 1).ToString());
-            }));
+            }, true));
 
             Assert.IsAssignableFrom<LeaseLostException>(exception);
             Assert.Equal(retryCount+1, callbackInvokeCount);

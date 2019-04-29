@@ -44,6 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             public string Id { get; set; }
             public string ConcurrencyToken { get; set; }
             public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
+            public AcquireReason? AcquireReason { get; set; }
         }
 
         [Fact]
@@ -566,7 +567,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         private static void SetupUpdateLeaseAfterRead(IDocumentServiceLeaseUpdater leaseUpdater, string storedContinuationToken, MockLease storedLease)
         {
             Mock.Get(leaseUpdater)
-                .Setup(u => u.UpdateLeaseAsync(It.Is<ILease>(l => l.ContinuationToken == storedContinuationToken), documentUri, null, It.IsAny<Func<ILease, ILease>>()))
+                .Setup(u => u.UpdateLeaseAsync(It.Is<ILease>(l => l.ContinuationToken == storedContinuationToken), documentUri, null, It.IsAny<Func<ILease, ILease>>(), It.IsAny<bool>()))
                 .Callback((ILease l, Uri uri, RequestOptions requestOptions, Func<ILease, ILease> callback) => callback(storedLease))
                 .ReturnsAsync(storedLease);
         }
@@ -603,7 +604,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             var leaseUpdater = Mock.Of<IDocumentServiceLeaseUpdater>();
             MockLease storedLease = CreateStoredLease(owner);
             Mock.Get(leaseUpdater)
-                .Setup(u => u.UpdateLeaseAsync(expectedCachedLease, documentUri, null, It.IsAny<Func<ILease, ILease>>()))
+                .Setup(u => u.UpdateLeaseAsync(expectedCachedLease, documentUri, null, It.IsAny<Func<ILease, ILease>>(), It.IsAny<bool>()))
                 .Callback((ILease cachedLease, Uri uri, RequestOptions requestOptions, Func<ILease, ILease> callback) => callback(storedLease))
                 .ReturnsAsync(storedLease);
             return leaseUpdater;

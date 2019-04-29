@@ -141,7 +141,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                     }
                     serverLease.ContinuationToken = continuationToken;
                     return serverLease;
-                }).ConfigureAwait(false);
+                },
+                true).ConfigureAwait(false);
         }
 
         public async Task<ILease> AcquireAsync(ILease lease)
@@ -164,8 +165,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                     }
                     serverLease.Owner = this.settings.HostName;
                     serverLease.Properties = lease.Properties;
+                    serverLease.AcquireReason = lease.AcquireReason;
                     return serverLease;
-                }).ConfigureAwait(false);
+                },
+                lease.AcquireReason != AcquireReason.Expired).ConfigureAwait(false);
         }
 
         public async Task<ILease> RenewAsync(ILease lease)
@@ -194,7 +197,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                         throw new LeaseLostException(lease);
                     }
                     return serverLease;
-                }).ConfigureAwait(false);
+                },
+                true).ConfigureAwait(false);
         }
 
         public async Task ReleaseAsync(ILease lease)
@@ -222,7 +226,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                     }
                     serverLease.Owner = null;
                     return serverLease;
-                }).ConfigureAwait(false);
+                },
+                true).ConfigureAwait(false);
         }
 
         public async Task DeleteAsync(ILease lease)
@@ -266,7 +271,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                         }
                         serverLease.Properties = lease.Properties;
                         return serverLease;
-                    }).ConfigureAwait(false);
+                    },
+                true).ConfigureAwait(false);
         }
 
         public Task<bool> IsInitializedAsync()

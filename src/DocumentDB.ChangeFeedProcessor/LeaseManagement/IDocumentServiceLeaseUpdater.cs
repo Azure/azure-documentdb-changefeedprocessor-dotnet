@@ -11,6 +11,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 
     internal interface IDocumentServiceLeaseUpdater
     {
-        Task<ILease> UpdateLeaseAsync(ILease cachedLease, Uri documentUri, RequestOptions requestOptions, Func<ILease, ILease> updateLease);
+        Task<ILease> UpdateLeaseAsync(ILease cachedLease, Uri documentUri, RequestOptions requestOptions, Func<ILease, ILease> updateLease, bool retryConflicts);
     }
 }

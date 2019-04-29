@@ -63,6 +63,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         [JsonProperty("properties")]
         public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
 
+        [JsonProperty("acquireReason")]
+        public AcquireReason? AcquireReason { get; set; }
+
         [JsonProperty("timestamp")]
         private DateTime? ExplicitTimestamp { get; set; }
 
