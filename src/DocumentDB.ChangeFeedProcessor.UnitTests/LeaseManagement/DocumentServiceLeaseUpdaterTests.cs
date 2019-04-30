@@ -197,6 +197,36 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             Assert.Equal(retryCount+1, callbackInvokeCount);
         }
 
+        [Fact]
+        public async Task UpdateLeaseAsync_ShouldThrowLeaseLostException_WhenConflictAndRetriesDisabled()
+        {
+            var client = Mock.Of<IChangeFeedDocumentClient>();
+            var updater = new DocumentServiceLeaseUpdater(client);
+            const string etag = "1";
+            ILease oldLease = CreateLease();
+
+            Mock.Get(client)
+                .Setup(c => c.ReplaceDocumentAsync(
+                    documentUri,
+                    It.Is<ILease>(lease => lease.ConcurrencyToken == etag),
+                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == etag),
+                    default(CancellationToken)))
+                .ThrowsAsync(DocumentExceptionHelpers.CreatePreconditionFailedException());
+            Mock.Get(client)
+                .Setup(c => c.ReadDocumentAsync(documentUri, null, default(CancellationToken)))
+                .ReturnsAsync(CreateLeaseResponse(etag));
+
+            int callbackInvokeCount = 0;
+            Exception exception = await Record.ExceptionAsync(async () => await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease =>
+            {
+                callbackInvokeCount++;
+                return CreateLease(etag);
+            }, false));
+
+            Assert.IsAssignableFrom<LeaseLostException>(exception);
+            Assert.Equal(1, callbackInvokeCount);
+        }
+
 
         private void SetupReplaceConflict(IChangeFeedDocumentClient client, ILease updatedLease)
         {
