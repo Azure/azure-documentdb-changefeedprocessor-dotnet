@@ -53,10 +53,5 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         /// Gets or sets custom lease properties which can be managed from <see cref="IParitionLoadBalancingStrategy"/>.
         /// </summary>
         Dictionary<string, string> Properties { get; set; }
-
-        /// <summary>
-        /// Gets or sets a reason of acquiring this lease which can be managed from <see cref="IParitionLoadBalancingStrategy"/>.
-        /// </summary>
-        AcquireReason? AcquireReason { get; set; }
     }
 }

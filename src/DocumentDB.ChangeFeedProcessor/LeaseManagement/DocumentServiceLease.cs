@@ -12,7 +12,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     using Newtonsoft.Json;
 
     [Serializable]
-    internal class DocumentServiceLease : ILease
+    internal class DocumentServiceLease : ILeaseEx
     {
         private static readonly DateTime UnixStartTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
@@ -63,7 +63,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         [JsonProperty("properties")]
         public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
 
-        [JsonProperty("acquireReason")]
+        [JsonIgnore]
         public AcquireReason? AcquireReason { get; set; }
 
         [JsonProperty("timestamp")]

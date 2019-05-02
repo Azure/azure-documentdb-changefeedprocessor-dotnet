@@ -60,7 +60,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 
             if (expiredLeases.Count > 0)
             {
-                var leasesToTake = expiredLeases.Take(partitionsNeededForMe).ToList();
+                var leasesToTake = expiredLeases.Take(partitionsNeededForMe).Select(l => (ILeaseEx)l).ToList();
                 foreach (var lease in leasesToTake)
                 {
                     lease.AcquireReason = this.IsExpired(lease) ? AcquireReason.Expired : AcquireReason.NoOwner;
@@ -73,7 +73,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             if (stolenLease == null)
                 return Enumerable.Empty<ILease>();
 
-            stolenLease.AcquireReason = AcquireReason.ForceSteal;
+            ((ILeaseEx)stolenLease).AcquireReason = AcquireReason.ForceSteal;
             return new[] { stolenLease };
         }
 

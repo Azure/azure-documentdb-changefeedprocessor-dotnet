@@ -36,21 +36,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
-        public void CalculateLeasesToTake_NotOwnedLeasesOnly_ReturnsAll()
+        public void CalculateLeasesToTake_NotOwnedLeasesOnly_ReturnsAllWithNoOwnerReason()
         {
             EqualPartitionsBalancingStrategy strategy = CreateStrategy();
             var allLeases = new HashSet<ILease> { CreateLease(ownerNone, "1"), CreateLease(ownerNone, "2") };
             var leasesToTake = strategy.SelectLeasesToTake(allLeases);
             Assert.Equal(allLeases, new HashSet<ILease>(leasesToTake));
+            Assert.All(leasesToTake, l => Assert.Equal(AcquireReason.NoOwner, ((ILeaseEx)l).AcquireReason));
         }
 
         [Fact]
-        public void CalculateLeasesToTake_ExpiredLeasesOnly_ReturnsAll()
+        public void CalculateLeasesToTake_ExpiredLeasesOnly_ReturnsAllWithExpiredReason()
         {
             EqualPartitionsBalancingStrategy strategy = CreateStrategy();
             var allLeases = new HashSet<ILease> { CreateExpiredLease(ownerSelf, "1"), CreateExpiredLease(owner1, "2") };
             var leasesToTake = strategy.SelectLeasesToTake(allLeases);
             Assert.Equal(allLeases, new HashSet<ILease>(leasesToTake));
+            Assert.All(leasesToTake, l => Assert.Equal(AcquireReason.Expired, ((ILeaseEx)l).AcquireReason));
         }
 
         [Fact]
@@ -129,6 +131,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
+        public void CalculateLeasesToTake_TwoOwners_ReturnsLeaseWithForceStealReason()
+        {
+            EqualPartitionsBalancingStrategy strategy = CreateStrategy();
+            var allLeases = new List<ILease>();
+            allLeases.AddRange(Enumerable.Range(1, 5).Select(index => CreateLease(owner1, "A" + index.ToString())));
+            allLeases.AddRange(Enumerable.Range(1, 10).Select(index => CreateLease(owner2, "B" + index.ToString())));
+            var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
+            ILease stolenLease = Assert.Single(leasesToTake);
+            Assert.Equal(AcquireReason.ForceSteal, ((ILeaseEx)stolenLease).AcquireReason);
+        }
+
+    [Fact]
         public void CalculateLeasesToTake_HavingMoreThanOtherOwner_ReturnsEmpty()
         {
             EqualPartitionsBalancingStrategy strategy = CreateStrategy();
@@ -201,9 +215,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             return CreateLease(owner, partitionId, DateTime.UtcNow.AddYears(-1));
         }
 
-        private static ILease CreateLease(string owner, string partitionId, DateTime timestamp)
+        private static ILeaseEx CreateLease(string owner, string partitionId, DateTime timestamp)
         {
-            var lease = Mock.Of<ILease>();
+            var lease = Mock.Of<ILeaseEx>();
             Mock.Get(lease).Setup(l => l.Owner).Returns(owner);
             Mock.Get(lease).Setup(l => l.PartitionId).Returns(partitionId);
             Mock.Get(lease).Setup(l => l.Timestamp).Returns(timestamp);

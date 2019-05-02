@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         };
         private static readonly Uri documentUri = UriFactory.CreateDocumentUri(collectionInfo.DatabaseName, collectionInfo.CollectionName, leaseId);
 
-        class MockLease : ILease
+        class MockLease : ILeaseEx
         {
             public string PartitionId { get; set; }
             public string Owner { get; set; }
@@ -305,6 +305,39 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         }
 
         [Fact]
+        public async Task AcquireAsync_DoesNotRetryConflicts_WhenAcquireReasonIsExpired()
+        {
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            var cachedLease = CreateCachedLease(owner);
+            cachedLease.AcquireReason = AcquireReason.Expired;
+            IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
+            var leaseStoreManager = CreateLeaseStoreManager(documentClient, owner, leaseUpdater);
+
+            await leaseStoreManager.AcquireAsync(cachedLease);
+
+            Mock.Get(leaseUpdater)
+            .Verify(u => u.UpdateLeaseAsync(cachedLease, documentUri, null, It.IsAny<Func<ILease, ILease>>(), false), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(AcquireReason.NoOwner)]
+        [InlineData(AcquireReason.ForceSteal)]
+        [InlineData(AcquireReason.Other)]
+        public async Task AcquireAsync_RetryConflicts_WhenAcquireReasonIsNotExpired(AcquireReason acquireReason)
+        {
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            var cachedLease = CreateCachedLease(owner);
+            cachedLease.AcquireReason = acquireReason;
+            IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
+            var leaseStoreManager = CreateLeaseStoreManager(documentClient, owner, leaseUpdater);
+
+            await leaseStoreManager.AcquireAsync(cachedLease);
+
+            Mock.Get(leaseUpdater)
+                .Verify(u => u.UpdateLeaseAsync(cachedLease, documentUri, null, It.IsAny<Func<ILease, ILease>>(), true), Times.Once);
+        }
+
+[Fact]
         public async Task RenewAsync_UpdatesLease_WhenOwningLease()
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
@@ -619,7 +652,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             };
         }
 
-        private static ILease CreateCachedLease(string leaseOwner)
+        private static ILeaseEx CreateCachedLease(string leaseOwner)
         {
             return new MockLease()
             {
