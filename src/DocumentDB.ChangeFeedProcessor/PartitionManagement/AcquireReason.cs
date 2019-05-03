@@ -10,6 +10,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     public enum AcquireReason
     {
         /// <summary>
+        /// Other reason to acquire.
+        /// </summary>
+        Other,
+
+        /// <summary>
         /// Partition has no owner.
         /// </summary>
         NoOwner,
@@ -23,10 +28,5 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         /// Partition needs to be stolen for load balancing.
         /// </summary>
         ForceSteal,
-
-        /// <summary>
-        /// Other reason to acquire.
-        /// </summary>
-        Other,
     }
 }
