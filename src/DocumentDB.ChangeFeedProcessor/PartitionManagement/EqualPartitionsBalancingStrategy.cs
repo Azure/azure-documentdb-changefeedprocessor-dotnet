@@ -31,8 +31,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             var workerToPartitionCount = new Dictionary<string, int>();
             var expiredLeases = new List<ILease>();
+            var notOwnedLeases = new List<ILease>();
             var allPartitions = new Dictionary<string, ILease>();
-            this.CategorizeLeases(allLeases, allPartitions, expiredLeases, workerToPartitionCount);
+            this.CategorizeLeases(allLeases, allPartitions, expiredLeases, notOwnedLeases, workerToPartitionCount);
 
             int partitionCount = allPartitions.Count;
             int workerCount = workerToPartitionCount.Count;
@@ -44,10 +45,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             int partitionsNeededForMe = target - myCount;
 
             Logger.InfoFormat(
-                "Host '{0}' {1} partitions, {2} hosts, {3} available leases, target = {4}, min = {5}, max = {6}, mine = {7}, will try to take {8} lease(s) for myself'.",
+                "Host '{0}' {1} partitions, {2} hosts, {3} not owned leases, {4} expired leases, target = {5}, min = {6}, max = {7}, mine = {8}, will try to take {9} lease(s) for myself'.",
                 this.hostName,
                 partitionCount,
                 workerCount,
+                notOwnedLeases.Count,
                 expiredLeases.Count,
                 target,
                 this.minPartitionCount,
@@ -58,16 +60,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             if (partitionsNeededForMe <= 0)
                 return Enumerable.Empty<ILease>();
 
-            if (expiredLeases.Count > 0)
+            var availableLeases = notOwnedLeases.Union(expiredLeases).ToList();
+            if (availableLeases.Count > 0)
             {
-                var leasesToTake = expiredLeases.Take(partitionsNeededForMe).ToList();
-                foreach (var lease in leasesToTake)
-                {
-                    if (lease is ILeaseEx leaseEx)
-                        leaseEx.AcquireReason = this.IsExpired(lease) ? AcquireReason.Expired : AcquireReason.NoOwner;
-                }
-
-                return leasesToTake;
+                return availableLeases.Take(partitionsNeededForMe);
             }
 
             ILease stolenLease = GetLeaseToSteal(workerToPartitionCount, target, partitionsNeededForMe, allPartitions);
@@ -75,7 +71,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 return Enumerable.Empty<ILease>();
 
             if (stolenLease is ILeaseEx stolenLeaseEx)
-                stolenLeaseEx.AcquireReason = AcquireReason.ForceSteal;
+                stolenLeaseEx.LeaseAcquireReason = LeaseAcquireReason.Steal;
             return new[] { stolenLease };
         }
 
@@ -133,6 +129,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             IEnumerable<ILease> allLeases,
             Dictionary<string, ILease> allPartitions,
             List<ILease> expiredLeases,
+            List<ILease> notOwnedLeases,
             Dictionary<string, int> workerToPartitionCount)
         {
             foreach (ILease lease in allLeases)
@@ -142,7 +139,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 allPartitions.Add(lease.PartitionId, lease);
                 if (string.IsNullOrWhiteSpace(lease.Owner) || this.IsExpired(lease))
                 {
-                    Logger.DebugFormat("Found unused or expired lease: {0}", lease);
+                    Logger.DebugFormat("Found unused lease: {0}", lease);
+                    if (lease is ILeaseEx leaseEx)
+                        leaseEx.LeaseAcquireReason = LeaseAcquireReason.NotOwned;
+                    notOwnedLeases.Add(lease);
+                }
+                else if (this.IsExpired(lease))
+                {
+                    Logger.DebugFormat("Found expired lease: {0}", lease);
+                    if (lease is ILeaseEx leaseEx)
+                        leaseEx.LeaseAcquireReason = LeaseAcquireReason.Expired;
                     expiredLeases.Add(lease);
                 }
                 else

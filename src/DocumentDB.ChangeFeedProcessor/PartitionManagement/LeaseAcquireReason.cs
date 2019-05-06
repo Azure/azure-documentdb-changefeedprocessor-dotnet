@@ -5,28 +5,28 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
 {
     /// <summary>
-    /// The acquire reason.
+    /// The reason why <see cref="IParitionLoadBalancingStrategy"/> chose to acquire a lease.
     /// </summary>
-    public enum AcquireReason
+    public enum LeaseAcquireReason
     {
         /// <summary>
-        /// Other reason to acquire.
+        /// Unknown reason to acquire.
         /// </summary>
-        Other,
+        Unknown,
 
         /// <summary>
-        /// Partition has no owner.
+        /// Lease has no owner.
         /// </summary>
-        NoOwner,
+        NotOwned,
 
         /// <summary>
-        /// Partition is detected as expired.
+        /// Lease is detected as expired.
         /// </summary>
         Expired,
 
         /// <summary>
-        /// Partition needs to be stolen for load balancing.
+        /// Lease needs to be stolen for load balancing.
         /// </summary>
-        ForceSteal,
+        Steal,
     }
 }

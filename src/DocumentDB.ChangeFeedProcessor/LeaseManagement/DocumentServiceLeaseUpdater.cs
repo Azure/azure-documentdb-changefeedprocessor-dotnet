@@ -27,10 +27,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         }
 
         // Note: requestOptions are only used for read and not for update.
-        public async Task<ILease> UpdateLeaseAsync(ILease cachedLease, Uri documentUri, RequestOptions requestOptions, Func<ILease, ILease> updateLease, bool retryConflicts)
+        public async Task<ILease> UpdateLeaseAsync(
+            ILease cachedLease,
+            Uri documentUri,
+            RequestOptions requestOptions,
+            Func<ILease, ILease> updateLease,
+            bool retryOnConflict)
         {
             ILease lease = cachedLease;
-            for (int retryCount = retryConflicts ? RetryCountOnConflict : 0; retryCount >= 0; retryCount--)
+            for (int retryCount = retryOnConflict ? RetryCountOnConflict : 0; retryCount >= 0; retryCount--)
             {
                 lease = updateLease(lease);
                 if (lease == null)

@@ -152,9 +152,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 
             string oldOwner = lease.Owner;
 
-            AcquireReason? acquireReason = null;
+            LeaseAcquireReason? leaseAcquireReason = null;
             if (lease is ILeaseEx leaseEx)
-                acquireReason = leaseEx.AcquireReason;
+                leaseAcquireReason = leaseEx.LeaseAcquireReason;
 
             return await this.leaseUpdater.UpdateLeaseAsync(
                 lease,
@@ -171,7 +171,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                     serverLease.Properties = lease.Properties;
                     return serverLease;
                 },
-                acquireReason != AcquireReason.Expired).ConfigureAwait(false);
+                leaseAcquireReason != LeaseAcquireReason.Expired).ConfigureAwait(false);
         }
 
         public async Task<ILease> RenewAsync(ILease lease)

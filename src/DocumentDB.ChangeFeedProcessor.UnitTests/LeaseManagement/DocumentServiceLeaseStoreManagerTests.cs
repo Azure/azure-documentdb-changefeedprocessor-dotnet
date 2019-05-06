@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         };
         private static readonly Uri documentUri = UriFactory.CreateDocumentUri(collectionInfo.DatabaseName, collectionInfo.CollectionName, leaseId);
 
-        class MockLease : ILeaseEx
+        class MockLease : ILease, ILeaseEx
         {
             public string PartitionId { get; set; }
             public string Owner { get; set; }
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             public string Id { get; set; }
             public string ConcurrencyToken { get; set; }
             public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
-            public AcquireReason? AcquireReason { get; set; }
+            public LeaseAcquireReason? LeaseAcquireReason { get; set; }
         }
 
         [Fact]
@@ -309,7 +309,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
-            cachedLease.AcquireReason = AcquireReason.Expired;
+            ((ILeaseEx) cachedLease).LeaseAcquireReason = LeaseAcquireReason.Expired;
             IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
             var leaseStoreManager = CreateLeaseStoreManager(documentClient, owner, leaseUpdater);
 
@@ -320,14 +320,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         }
 
         [Theory]
-        [InlineData(AcquireReason.NoOwner)]
-        [InlineData(AcquireReason.ForceSteal)]
-        [InlineData(AcquireReason.Other)]
-        public async Task AcquireAsync_RetryConflicts_WhenAcquireReasonIsNotExpired(AcquireReason acquireReason)
+        [InlineData(LeaseAcquireReason.NotOwned)]
+        [InlineData(LeaseAcquireReason.Steal)]
+        [InlineData(LeaseAcquireReason.Unknown)]
+        public async Task AcquireAsync_RetryConflicts_WhenAcquireReasonIsNotExpired(LeaseAcquireReason leaseAcquireReason)
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
-            cachedLease.AcquireReason = acquireReason;
+            ((ILeaseEx)cachedLease).LeaseAcquireReason = leaseAcquireReason;
             IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
             var leaseStoreManager = CreateLeaseStoreManager(documentClient, owner, leaseUpdater);
 
@@ -652,7 +652,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             };
         }
 
-        private static ILeaseEx CreateCachedLease(string leaseOwner)
+        private static ILease CreateCachedLease(string leaseOwner)
         {
             return new MockLease()
             {

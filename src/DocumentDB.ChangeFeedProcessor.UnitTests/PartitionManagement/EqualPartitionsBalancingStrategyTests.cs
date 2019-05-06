@@ -42,7 +42,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var allLeases = new HashSet<ILease> { CreateLease(ownerNone, "1"), CreateLease(ownerNone, "2") };
             var leasesToTake = strategy.SelectLeasesToTake(allLeases);
             Assert.Equal(allLeases, new HashSet<ILease>(leasesToTake));
-            Assert.All(leasesToTake, l => Assert.Equal(AcquireReason.NoOwner, ((ILeaseEx)l).AcquireReason));
+            Assert.All(leasesToTake, l => AssertAcquireReason(l, LeaseAcquireReason.NotOwned));
         }
 
         [Fact]
@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             var allLeases = new HashSet<ILease> { CreateExpiredLease(ownerSelf, "1"), CreateExpiredLease(owner1, "2") };
             var leasesToTake = strategy.SelectLeasesToTake(allLeases);
             Assert.Equal(allLeases, new HashSet<ILease>(leasesToTake));
-            Assert.All(leasesToTake, l => Assert.Equal(AcquireReason.Expired, ((ILeaseEx)l).AcquireReason));
+            Assert.All(leasesToTake, l => AssertAcquireReason(l, LeaseAcquireReason.Expired));
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
-        public void CalculateLeasesToTake_TwoOwners_ReturnsLeaseWithForceStealReason()
+        public void CalculateLeasesToTake_TwoOwners_ReturnsLeaseWithStealReason()
         {
             EqualPartitionsBalancingStrategy strategy = CreateStrategy();
             var allLeases = new List<ILease>();
@@ -139,7 +139,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             allLeases.AddRange(Enumerable.Range(1, 10).Select(index => CreateLease(owner2, "B" + index.ToString())));
             var leasesToTake = strategy.SelectLeasesToTake(allLeases).ToList();
             ILease stolenLease = Assert.Single(leasesToTake);
-            Assert.Equal(AcquireReason.ForceSteal, ((ILeaseEx)stolenLease).AcquireReason);
+            AssertAcquireReason(stolenLease, LeaseAcquireReason.Steal);
         }
 
     [Fact]
@@ -215,13 +215,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             return CreateLease(owner, partitionId, DateTime.UtcNow.AddYears(-1));
         }
 
-        private static ILeaseEx CreateLease(string owner, string partitionId, DateTime timestamp)
+        private static ILease CreateLease(string owner, string partitionId, DateTime timestamp)
         {
-            var lease = Mock.Of<ILeaseEx>();
-            Mock.Get(lease).Setup(l => l.Owner).Returns(owner);
-            Mock.Get(lease).Setup(l => l.PartitionId).Returns(partitionId);
-            Mock.Get(lease).Setup(l => l.Timestamp).Returns(timestamp);
-            return lease;
+            var leaseEx = new Mock<ILeaseEx>();
+            var lease = leaseEx.As<ILease>();
+            lease.Setup(l => l.Owner).Returns(owner);
+            lease.Setup(l => l.PartitionId).Returns(partitionId);
+            lease.Setup(l => l.Timestamp).Returns(timestamp);
+            return lease.Object;
         }
+
+        private static void AssertAcquireReason (ILease lease, LeaseAcquireReason expectedReason)
+        {
+            Mock.Get((ILeaseEx)lease).VerifySet(l => l.LeaseAcquireReason = expectedReason);
+        }
+
     }
 }
