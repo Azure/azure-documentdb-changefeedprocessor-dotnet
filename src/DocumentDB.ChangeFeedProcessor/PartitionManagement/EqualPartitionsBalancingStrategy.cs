@@ -31,9 +31,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         {
             var workerToPartitionCount = new Dictionary<string, int>();
             var expiredLeases = new List<ILease>();
-            var notOwnedLeases = new List<ILease>();
+            var leasesWithoutOwner = new List<ILease>();
             var allPartitions = new Dictionary<string, ILease>();
-            this.CategorizeLeases(allLeases, allPartitions, expiredLeases, notOwnedLeases, workerToPartitionCount);
+            this.CategorizeLeases(allLeases, allPartitions, expiredLeases, leasesWithoutOwner, workerToPartitionCount);
 
             int partitionCount = allPartitions.Count;
             int workerCount = workerToPartitionCount.Count;
@@ -49,7 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 this.hostName,
                 partitionCount,
                 workerCount,
-                notOwnedLeases.Count,
+                leasesWithoutOwner.Count,
                 expiredLeases.Count,
                 target,
                 this.minPartitionCount,
@@ -60,7 +60,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             if (partitionsNeededForMe <= 0)
                 return Enumerable.Empty<ILease>();
 
-            var availableLeases = notOwnedLeases.Union(expiredLeases).ToList();
+            var availableLeases = leasesWithoutOwner.Union(expiredLeases).ToList();
             if (availableLeases.Count > 0)
             {
                 return availableLeases.Take(partitionsNeededForMe);
@@ -70,8 +70,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             if (stolenLease == null)
                 return Enumerable.Empty<ILease>();
 
-            if (stolenLease is ILeaseEx stolenLeaseEx)
-                stolenLeaseEx.LeaseAcquireReason = LeaseAcquireReason.Steal;
+            if (stolenLease is ILeaseAcquireReasonProvider acquireReasonProvider)
+                acquireReasonProvider.AcquireReason = LeaseAcquireReason.Steal;
             return new[] { stolenLease };
         }
 
@@ -129,7 +129,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
             IEnumerable<ILease> allLeases,
             Dictionary<string, ILease> allPartitions,
             List<ILease> expiredLeases,
-            List<ILease> notOwnedLeases,
+            List<ILease> leasesWithoutOwner,
             Dictionary<string, int> workerToPartitionCount)
         {
             foreach (ILease lease in allLeases)
@@ -137,18 +137,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 Debug.Assert(lease.PartitionId != null, "TakeLeasesAsync: lease.PartitionId cannot be null.");
 
                 allPartitions.Add(lease.PartitionId, lease);
-                if (string.IsNullOrWhiteSpace(lease.Owner) || this.IsExpired(lease))
+                if (string.IsNullOrWhiteSpace(lease.Owner))
                 {
                     Logger.DebugFormat("Found unused lease: {0}", lease);
-                    if (lease is ILeaseEx leaseEx)
-                        leaseEx.LeaseAcquireReason = LeaseAcquireReason.NotOwned;
-                    notOwnedLeases.Add(lease);
+                    if (lease is ILeaseAcquireReasonProvider acquireReasonProvider)
+                        acquireReasonProvider.AcquireReason = LeaseAcquireReason.NotOwned;
+                    leasesWithoutOwner.Add(lease);
                 }
                 else if (this.IsExpired(lease))
                 {
                     Logger.DebugFormat("Found expired lease: {0}", lease);
-                    if (lease is ILeaseEx leaseEx)
-                        leaseEx.LeaseAcquireReason = LeaseAcquireReason.Expired;
+                    if (lease is ILeaseAcquireReasonProvider acquireReasonProvider)
+                        acquireReasonProvider.AcquireReason = LeaseAcquireReason.Expired;
                     expiredLeases.Add(lease);
                 }
                 else

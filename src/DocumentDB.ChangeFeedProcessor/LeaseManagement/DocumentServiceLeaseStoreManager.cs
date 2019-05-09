@@ -153,8 +153,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             string oldOwner = lease.Owner;
 
             LeaseAcquireReason? leaseAcquireReason = null;
-            if (lease is ILeaseEx leaseEx)
-                leaseAcquireReason = leaseEx.LeaseAcquireReason;
+            if (lease is ILeaseAcquireReasonProvider leaseEx)
+                leaseAcquireReason = leaseEx.AcquireReason;
 
             return await this.leaseUpdater.UpdateLeaseAsync(
                 lease,

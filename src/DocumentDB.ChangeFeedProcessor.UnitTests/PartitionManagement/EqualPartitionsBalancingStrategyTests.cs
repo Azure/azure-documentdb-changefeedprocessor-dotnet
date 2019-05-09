@@ -217,7 +217,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
         private static ILease CreateLease(string owner, string partitionId, DateTime timestamp)
         {
-            var leaseEx = new Mock<ILeaseEx>();
+            var leaseEx = new Mock<ILeaseAcquireReasonProvider>();
             var lease = leaseEx.As<ILease>();
             lease.Setup(l => l.Owner).Returns(owner);
             lease.Setup(l => l.PartitionId).Returns(partitionId);
@@ -227,7 +227,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
 
         private static void AssertAcquireReason (ILease lease, LeaseAcquireReason expectedReason)
         {
-            Mock.Get((ILeaseEx)lease).VerifySet(l => l.LeaseAcquireReason = expectedReason);
+            Mock.Get((ILeaseAcquireReasonProvider)lease).VerifySet(l => l.AcquireReason = expectedReason);
         }
 
     }

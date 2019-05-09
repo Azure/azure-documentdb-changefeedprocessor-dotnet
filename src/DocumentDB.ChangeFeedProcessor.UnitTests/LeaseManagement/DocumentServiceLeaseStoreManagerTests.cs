@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         };
         private static readonly Uri documentUri = UriFactory.CreateDocumentUri(collectionInfo.DatabaseName, collectionInfo.CollectionName, leaseId);
 
-        class MockLease : ILease, ILeaseEx
+        class MockLease : ILease, ILeaseAcquireReasonProvider
         {
             public string PartitionId { get; set; }
             public string Owner { get; set; }
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             public string Id { get; set; }
             public string ConcurrencyToken { get; set; }
             public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
-            public LeaseAcquireReason? LeaseAcquireReason { get; set; }
+            public LeaseAcquireReason AcquireReason { get; set; }
         }
 
         [Fact]
@@ -309,7 +309,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
-            ((ILeaseEx) cachedLease).LeaseAcquireReason = LeaseAcquireReason.Expired;
+            ((ILeaseAcquireReasonProvider) cachedLease).AcquireReason = LeaseAcquireReason.Expired;
             IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
             var leaseStoreManager = CreateLeaseStoreManager(documentClient, owner, leaseUpdater);
 
@@ -327,7 +327,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         {
             var documentClient = Mock.Of<IChangeFeedDocumentClient>();
             var cachedLease = CreateCachedLease(owner);
-            ((ILeaseEx)cachedLease).LeaseAcquireReason = leaseAcquireReason;
+            ((ILeaseAcquireReasonProvider)cachedLease).AcquireReason = leaseAcquireReason;
             IDocumentServiceLeaseUpdater leaseUpdater = CreateLeaseUpdater(cachedLease);
             var leaseStoreManager = CreateLeaseStoreManager(documentClient, owner, leaseUpdater);
 
