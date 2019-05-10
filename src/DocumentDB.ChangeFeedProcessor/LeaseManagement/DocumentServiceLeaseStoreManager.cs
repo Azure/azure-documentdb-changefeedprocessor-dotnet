@@ -141,7 +141,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                     }
                     serverLease.ContinuationToken = continuationToken;
                     return serverLease;
-                }).ConfigureAwait(false);
+                },
+                true).ConfigureAwait(false);
         }
 
         public async Task<ILease> AcquireAsync(ILease lease)
@@ -150,6 +151,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 throw new ArgumentNullException(nameof(lease));
 
             string oldOwner = lease.Owner;
+
+            LeaseAcquireReason? leaseAcquireReason = null;
+            if (lease is ILeaseAcquireReasonProvider leaseEx)
+                leaseAcquireReason = leaseEx.AcquireReason;
 
             return await this.leaseUpdater.UpdateLeaseAsync(
                 lease,
@@ -165,7 +170,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                     serverLease.Owner = this.settings.HostName;
                     serverLease.Properties = lease.Properties;
                     return serverLease;
-                }).ConfigureAwait(false);
+                },
+                leaseAcquireReason != LeaseAcquireReason.Expired).ConfigureAwait(false);
         }
 
         public async Task<ILease> RenewAsync(ILease lease)
@@ -194,7 +200,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                         throw new LeaseLostException(lease);
                     }
                     return serverLease;
-                }).ConfigureAwait(false);
+                },
+                true).ConfigureAwait(false);
         }
 
         public async Task ReleaseAsync(ILease lease)
@@ -222,7 +229,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                     }
                     serverLease.Owner = null;
                     return serverLease;
-                }).ConfigureAwait(false);
+                },
+                true).ConfigureAwait(false);
         }
 
         public async Task DeleteAsync(ILease lease)
@@ -266,7 +274,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                         }
                         serverLease.Properties = lease.Properties;
                         return serverLease;
-                    }).ConfigureAwait(false);
+                    },
+                true).ConfigureAwait(false);
         }
 
         public Task<bool> IsInitializedAsync()
