@@ -16,13 +16,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess
     /// </summary>
     public class ChangeFeedDocumentClient : IChangeFeedDocumentClient
     {
-        private readonly DocumentClient documentClient;
+        private readonly IDocumentClient documentClient;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ChangeFeedDocumentClient"/> class.
         /// </summary>
         /// <param name="documentClient">Existing <see cref="DocumentClient"/>.</param>
-        public ChangeFeedDocumentClient(DocumentClient documentClient)
+        public ChangeFeedDocumentClient(IDocumentClient documentClient)
         {
             if (documentClient == null) throw new ArgumentNullException(nameof(documentClient));
             this.documentClient = documentClient;

@@ -165,11 +165,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Sets an existing <see cref="DocumentClient"/> to be used to read from the monitored collection.
+        /// Sets an existing <see cref="IDocumentClient"/> to be used to read from the monitored collection.
         /// </summary>
-        /// <param name="feedDocumentClient">The instance of <see cref="DocumentClient"/> to use.</param>
+        /// <param name="feedDocumentClient">The instance of <see cref="IDocumentClient"/> to use.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithFeedDocumentClient(DocumentClient feedDocumentClient)
+        public ChangeFeedProcessorBuilder WithFeedDocumentClient(IDocumentClient feedDocumentClient)
         {
             if (feedDocumentClient == null) throw new ArgumentNullException(nameof(feedDocumentClient));
             this.feedDocumentClient = new ChangeFeedDocumentClient(feedDocumentClient);
@@ -261,11 +261,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
-        /// Sets an existing <see cref="DocumentClient"/> to be used to read from the leases collection.
+        /// Sets an existing <see cref="IDocumentClient"/> to be used to read from the leases collection.
         /// </summary>
-        /// <param name="leaseDocumentClient">The instance of <see cref="DocumentClient"/> to use.</param>
+        /// <param name="leaseDocumentClient">The instance of <see cref="IDocumentClient"/> to use.</param>
         /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
-        public ChangeFeedProcessorBuilder WithLeaseDocumentClient(DocumentClient leaseDocumentClient)
+        public ChangeFeedProcessorBuilder WithLeaseDocumentClient(IDocumentClient leaseDocumentClient)
         {
             if (leaseDocumentClient == null) throw new ArgumentNullException(nameof(leaseDocumentClient));
             this.leaseDocumentClient = new ChangeFeedDocumentClient(leaseDocumentClient);
