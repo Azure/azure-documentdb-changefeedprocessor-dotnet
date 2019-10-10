@@ -122,7 +122,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private IChangeFeedDocumentClient leaseDocumentClient;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
         private IPartitionProcessorFactory partitionProcessorFactory;
-        private IHealthMonitor healthMonitor;
+        private IHealthMonitor healthMonitor = new TraceHealthMonitor();
 
         internal string HostName
         {
@@ -358,6 +358,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new InvalidOperationException("Observer was not specified");
             }
 
+            this.InitializeFeedDocumentClient();
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
             ILeaseStoreManager leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
@@ -381,6 +382,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 throw new InvalidOperationException($"Either {nameof(this.leaseCollectionLocation)} or {nameof(this.LeaseStoreManager)} must be specified");
             }
 
+            this.InitializeFeedDocumentClient();
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
             var leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
@@ -436,12 +438,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             }
 
             IPartitionController partitionController = new PartitionController(leaseStoreManager, leaseStoreManager, partitionSuperviserFactory, synchronizer);
-
-            if (this.healthMonitor == null)
-            {
-                this.healthMonitor = new TraceHealthMonitor();
-            }
-
             partitionController = new HealthMonitoringPartitionControllerDecorator(partitionController, this.healthMonitor);
             var partitionLoadBalancer = new PartitionLoadBalancer(
                 partitionController,
@@ -504,10 +500,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         private async Task InitializeCollectionPropertiesForBuildAsync()
         {
-            this.feedDocumentClient = this.feedDocumentClient ?? this.feedCollectionLocation.CreateDocumentClient();
             this.changeFeedProcessorOptions = this.changeFeedProcessorOptions ?? new ChangeFeedProcessorOptions();
             this.databaseResourceId = this.databaseResourceId ?? await GetDatabaseResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
             this.collectionResourceId = this.collectionResourceId ?? await GetCollectionResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
+        }
+
+        private void InitializeFeedDocumentClient()
+        {
+            this.feedDocumentClient = this.feedDocumentClient = new ChangeFeedDocumentClientHealthDecorator(this.feedDocumentClient ?? this.feedCollectionLocation.CreateDocumentClient(), this.healthMonitor, this.changeFeedProcessorOptions.ChangeFeedClientHealthOptions);
         }
     }
 }

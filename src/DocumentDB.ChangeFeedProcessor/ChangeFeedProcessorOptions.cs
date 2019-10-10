@@ -5,6 +5,7 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>
@@ -28,6 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             this.FeedPollDelay = DefaultFeedPollDelay;
             this.QueryPartitionsMaxBatchSize = DefaultQueryPartitionsMaxBatchSize;
             this.CheckpointFrequency = new CheckpointFrequency();
+            this.ChangeFeedClientHealthOptions = new ChangeFeedClientHealthOptions();
         }
 
         /// <summary>
@@ -119,6 +121,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// Gets or sets the session token for use with session consistency in the Azure Cosmos DB service.
         /// </summary>
         public string SessionToken { get; set; }
+
+        /// <summary>
+        /// Gets or sets the health options for <see cref="IChangeFeedDocumentClient"/>.
+        /// </summary>
+        public ChangeFeedClientHealthOptions ChangeFeedClientHealthOptions { get; set; }
 
         /// <summary>
         /// Gets or sets the minimum partition count for the host.
