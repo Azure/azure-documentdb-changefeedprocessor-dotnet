@@ -5,7 +5,6 @@
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 {
     using System;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.Client;
 
     /// <summary>
