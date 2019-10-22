@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             this.FeedPollDelay = DefaultFeedPollDelay;
             this.QueryPartitionsMaxBatchSize = DefaultQueryPartitionsMaxBatchSize;
             this.CheckpointFrequency = new CheckpointFrequency();
-            this.ChangeFeedClientHealthOptions = new ChangeFeedClientHealthOptions();
+            this.ChangeFeedTimeout = TimeSpan.FromMinutes(10);
         }
 
         /// <summary>
@@ -123,9 +123,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         public string SessionToken { get; set; }
 
         /// <summary>
-        /// Gets or sets the health options for <see cref="IChangeFeedDocumentClient"/>.
+        /// Gets or sets the timeout for change feed.
         /// </summary>
-        public ChangeFeedClientHealthOptions ChangeFeedClientHealthOptions { get; set; }
+        public TimeSpan ChangeFeedTimeout { get; set; }
 
         /// <summary>
         /// Gets or sets the minimum partition count for the host.

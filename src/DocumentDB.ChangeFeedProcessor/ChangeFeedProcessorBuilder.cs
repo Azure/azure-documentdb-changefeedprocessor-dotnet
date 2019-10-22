@@ -507,7 +507,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         private void InitializeFeedDocumentClient()
         {
-            this.feedDocumentClient = this.feedDocumentClient = new ChangeFeedDocumentClientHealthDecorator(this.feedDocumentClient ?? this.feedCollectionLocation.CreateDocumentClient(), this.healthMonitor, this.changeFeedProcessorOptions.ChangeFeedClientHealthOptions);
+            if (this.feedDocumentClient == null)
+                this.feedDocumentClient = this.feedCollectionLocation.CreateDocumentClient();
+
+            if (this.changeFeedProcessorOptions.ChangeFeedTimeout != TimeSpan.MaxValue)
+                this.feedDocumentClient = new ChangeFeedDocumentClientHealthDecorator(this.feedDocumentClient, this.healthMonitor, this.changeFeedProcessorOptions.ChangeFeedTimeout);
         }
     }
 }

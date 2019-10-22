@@ -16,14 +16,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     {
         private readonly IChangeFeedDocumentClient documentClient;
         private readonly IHealthMonitor monitor;
-        private readonly ChangeFeedClientHealthOptions healthOptions;
+        private readonly TimeSpan changeFeedTimeout;
 
-        public ChangeFeedDocumentClientHealthDecorator(IChangeFeedDocumentClient documentClient, IHealthMonitor monitor, ChangeFeedClientHealthOptions healthOptions)
+        public ChangeFeedDocumentClientHealthDecorator(IChangeFeedDocumentClient documentClient, IHealthMonitor monitor, TimeSpan changeFeedTimeout)
         {
             if (documentClient == null) throw new ArgumentNullException(nameof(documentClient));
             this.documentClient = documentClient;
             this.monitor = monitor;
-            this.healthOptions = healthOptions;
+            this.changeFeedTimeout = changeFeedTimeout;
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         public IChangeFeedDocumentQuery<Document> CreateDocumentChangeFeedQuery(string collectionLink, ChangeFeedOptions feedOptions = null)
         {
             var query = this.documentClient.CreateDocumentChangeFeedQuery(collectionLink, feedOptions);
-            return new ChangeFeedQueryTimeoutDecorator(query, this.monitor, this.healthOptions.MaxChangeFeedQueryDuration);
+            return new ChangeFeedQueryTimeoutDecorator(query, this.monitor, this.changeFeedTimeout);
         }
 
         /// <summary>
