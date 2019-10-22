@@ -500,7 +500,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         private async Task InitializeCollectionPropertiesForBuildAsync()
         {
-            this.changeFeedProcessorOptions = this.changeFeedProcessorOptions ?? new ChangeFeedProcessorOptions();
             this.databaseResourceId = this.databaseResourceId ?? await GetDatabaseResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
             this.collectionResourceId = this.collectionResourceId ?? await GetCollectionResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
         }
@@ -509,6 +508,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         {
             if (this.feedDocumentClient == null)
                 this.feedDocumentClient = this.feedCollectionLocation.CreateDocumentClient();
+
+            this.changeFeedProcessorOptions = this.changeFeedProcessorOptions ?? new ChangeFeedProcessorOptions();
 
             if (this.changeFeedProcessorOptions.ChangeFeedTimeout != TimeSpan.MaxValue)
                 this.feedDocumentClient = new ChangeFeedDocumentClientHealthDecorator(this.feedDocumentClient, this.healthMonitor, this.changeFeedProcessorOptions.ChangeFeedTimeout);
