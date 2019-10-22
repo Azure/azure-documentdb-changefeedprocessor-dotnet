@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Utils
 
             // timeout or cancellation token has fired
             token.ThrowIfCancellationRequested();
-            throw new TimeoutException();
+            throw new TimeoutException("Change feed operation took too much time and was aborted");
         }
     }
 }

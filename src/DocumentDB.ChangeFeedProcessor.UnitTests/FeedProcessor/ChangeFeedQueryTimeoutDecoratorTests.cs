@@ -37,7 +37,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             await Assert.ThrowsAsync<TimeoutException>(()=> timeoutDecorator.ExecuteNextAsync<Document>(CancellationToken.None));
 
             Mock.Get(monitor)
-                .Verify(m => m.InspectAsync(It.Is<HealthMonitoringRecord>(record => record.Operation == MonitoredOperation.ChangeFeedQuery)), Times.Once);
+                .Verify(m => m.InspectAsync(It.Is<HealthMonitoringRecord>(record => record.Operation == MonitoredOperation.ReadChangeFeed)), Times.Once);
         }
 
         [Fact]

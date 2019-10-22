@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             catch (TimeoutException e)
             {
                 await this.monitor
-                    .InspectAsync(new HealthMonitoringRecord(HealthSeverity.Error, MonitoredOperation.ChangeFeedQuery, null, e)).ConfigureAwait(false);
+                    .InspectAsync(new HealthMonitoringRecord(HealthSeverity.Error, MonitoredOperation.ReadChangeFeed, null, e)).ConfigureAwait(false);
                 throw;
             }
         }

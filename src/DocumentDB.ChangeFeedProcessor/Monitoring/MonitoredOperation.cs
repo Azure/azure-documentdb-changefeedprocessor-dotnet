@@ -15,8 +15,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
         AcquireLease,
 
         /// <summary>
-        /// A phase when the instance tries to execute changefeed query
+        /// A phase when the instance tries to read from changefeed
         /// </summary>
-        ChangeFeedQuery,
+        ReadChangeFeed,
     }
 }
