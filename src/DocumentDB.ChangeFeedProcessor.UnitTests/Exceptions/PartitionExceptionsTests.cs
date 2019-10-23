@@ -14,6 +14,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
     using Microsoft.Azure.Documents.Client;
     using Moq;
@@ -74,7 +75,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
                 .Callback(cancellationTokenSource.Cancel);
 
             var checkPointer = new Mock<IPartitionCheckpointer>();
-            partitionProcessor = new PartitionProcessor(observer, docClient, processorSettings, checkPointer.Object);
+            var healthMonitor = Mock.Of<IHealthMonitor>();
+            partitionProcessor = new PartitionProcessor(observer, docClient, processorSettings, checkPointer.Object, healthMonitor);
         }
 
         [Fact]

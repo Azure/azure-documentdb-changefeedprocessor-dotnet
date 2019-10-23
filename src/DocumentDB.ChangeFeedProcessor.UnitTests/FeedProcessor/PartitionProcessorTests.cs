@@ -12,6 +12,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
     using Microsoft.Azure.Documents.Client;
     using Moq;
@@ -71,7 +72,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 
             observer = Mock.Of<IChangeFeedObserver>();
             var checkPointer = new Mock<IPartitionCheckpointer>();
-            sut = new PartitionProcessor(new FeedProcessing.ObserverExceptionWrappingChangeFeedObserverDecorator(observer), docClient, processorSettings, checkPointer.Object);
+            var healthMonitor = Mock.Of<IHealthMonitor>();
+            sut = new PartitionProcessor(new FeedProcessing.ObserverExceptionWrappingChangeFeedObserverDecorator(observer), docClient, processorSettings, checkPointer.Object, healthMonitor);
         }
 
         [Fact]
@@ -241,6 +243,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                             It.IsAny<CancellationToken>()),
                     Times.Once);
         }
+
+        [Fact]
+        public async Task Run_ShouldThrow_IfQueryThrowsTimeoutException()
+        {
+            Mock.Get(documentQuery)
+                .Reset();
+
+            Mock.Get(documentQuery)
+                .Setup(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)))
+                .ThrowsAsync(new TimeoutException("test timeout"));
+
+            await Assert.ThrowsAsync<TimeoutException>(() => sut.RunAsync(cancellationTokenSource.Token));
+
+            Mock.Get(documentQuery)
+                .Verify(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)), Times.Once);
+        }
+
 
         /// <summary>
         /// (1) Read normal feed

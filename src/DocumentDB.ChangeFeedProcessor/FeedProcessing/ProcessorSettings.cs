@@ -23,5 +23,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         public DateTime? StartTime { get; set; }
 
         public string SessionToken { get; set; }
+
+        public TimeSpan ChangeFeedTimeout { get; set; }
     }
 }

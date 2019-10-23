@@ -11,6 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.Client;
     using Moq;
     using Xunit;
@@ -84,7 +85,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 
             observer = Mock.Of<IChangeFeedObserver>();
             var checkPointer = new Mock<IPartitionCheckpointer>();
-            partitionProcessor = new PartitionProcessor(observer, docClient, processorSettings, checkPointer.Object);
+            var healthMonitor = Mock.Of<IHealthMonitor>();
+            partitionProcessor = new PartitionProcessor(observer, docClient, processorSettings, checkPointer.Object, healthMonitor);
 
             var i = 0;
             Mock.Get(observer)
