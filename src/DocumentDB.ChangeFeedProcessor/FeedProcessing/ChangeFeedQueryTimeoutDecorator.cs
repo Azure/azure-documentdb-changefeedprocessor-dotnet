@@ -20,6 +20,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 
         public ChangeFeedQueryTimeoutDecorator(IChangeFeedDocumentQuery<Document> query, IHealthMonitor monitor, TimeSpan timeout)
         {
+            if (query == null)
+                throw new ArgumentNullException(nameof(query));
+            if (monitor == null)
+                throw new ArgumentNullException(nameof(monitor));
+
             this.query = query;
             this.monitor = monitor;
             this.timeout = timeout;
