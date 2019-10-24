@@ -122,7 +122,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private IChangeFeedDocumentClient leaseDocumentClient;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
         private IPartitionProcessorFactory partitionProcessorFactory;
-        private IHealthMonitor healthMonitor;
+        private IHealthMonitor healthMonitor = new TraceHealthMonitor();
 
         internal string HostName
         {
@@ -423,7 +423,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             var partitionSuperviserFactory = new PartitionSupervisorFactory(
                 factory,
                 leaseStoreManager,
-                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseStoreManager, feedCollectionSelfLink),
+                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseStoreManager, feedCollectionSelfLink, this.healthMonitor),
                 this.changeFeedProcessorOptions);
 
             if (this.loadBalancingStrategy == null)
@@ -436,12 +436,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             }
 
             IPartitionController partitionController = new PartitionController(leaseStoreManager, leaseStoreManager, partitionSuperviserFactory, synchronizer);
-
-            if (this.healthMonitor == null)
-            {
-                this.healthMonitor = new TraceHealthMonitor();
-            }
-
             partitionController = new HealthMonitoringPartitionControllerDecorator(partitionController, this.healthMonitor);
             var partitionLoadBalancer = new PartitionLoadBalancer(
                 partitionController,

@@ -17,6 +17,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private static readonly TimeSpan DefaultAcquireInterval = TimeSpan.FromSeconds(13);
         private static readonly TimeSpan DefaultExpirationInterval = TimeSpan.FromSeconds(60);
         private static readonly TimeSpan DefaultFeedPollDelay = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan DefaultFeedTimeout = TimeSpan.FromMinutes(10);
         private DateTime? startTime;
 
         /// <summary>Initializes a new instance of the <see cref="ChangeFeedProcessorOptions" /> class.</summary>
@@ -28,6 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             this.FeedPollDelay = DefaultFeedPollDelay;
             this.QueryPartitionsMaxBatchSize = DefaultQueryPartitionsMaxBatchSize;
             this.CheckpointFrequency = new CheckpointFrequency();
+            this.ChangeFeedTimeout = DefaultFeedTimeout;
         }
 
         /// <summary>
@@ -119,6 +121,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         /// Gets or sets the session token for use with session consistency in the Azure Cosmos DB service.
         /// </summary>
         public string SessionToken { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout for change feed.
+        /// </summary>
+        public TimeSpan ChangeFeedTimeout { get; set; }
 
         /// <summary>
         /// Gets or sets the minimum partition count for the host.

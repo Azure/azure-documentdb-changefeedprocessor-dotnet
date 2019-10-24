@@ -13,6 +13,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.Client;
 
     internal class PartitionProcessor : IPartitionProcessor
@@ -25,22 +26,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         private readonly IChangeFeedObserver observer;
         private readonly ChangeFeedOptions options;
 
-        public PartitionProcessor(IChangeFeedObserver observer, IChangeFeedDocumentClient documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
+        public PartitionProcessor(IChangeFeedObserver observer, IChangeFeedDocumentQuery<Document> query, ChangeFeedOptions options, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
         {
             this.observer = observer;
             this.settings = settings;
             this.checkpointer = checkpointer;
-            this.options = new ChangeFeedOptions
-            {
-                MaxItemCount = settings.MaxItemCount,
-                PartitionKeyRangeId = settings.PartitionKeyRangeId,
-                SessionToken = settings.SessionToken,
-                StartFromBeginning = settings.StartFromBeginning,
-                RequestContinuation = settings.StartContinuation,
-                StartTime = settings.StartTime,
-            };
-
-            this.query = documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, this.options);
+            this.options = options;
+            this.query = query;
         }
 
         public async Task RunAsync(CancellationToken cancellationToken)
