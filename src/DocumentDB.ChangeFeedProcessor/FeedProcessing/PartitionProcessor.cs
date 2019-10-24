@@ -26,22 +26,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         private readonly IChangeFeedObserver observer;
         private readonly ChangeFeedOptions options;
 
-        public PartitionProcessor(IChangeFeedObserver observer, IChangeFeedDocumentClient documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer, IHealthMonitor healthMonitor)
+        public PartitionProcessor(IChangeFeedObserver observer, IChangeFeedDocumentQuery<Document> query, ChangeFeedOptions options, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
         {
             this.observer = observer;
             this.settings = settings;
             this.checkpointer = checkpointer;
-            this.options = new ChangeFeedOptions
-            {
-                MaxItemCount = settings.MaxItemCount,
-                PartitionKeyRangeId = settings.PartitionKeyRangeId,
-                SessionToken = settings.SessionToken,
-                StartFromBeginning = settings.StartFromBeginning,
-                RequestContinuation = settings.StartContinuation,
-                StartTime = settings.StartTime,
-            };
-            var changeFeedQuery = documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, this.options);
-            this.query = new ChangeFeedQueryTimeoutDecorator(changeFeedQuery, healthMonitor, settings.ChangeFeedTimeout);
+            this.options = options;
+            this.query = query;
         }
 
         public async Task RunAsync(CancellationToken cancellationToken)

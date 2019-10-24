@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
 
@@ -16,18 +17,22 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     {
         private readonly IChangeFeedDocumentQuery<Document> query;
         private readonly IHealthMonitor monitor;
+        private readonly ILease lease;
         private readonly TimeSpan timeout;
 
-        public ChangeFeedQueryTimeoutDecorator(IChangeFeedDocumentQuery<Document> query, IHealthMonitor monitor, TimeSpan timeout)
+        public ChangeFeedQueryTimeoutDecorator(IChangeFeedDocumentQuery<Document> query, IHealthMonitor monitor, TimeSpan timeout, ILease lease)
         {
             if (query == null)
                 throw new ArgumentNullException(nameof(query));
             if (monitor == null)
                 throw new ArgumentNullException(nameof(monitor));
+            if (lease == null)
+                throw new ArgumentNullException(nameof(lease));
 
             this.query = query;
             this.monitor = monitor;
             this.timeout = timeout;
+            this.lease = lease;
         }
 
         public bool HasMoreResults => this.query.HasMoreResults;
@@ -41,7 +46,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             catch (TimeoutException e)
             {
                 await this.monitor
-                    .InspectAsync(new HealthMonitoringRecord(HealthSeverity.Error, MonitoredOperation.ReadChangeFeed, null, e)).ConfigureAwait(false);
+                    .InspectAsync(new HealthMonitoringRecord(HealthSeverity.Error, MonitoredOperation.ReadChangeFeed, this.lease, e)).ConfigureAwait(false);
                 throw;
             }
         }

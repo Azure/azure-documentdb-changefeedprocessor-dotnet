@@ -7,6 +7,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
     using System;
     using System.Threading;
@@ -21,8 +22,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         {
             var monitor = Mock.Of<IHealthMonitor>();
             var innerQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
+            var lease = Mock.Of<ILease>();
 
-            var timeoutDecorator = new ChangeFeedQueryTimeoutDecorator(innerQuery, monitor, TimeSpan.FromMilliseconds(1));
+            var timeoutDecorator = new ChangeFeedQueryTimeoutDecorator(innerQuery, monitor, TimeSpan.FromMilliseconds(1), lease);
 
             var feedResponse = Mock.Of<IFeedResponse<Document>>();
 
@@ -37,7 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
             await Assert.ThrowsAsync<TimeoutException>(()=> timeoutDecorator.ExecuteNextAsync<Document>(CancellationToken.None));
 
             Mock.Get(monitor)
-                .Verify(m => m.InspectAsync(It.Is<HealthMonitoringRecord>(record => record.Operation == MonitoredOperation.ReadChangeFeed)), Times.Once);
+                .Verify(m => m.InspectAsync(It.Is<HealthMonitoringRecord>(record => record.Operation == MonitoredOperation.ReadChangeFeed && record.Lease == lease)), Times.Once);
         }
 
         [Fact]
@@ -45,8 +47,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         {
             var monitor = Mock.Of<IHealthMonitor>();
             var innerQuery = Mock.Of<IChangeFeedDocumentQuery<Document>>();
+            var lease = Mock.Of<ILease>();
 
-            var timeoutDecorator = new ChangeFeedQueryTimeoutDecorator(innerQuery, monitor, TimeSpan.FromMinutes(10));
+            var timeoutDecorator = new ChangeFeedQueryTimeoutDecorator(innerQuery, monitor, TimeSpan.FromMinutes(10), lease);
 
             var feedResponse = Mock.Of<IFeedResponse<Document>>();
 

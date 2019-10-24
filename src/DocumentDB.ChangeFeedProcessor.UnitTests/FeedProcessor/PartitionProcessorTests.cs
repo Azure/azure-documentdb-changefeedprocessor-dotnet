@@ -24,7 +24,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         private readonly ProcessorSettings processorSettings;
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly PartitionProcessor sut;
-        private readonly IChangeFeedDocumentClient docClient;
         private readonly IChangeFeedDocumentQuery<Document> documentQuery;
         private readonly IFeedResponse<Document> feedResponse;
         private readonly IChangeFeedObserver observer;
@@ -65,15 +64,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .ReturnsAsync(() => feedResponse)
                 .Callback(() => cancellationTokenSource.Cancel());
 
-            docClient = Mock.Of<IChangeFeedDocumentClient>();
-            Mock.Get(docClient)
-                .Setup(ex => ex.CreateDocumentChangeFeedQuery(processorSettings.CollectionSelfLink, It.IsAny<ChangeFeedOptions>()))
-                .Returns(documentQuery);
-
             observer = Mock.Of<IChangeFeedObserver>();
             var checkPointer = new Mock<IPartitionCheckpointer>();
-            var healthMonitor = Mock.Of<IHealthMonitor>();
-            sut = new PartitionProcessor(new FeedProcessing.ObserverExceptionWrappingChangeFeedObserverDecorator(observer), docClient, processorSettings, checkPointer.Object, healthMonitor);
+            sut = new PartitionProcessor(new ObserverExceptionWrappingChangeFeedObserverDecorator(observer), documentQuery, new ChangeFeedOptions(), processorSettings, checkPointer.Object);
         }
 
         [Fact]
@@ -93,20 +86,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                             It.Is<IChangeFeedObserverContext>(context => context.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId),
                             It.Is<IReadOnlyList<Document>>(list => list.SequenceEqual(documents)), 
                             It.IsAny<CancellationToken>()),
-                    Times.Once);
-        }
-
-        [Fact]
-        public async Task Run_ShouldPassFeedOptionsToQuery_OnCreation()
-        {
-            await Assert.ThrowsAsync<TaskCanceledException>(() => sut.RunAsync(cancellationTokenSource.Token));
-
-            Mock.Get(docClient)
-                .Verify(d => d.CreateDocumentChangeFeedQuery(
-                        It.Is<string>(s => s == processorSettings.CollectionSelfLink),
-                        It.Is<ChangeFeedOptions>(options =>
-                            options.PartitionKeyRangeId == processorSettings.PartitionKeyRangeId &&
-                            options.RequestContinuation == processorSettings.StartContinuation)),
                     Times.Once);
         }
 

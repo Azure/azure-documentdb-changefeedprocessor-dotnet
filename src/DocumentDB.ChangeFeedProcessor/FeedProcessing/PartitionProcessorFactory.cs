@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
+    using Microsoft.Azure.Documents.Client;
 
     internal class PartitionProcessorFactory : IPartitionProcessorFactory
     {
@@ -59,7 +60,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
             };
 
             var checkpointer = new PartitionCheckpointer(this.leaseCheckpointer, lease);
-            return new PartitionProcessor(observer, this.documentClient, settings, checkpointer, this.healthMonitor);
+
+            var changeFeedOptions = new ChangeFeedOptions
+            {
+                MaxItemCount = settings.MaxItemCount,
+                PartitionKeyRangeId = settings.PartitionKeyRangeId,
+                SessionToken = settings.SessionToken,
+                StartFromBeginning = settings.StartFromBeginning,
+                RequestContinuation = settings.StartContinuation,
+                StartTime = settings.StartTime,
+            };
+            var changeFeedQuery = this.documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, changeFeedOptions);
+            changeFeedQuery = new ChangeFeedQueryTimeoutDecorator(changeFeedQuery, this.healthMonitor, settings.ChangeFeedTimeout, lease);
+
+            return new PartitionProcessor(observer, changeFeedQuery, changeFeedOptions, settings, checkpointer);
         }
     }
 }

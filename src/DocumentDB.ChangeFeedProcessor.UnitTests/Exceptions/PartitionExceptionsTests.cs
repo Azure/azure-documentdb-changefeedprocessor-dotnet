@@ -14,7 +14,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
     using Microsoft.Azure.Documents.Client;
     using Moq;
@@ -26,7 +25,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
         private readonly ProcessorSettings processorSettings;
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly PartitionProcessor partitionProcessor;
-        private readonly IChangeFeedDocumentClient docClient;
         private readonly IChangeFeedDocumentQuery<Document> documentQuery;
         private readonly IFeedResponse<Document> feedResponse;
         private readonly IChangeFeedObserver observer;
@@ -61,11 +59,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
             Mock.Get(documentQuery)
                 .Setup(query => query.HasMoreResults)
                 .Returns(false);
-
-            docClient = Mock.Of<IChangeFeedDocumentClient>();
-            Mock.Get(docClient)
-                .Setup(ex => ex.CreateDocumentChangeFeedQuery(processorSettings.CollectionSelfLink, It.IsAny<ChangeFeedOptions>()))
-                .Returns(documentQuery);
+            var options = new ChangeFeedOptions();
 
             observer = Mock.Of<IChangeFeedObserver>();
             Mock.Get(observer)
@@ -75,8 +69,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
                 .Callback(cancellationTokenSource.Cancel);
 
             var checkPointer = new Mock<IPartitionCheckpointer>();
-            var healthMonitor = Mock.Of<IHealthMonitor>();
-            partitionProcessor = new PartitionProcessor(observer, docClient, processorSettings, checkPointer.Object, healthMonitor);
+            partitionProcessor = new PartitionProcessor(observer, documentQuery, options, processorSettings, checkPointer.Object);
         }
 
         [Fact]

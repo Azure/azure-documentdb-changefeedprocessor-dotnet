@@ -21,6 +21,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
         /// <param name="exception">The exception.</param>
         public HealthMonitoringRecord(HealthSeverity severity, MonitoredOperation operation, ILease lease, Exception exception)
         {
+            if (lease == null) throw new ArgumentNullException(nameof(lease));
             this.Severity = severity;
             this.Operation = operation;
             this.Lease = lease;
