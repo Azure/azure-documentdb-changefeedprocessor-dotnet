@@ -56,7 +56,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 StartFromBeginning = this.changeFeedProcessorOptions.StartFromBeginning,
                 StartTime = this.changeFeedProcessorOptions.StartTime,
                 SessionToken = this.changeFeedProcessorOptions.SessionToken,
-                ChangeFeedTimeout = this.changeFeedProcessorOptions.ChangeFeedTimeout,
             };
 
             var checkpointer = new PartitionCheckpointer(this.leaseCheckpointer, lease);
@@ -71,7 +70,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 StartTime = settings.StartTime,
             };
             var changeFeedQuery = this.documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, changeFeedOptions);
-            changeFeedQuery = new ChangeFeedQueryTimeoutDecorator(changeFeedQuery, this.healthMonitor, settings.ChangeFeedTimeout, lease);
+            changeFeedQuery = new ChangeFeedQueryTimeoutDecorator(changeFeedQuery, this.healthMonitor, this.changeFeedProcessorOptions.ChangeFeedTimeout, lease);
 
             return new PartitionProcessor(observer, changeFeedQuery, changeFeedOptions, settings, checkpointer);
         }
