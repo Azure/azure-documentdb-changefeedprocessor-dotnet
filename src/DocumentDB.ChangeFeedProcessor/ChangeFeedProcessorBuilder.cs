@@ -420,10 +420,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 this.changeFeedProcessorOptions.DegreeOfParallelism,
                 this.changeFeedProcessorOptions.QueryPartitionsMaxBatchSize);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStoreManager, this.lockTime, this.sleepTime);
-            var partitionSuperviserFactory = new PartitionSupervisorFactory(
+            var partitionSupervisorFactory = new PartitionSupervisorFactory(
                 factory,
                 leaseStoreManager,
-                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseStoreManager, feedCollectionSelfLink, this.healthMonitor),
+                leaseStoreManager,
+                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, feedCollectionSelfLink, this.healthMonitor),
                 this.changeFeedProcessorOptions);
 
             if (this.loadBalancingStrategy == null)
@@ -435,7 +436,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     this.changeFeedProcessorOptions.LeaseExpirationInterval);
             }
 
-            IPartitionController partitionController = new PartitionController(leaseStoreManager, leaseStoreManager, partitionSuperviserFactory, synchronizer);
+            IPartitionController partitionController = new PartitionController(leaseStoreManager, leaseStoreManager, partitionSupervisorFactory, synchronizer);
             partitionController = new HealthMonitoringPartitionControllerDecorator(partitionController, this.healthMonitor);
             var partitionLoadBalancer = new PartitionLoadBalancer(
                 partitionController,

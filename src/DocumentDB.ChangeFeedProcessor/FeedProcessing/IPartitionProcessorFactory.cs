@@ -4,6 +4,7 @@
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
     /// <summary>
@@ -15,8 +16,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         /// Creates an instance of a <see cref="IPartitionProcessor"/>.
         /// </summary>
         /// <param name="lease">Lease to be used for partition processing</param>
+        /// <param name="leaseCheckpointer">Default lease checkpointer</param>
         /// <param name="observer">Observer to be used</param>
         /// <returns>An instance of a <see cref="IPartitionProcessor"/>.</returns>
-        IPartitionProcessor Create(ILease lease, IChangeFeedObserver observer);
+        IPartitionProcessor Create(ILease lease, ILeaseCheckpointer leaseCheckpointer, IChangeFeedObserver observer);
     }
 }

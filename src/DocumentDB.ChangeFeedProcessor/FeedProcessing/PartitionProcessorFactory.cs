@@ -15,34 +15,31 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     {
         private readonly IChangeFeedDocumentClient documentClient;
         private readonly ChangeFeedProcessorOptions changeFeedProcessorOptions;
-        private readonly ILeaseCheckpointer leaseCheckpointer;
         private readonly string collectionSelfLink;
         private readonly IHealthMonitor healthMonitor;
 
         public PartitionProcessorFactory(
             IChangeFeedDocumentClient documentClient,
             ChangeFeedProcessorOptions changeFeedProcessorOptions,
-            ILeaseCheckpointer leaseCheckpointer,
             string collectionSelfLink,
             IHealthMonitor healthMonitor)
         {
             if (documentClient == null) throw new ArgumentNullException(nameof(documentClient));
             if (changeFeedProcessorOptions == null) throw new ArgumentNullException(nameof(changeFeedProcessorOptions));
-            if (leaseCheckpointer == null) throw new ArgumentNullException(nameof(leaseCheckpointer));
             if (collectionSelfLink == null) throw new ArgumentNullException(nameof(collectionSelfLink));
             if (healthMonitor == null) throw new ArgumentNullException(nameof(healthMonitor));
 
             this.documentClient = documentClient;
             this.changeFeedProcessorOptions = changeFeedProcessorOptions;
-            this.leaseCheckpointer = leaseCheckpointer;
             this.collectionSelfLink = collectionSelfLink;
             this.healthMonitor = healthMonitor;
         }
 
-        public IPartitionProcessor Create(ILease lease, IChangeFeedObserver observer)
+        public IPartitionProcessor Create(ILease lease, ILeaseCheckpointer leaseCheckpointer, IChangeFeedObserver observer)
         {
             if (observer == null) throw new ArgumentNullException(nameof(observer));
             if (lease == null) throw new ArgumentNullException(nameof(lease));
+            if (leaseCheckpointer == null) throw new ArgumentNullException(nameof(leaseCheckpointer));
 
             var settings = new ProcessorSettings
             {
@@ -58,7 +55,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                 SessionToken = this.changeFeedProcessorOptions.SessionToken,
             };
 
-            var checkpointer = new PartitionCheckpointer(this.leaseCheckpointer, lease);
+            var checkpointer = new PartitionCheckpointer(leaseCheckpointer, lease);
 
             var changeFeedOptions = new ChangeFeedOptions
             {
