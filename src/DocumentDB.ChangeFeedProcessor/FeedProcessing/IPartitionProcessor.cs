@@ -8,8 +8,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Provides an API to run continious processing on a single partition of some resource.
-    /// Created by <see cref="IPartitionProcessorFactory.Create"/> after some lease is acquired by the current host.
+    /// Provides an API to run continuous processing on a single partition of some resource.
+    /// Created by <see cref="IPartitionProcessorFactory.Create"/> or <see cref="ICheckpointPartitionProcessorFactory.Create"/> after some lease is acquired by the current host.
     /// Processing can perform the following tasks in a loop:
     ///   1. Read some data from the resource partition.
     ///   2. Handle possible problems with the read.

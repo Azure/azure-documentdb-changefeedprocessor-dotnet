@@ -4,19 +4,21 @@
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
 {
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
 
     /// <summary>
-    /// Factory class used to create instance(s) of <see cref="IPartitionProcessor"/>. Use <see cref="ICheckpointPartitionProcessorFactory"/> for using default checkpoint mechanism.
+    /// Factory class used to create instance(s) of <see cref="IPartitionProcessor"/> and allows to re-use default checkpoint mechanism.
     /// </summary>
-    public interface IPartitionProcessorFactory
+    public interface ICheckpointPartitionProcessorFactory
     {
         /// <summary>
         /// Creates an instance of a <see cref="IPartitionProcessor"/>.
         /// </summary>
         /// <param name="lease">Lease to be used for partition processing</param>
+        /// <param name="leaseCheckpointer">Default lease checkpointer</param>
         /// <param name="observer">Observer to be used</param>
         /// <returns>An instance of a <see cref="IPartitionProcessor"/>.</returns>
-        IPartitionProcessor Create(ILease lease, IChangeFeedObserver observer);
+        IPartitionProcessor Create(ILease lease, ILeaseCheckpointer leaseCheckpointer, IChangeFeedObserver observer);
     }
 }

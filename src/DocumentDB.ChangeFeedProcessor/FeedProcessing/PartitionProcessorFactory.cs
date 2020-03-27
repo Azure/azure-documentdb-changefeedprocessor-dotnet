@@ -11,7 +11,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
 
-    internal class PartitionProcessorFactory : IPartitionProcessorFactory
+    internal class PartitionProcessorFactory : ICheckpointPartitionProcessorFactory
     {
         private readonly IChangeFeedDocumentClient documentClient;
         private readonly ChangeFeedProcessorOptions changeFeedProcessorOptions;

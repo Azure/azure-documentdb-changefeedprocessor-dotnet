@@ -14,13 +14,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
         private readonly ILeaseManager leaseManager;
         private readonly ILeaseCheckpointer leaseCheckpointer;
         private readonly ChangeFeedProcessorOptions changeFeedProcessorOptions;
-        private readonly IPartitionProcessorFactory partitionProcessorFactory;
+        private readonly ICheckpointPartitionProcessorFactory partitionProcessorFactory;
 
         public PartitionSupervisorFactory(
             IChangeFeedObserverFactory observerFactory,
             ILeaseManager leaseManager,
             ILeaseCheckpointer leaseCheckpointer,
-            IPartitionProcessorFactory partitionProcessorFactory,
+            ICheckpointPartitionProcessorFactory partitionProcessorFactory,
             ChangeFeedProcessorOptions options)
         {
             if (observerFactory == null) throw new ArgumentNullException(nameof(observerFactory));
