@@ -12,22 +12,26 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
     {
         private readonly IChangeFeedObserverFactory observerFactory;
         private readonly ILeaseManager leaseManager;
+        private readonly ILeaseCheckpointer leaseCheckpointer;
         private readonly ChangeFeedProcessorOptions changeFeedProcessorOptions;
-        private readonly IPartitionProcessorFactory partitionProcessorFactory;
+        private readonly ICheckpointPartitionProcessorFactory partitionProcessorFactory;
 
         public PartitionSupervisorFactory(
             IChangeFeedObserverFactory observerFactory,
             ILeaseManager leaseManager,
-            IPartitionProcessorFactory partitionProcessorFactory,
+            ILeaseCheckpointer leaseCheckpointer,
+            ICheckpointPartitionProcessorFactory partitionProcessorFactory,
             ChangeFeedProcessorOptions options)
         {
             if (observerFactory == null) throw new ArgumentNullException(nameof(observerFactory));
             if (leaseManager == null) throw new ArgumentNullException(nameof(leaseManager));
+            if (leaseCheckpointer == null) throw new ArgumentNullException(nameof(leaseCheckpointer));
             if (options == null) throw new ArgumentNullException(nameof(options));
             if (partitionProcessorFactory == null) throw new ArgumentNullException(nameof(partitionProcessorFactory));
 
             this.observerFactory = observerFactory;
             this.leaseManager = leaseManager;
+            this.leaseCheckpointer = leaseCheckpointer;
             this.changeFeedProcessorOptions = options;
             this.partitionProcessorFactory = partitionProcessorFactory;
         }
@@ -38,7 +42,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 throw new ArgumentNullException(nameof(lease));
 
             IChangeFeedObserver changeFeedObserver = this.observerFactory.CreateObserver();
-            var processor = this.partitionProcessorFactory.Create(lease, changeFeedObserver);
+            var processor = this.partitionProcessorFactory.Create(lease, this.leaseCheckpointer, changeFeedObserver);
             var renewer = new LeaseRenewer(lease, this.leaseManager, this.changeFeedProcessorOptions.LeaseRenewInterval);
 
             return new PartitionSupervisor(lease, changeFeedObserver, processor, renewer);

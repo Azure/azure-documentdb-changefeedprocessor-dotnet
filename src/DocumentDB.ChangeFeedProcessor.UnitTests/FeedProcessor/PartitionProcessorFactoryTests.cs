@@ -52,8 +52,8 @@
                 .Returns(leaseContinuationToken);
 
             var healthMonitor = Mock.Of<IHealthMonitor>();
-            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, leaseCheckpointer, this.collectionSelfLink, healthMonitor);
-            var processor = sut.Create(lease, this.observer);
+            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, this.collectionSelfLink, healthMonitor);
+            var processor = sut.Create(lease, leaseCheckpointer, this.observer);
 
             Mock.Get(this.docClient)
                 .Verify(d => d.CreateDocumentChangeFeedQuery(

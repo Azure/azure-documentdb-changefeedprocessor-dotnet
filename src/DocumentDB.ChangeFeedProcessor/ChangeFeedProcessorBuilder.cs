@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Bootstrapping;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing.Adapters;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
@@ -122,6 +123,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private IChangeFeedDocumentClient leaseDocumentClient;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
         private IPartitionProcessorFactory partitionProcessorFactory;
+        private ICheckpointPartitionProcessorFactory checkpointPartitionProcessorFactory;
         private IHealthMonitor healthMonitor = new TraceHealthMonitor();
 
         internal string HostName
@@ -309,6 +311,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
+        /// Sets the <see cref="ICheckpointPartitionProcessorFactory"/> to be used to create <see cref="IPartitionProcessor"/> for partition processing.
+        /// </summary>
+        /// <param name="partitionProcessorFactory">The instance of <see cref="IPartitionProcessorFactory"/> to use.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
+        public ChangeFeedProcessorBuilder WithCheckpointPartitionProcessorFactory(ICheckpointPartitionProcessorFactory partitionProcessorFactory)
+        {
+            if (partitionProcessorFactory == null) throw new ArgumentNullException(nameof(partitionProcessorFactory));
+            this.checkpointPartitionProcessorFactory = partitionProcessorFactory;
+            return this;
+        }
+
+        /// <summary>
         /// Sets the <see cref="ILeaseStoreManager"/> to be used to manage leases.
         /// </summary>
         /// <param name="leaseStoreManager">The instance of <see cref="ILeaseStoreManager"/> to use.</param>
@@ -420,10 +434,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 this.changeFeedProcessorOptions.DegreeOfParallelism,
                 this.changeFeedProcessorOptions.QueryPartitionsMaxBatchSize);
             var bootstrapper = new Bootstrapper(synchronizer, leaseStoreManager, this.lockTime, this.sleepTime);
-            var partitionSuperviserFactory = new PartitionSupervisorFactory(
+            var partitionSupervisorFactory = new PartitionSupervisorFactory(
                 factory,
                 leaseStoreManager,
-                this.partitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, leaseStoreManager, feedCollectionSelfLink, this.healthMonitor),
+                leaseStoreManager,
+                this.GetPartitionProcessorFactory(feedCollectionSelfLink),
                 this.changeFeedProcessorOptions);
 
             if (this.loadBalancingStrategy == null)
@@ -435,7 +450,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     this.changeFeedProcessorOptions.LeaseExpirationInterval);
             }
 
-            IPartitionController partitionController = new PartitionController(leaseStoreManager, leaseStoreManager, partitionSuperviserFactory, synchronizer);
+            IPartitionController partitionController = new PartitionController(leaseStoreManager, leaseStoreManager, partitionSupervisorFactory, synchronizer);
             partitionController = new HealthMonitoringPartitionControllerDecorator(partitionController, this.healthMonitor);
             var partitionLoadBalancer = new PartitionLoadBalancer(
                 partitionController,
@@ -502,6 +517,24 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
             this.changeFeedProcessorOptions = this.changeFeedProcessorOptions ?? new ChangeFeedProcessorOptions();
             this.databaseResourceId = this.databaseResourceId ?? await GetDatabaseResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
             this.collectionResourceId = this.collectionResourceId ?? await GetCollectionResourceIdAsync(this.feedDocumentClient, this.feedCollectionLocation).ConfigureAwait(false);
+        }
+
+        private ICheckpointPartitionProcessorFactory GetPartitionProcessorFactory(string feedCollectionSelfLink)
+        {
+            ICheckpointPartitionProcessorFactory factory = this.checkpointPartitionProcessorFactory;
+            if (this.partitionProcessorFactory != null)
+            {
+                if (this.checkpointPartitionProcessorFactory != null)
+                    throw new ArgumentException("Only one partition processor factory can be used");
+
+                factory = new CheckpointPartitionProcessorFactoryAdapter(this.partitionProcessorFactory);
+            }
+
+            return factory ?? new PartitionProcessorFactory(
+                       this.feedDocumentClient,
+                       this.changeFeedProcessorOptions,
+                       feedCollectionSelfLink,
+                       this.healthMonitor);
         }
     }
 }
