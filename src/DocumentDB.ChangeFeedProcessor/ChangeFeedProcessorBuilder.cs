@@ -521,15 +521,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
         private ICheckpointPartitionProcessorFactory GetPartitionProcessorFactory(string feedCollectionSelfLink)
         {
+            ICheckpointPartitionProcessorFactory factory = this.checkpointPartitionProcessorFactory;
             if (this.partitionProcessorFactory != null)
             {
                 if (this.checkpointPartitionProcessorFactory != null)
                     throw new ArgumentException("Only one partition processor factory can be used");
 
-                this.checkpointPartitionProcessorFactory = new CheckpointPartitionProcessorFactoryAdapter(this.partitionProcessorFactory);
+                factory = new CheckpointPartitionProcessorFactoryAdapter(this.partitionProcessorFactory);
             }
 
-            return this.checkpointPartitionProcessorFactory ?? new PartitionProcessorFactory(this.feedDocumentClient, this.changeFeedProcessorOptions, feedCollectionSelfLink, this.healthMonitor);
+            return factory ?? new PartitionProcessorFactory(
+                       this.feedDocumentClient,
+                       this.changeFeedProcessorOptions,
+                       feedCollectionSelfLink,
+                       this.healthMonitor);
         }
     }
 }
