@@ -59,6 +59,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement
                 closeReason = ChangeFeedObserverCloseReason.LeaseGone;
                 throw;
             }
+            catch (PartitionNotFoundException)
+            {
+                closeReason = ChangeFeedObserverCloseReason.ResourceGone;
+                throw;
+            }
+            catch (ReadSessionNotAvailableException)
+            {
+                closeReason = ChangeFeedObserverCloseReason.ReadSessionNotAvailable;
+                throw;
+            }
             catch (OperationCanceledException) when (shutdownToken.IsCancellationRequested)
             {
                 closeReason = ChangeFeedObserverCloseReason.Shutdown;

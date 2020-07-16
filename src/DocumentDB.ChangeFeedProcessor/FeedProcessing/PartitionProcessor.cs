@@ -19,6 +19,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     internal class PartitionProcessor : IPartitionProcessor
     {
         private static readonly int DefaultMaxItemCount = 100;
+        private static readonly int MaxReadSessionNotAvailableHits = 16;
         private readonly ILog logger = LogProvider.GetCurrentClassLogger();
         private readonly IChangeFeedDocumentQuery<Document> query;
         private readonly ProcessorSettings settings;
@@ -38,6 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         public async Task RunAsync(CancellationToken cancellationToken)
         {
             string lastContinuation = this.settings.StartContinuation;
+            int readSessionNotAvailableHitCount = 0;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -49,6 +51,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     {
                         IFeedResponse<Document> response = await this.query.ExecuteNextAsync<Document>(cancellationToken).ConfigureAwait(false);
                         lastContinuation = response.ResponseContinuation;
+
+                        if (readSessionNotAvailableHitCount > 0)
+                        {
+                            readSessionNotAvailableHitCount = 0; // Reset on success.
+                        }
+
                         if (response.Count > 0)
                         {
                             await this.DispatchChanges(response, cancellationToken).ConfigureAwait(false);
@@ -69,13 +77,27 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     {
                         case DocDbError.PartitionNotFound:
                             throw new PartitionNotFoundException("Partition not found.", lastContinuation);
+
+                        case DocDbError.ReadSessionNotAvailable:
+                            if (++readSessionNotAvailableHitCount > MaxReadSessionNotAvailableHits)
+                            {
+                                throw new ReadSessionNotAvailableException("Read session not availalbe.", lastContinuation);
+                            }
+
+                            this.logger.WarnFormat("ReadSessionNotAvailableHits: {0} hits of {1} MAX.", readSessionNotAvailableHitCount, MaxReadSessionNotAvailableHits);
+                            delay = TimeSpan.Zero;
+                            break;  // Retry, transient NotFound/ReadSessionNotAvailable.
+
                         case DocDbError.PartitionSplit:
                             throw new PartitionSplitException("Partition split.", lastContinuation);
+
                         case DocDbError.Undefined:
                             throw;
+
                         case DocDbError.TransientError:
                             // Retry on transient (429) errors
                             break;
+
                         case DocDbError.MaxItemCountTooLarge:
                             if (!this.options.MaxItemCount.HasValue)
                             {
@@ -90,6 +112,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                             this.options.MaxItemCount /= 2;
                             this.logger.WarnFormat("Reducing maxItemCount, new value: {0}.", this.options.MaxItemCount);
                             break;
+
                         default:
                             this.logger.Fatal($"Unrecognized DocDbError enum value {docDbError}");
                             Debug.Fail($"Unrecognized DocDbError enum value {docDbError}");
@@ -97,7 +120,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     }
 
                     if (clientException.RetryAfter != TimeSpan.Zero)
+                    {
                         delay = clientException.RetryAfter;
+                    }
                 }
                 catch (TaskCanceledException canceledException)
                 {

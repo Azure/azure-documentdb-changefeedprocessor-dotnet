@@ -38,5 +38,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         /// The lease is gone. This can be due to partition split.
         /// </summary>
         LeaseGone,
+
+        /// <summary>
+        /// Indicates a warning of multiple hits of "read session not avaialbe".
+        /// </summary>
+        ReadSessionNotAvailable,
     }
 }

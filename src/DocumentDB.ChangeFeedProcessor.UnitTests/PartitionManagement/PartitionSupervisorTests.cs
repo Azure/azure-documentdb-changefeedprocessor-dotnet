@@ -151,6 +151,40 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
             Assert.Null(exception);
         }
 
+        [Fact]
+        public async Task RunObserver_ResourceGoneCloseReason_IfProcessorFailedWithPartitionNotFoundException()
+        {
+            Mock.Get(partitionProcessor)
+                .Setup(processor => processor.RunAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new PartitionNotFoundException("processorException", "12345"));
+
+            Exception exception = await Record.ExceptionAsync(() => sut.RunAsync(shutdownToken.Token)).ConfigureAwait(false);
+            Assert.IsType<PartitionNotFoundException>(exception);
+            Assert.Equal("processorException", exception.Message);
+
+            Mock.Get(observer)
+                .Verify(feedObserver => feedObserver
+                    .CloseAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
+                        ChangeFeedObserverCloseReason.ResourceGone));
+        }
+
+        [Fact]
+        public async Task RunObserver_ResourceGoneCloseReason_IfProcessorFailedWithReadSessionNotAvailableException()
+        {
+            Mock.Get(partitionProcessor)
+                .Setup(processor => processor.RunAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new ReadSessionNotAvailableException("processorException", "12345"));
+
+            Exception exception = await Record.ExceptionAsync(() => sut.RunAsync(shutdownToken.Token)).ConfigureAwait(false);
+            Assert.IsType<ReadSessionNotAvailableException>(exception);
+            Assert.Equal("processorException", exception.Message);
+
+            Mock.Get(observer)
+                .Verify(feedObserver => feedObserver
+                    .CloseAsync(It.Is<ChangeFeedObserverContext>(context => context.PartitionKeyRangeId == lease.PartitionId),
+                        ChangeFeedObserverCloseReason.ReadSessionNotAvailable));
+        }
+
         public void Dispose()
         {
             sut.Dispose();

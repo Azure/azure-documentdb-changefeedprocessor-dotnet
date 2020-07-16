@@ -12,6 +12,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
@@ -119,15 +120,31 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
         }
 
         [Fact]
-        public async Task Run_ShouldReThrow_IfUnknownNotFoundSubcode()
+        public async Task Run_ShouldThrowReadSessionNotAvailable()
         {
             Mock.Get(documentQuery)
                 .SetupSequence(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", 1002))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
                 .ReturnsAsync(feedResponse);
 
             Exception exception = await Record.ExceptionAsync(() => partitionProcessor.RunAsync(cancellationTokenSource.Token));
-            Assert.IsAssignableFrom<DocumentClientException>(exception);
+            Assert.IsAssignableFrom<ReadSessionNotAvailableException>(exception);
         }
 
         [Fact]
