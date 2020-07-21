@@ -120,28 +120,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Exceptions
         }
 
         [Fact]
-        public async Task Run_ShouldThrowReadSessionNotAvailable()
+        public async Task Run_ShouldRethrowReadSessionNotAvailable()
         {
             Mock.Get(documentQuery)
                 .SetupSequence(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable))
-                .ReturnsAsync(feedResponse);
+                .Throws(DocumentExceptionHelpers.CreateException("Microsoft.Azure.Documents.NotFoundException", (int)SubStatusCode.ReadSessionNotAvailable));
 
             Exception exception = await Record.ExceptionAsync(() => partitionProcessor.RunAsync(cancellationTokenSource.Token));
             Assert.IsAssignableFrom<ReadSessionNotAvailableException>(exception);

@@ -10,10 +10,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
     using Microsoft.Azure.Documents.Client;
     using Moq;
@@ -320,34 +318,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                     Times.Exactly(3));
 
             Assert.Equal("token.token2.token3.", accumulator);
-        }
-
-        [Fact]
-        public async Task Run_ShoulRetry_OnSinglePartitionNotFoundWithReadSessionNotAvailableException()
-        {
-            Mock.Get(documentQuery)
-                .Reset();
-
-            Exception readSessionNotAvaialbeException = DocumentExceptionHelpers.CreateException(
-                "Microsoft.Azure.Documents.NotFoundException",
-                (int)SubStatusCode.ReadSessionNotAvailable,
-                "throw in test");
-
-            Mock.Get(documentQuery)
-                .SetupSequence(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)))
-                .Throws(readSessionNotAvaialbeException)
-                .ReturnsAsync(feedResponse);
-
-            Mock.Get(observer)
-                .Setup(feedObserver => feedObserver
-                    .ProcessChangesAsync(It.IsAny<IChangeFeedObserverContext>(), It.IsAny<IReadOnlyList<Document>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
-                .Callback(cancellationTokenSource.Cancel);
-
-            await Assert.ThrowsAsync<TaskCanceledException>(() => sut.RunAsync(cancellationTokenSource.Token));
-
-            Mock.Get(documentQuery)
-                .Verify(query => query.ExecuteNextAsync<Document>(It.Is<CancellationToken>(token => token == cancellationTokenSource.Token)), Times.Exactly(2));
         }
 
         private class CustomException : Exception

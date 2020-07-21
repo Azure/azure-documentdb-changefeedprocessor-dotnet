@@ -169,7 +169,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.PartitionManag
         }
 
         [Fact]
-        public async Task RunObserver_ResourceGoneCloseReason_IfProcessorFailedWithReadSessionNotAvailableException()
+        public async Task RunObserver_ReadSessionNotAvailableCloseReason_IfProcessorFailedWithReadSessionNotAvailableException()
         {
             Mock.Get(partitionProcessor)
                 .Setup(processor => processor.RunAsync(It.IsAny<CancellationToken>()))
