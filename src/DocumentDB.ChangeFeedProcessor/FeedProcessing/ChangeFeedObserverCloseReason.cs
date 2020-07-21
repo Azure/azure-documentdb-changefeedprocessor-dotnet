@@ -40,7 +40,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         LeaseGone,
 
         /// <summary>
-        /// Indicates a warning of "read session not avaialbe". Note: SDK retries on this error.
+        /// Indicates a "read session not available" warning related to <see cref="Microsoft.Azure.Documents.ConsistencyLevel.Session"/>.
+        /// Note: SDK retries on this error.
         /// </summary>
         ReadSessionNotAvailable,
     }
