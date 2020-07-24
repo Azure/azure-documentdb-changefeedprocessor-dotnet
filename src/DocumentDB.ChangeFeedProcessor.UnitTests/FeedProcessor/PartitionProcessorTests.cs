@@ -12,7 +12,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
-    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
     using Microsoft.Azure.Documents.Client;
     using Moq;
@@ -66,7 +65,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
 
             observer = Mock.Of<IChangeFeedObserver>();
             var checkPointer = new Mock<IPartitionCheckpointer>();
-            sut = new PartitionProcessor(new ObserverExceptionWrappingChangeFeedObserverDecorator(observer), documentQuery, new ChangeFeedOptions(), processorSettings, checkPointer.Object);
+            sut = new PartitionProcessor(
+                new ObserverExceptionWrappingChangeFeedObserverDecorator(observer),
+                documentQuery,
+                new ChangeFeedOptions(),
+                processorSettings,
+                checkPointer.Object);
         }
 
         [Fact]

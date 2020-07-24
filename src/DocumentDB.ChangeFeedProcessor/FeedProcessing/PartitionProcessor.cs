@@ -49,6 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     {
                         IFeedResponse<Document> response = await this.query.ExecuteNextAsync<Document>(cancellationToken).ConfigureAwait(false);
                         lastContinuation = response.ResponseContinuation;
+
                         if (response.Count > 0)
                         {
                             await this.DispatchChanges(response, cancellationToken).ConfigureAwait(false);
@@ -69,13 +70,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     {
                         case DocDbError.PartitionNotFound:
                             throw new PartitionNotFoundException("Partition not found.", lastContinuation);
+
+                        case DocDbError.ReadSessionNotAvailable:
+                            throw new ReadSessionNotAvailableException("Read session not availalbe.", lastContinuation);
+
                         case DocDbError.PartitionSplit:
                             throw new PartitionSplitException("Partition split.", lastContinuation);
+
                         case DocDbError.Undefined:
                             throw;
+
                         case DocDbError.TransientError:
                             // Retry on transient (429) errors
                             break;
+
                         case DocDbError.MaxItemCountTooLarge:
                             if (!this.options.MaxItemCount.HasValue)
                             {
@@ -90,6 +98,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                             this.options.MaxItemCount /= 2;
                             this.logger.WarnFormat("Reducing maxItemCount, new value: {0}.", this.options.MaxItemCount);
                             break;
+
                         default:
                             this.logger.Fatal($"Unrecognized DocDbError enum value {docDbError}");
                             Debug.Fail($"Unrecognized DocDbError enum value {docDbError}");
@@ -97,7 +106,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     }
 
                     if (clientException.RetryAfter != TimeSpan.Zero)
+                    {
                         delay = clientException.RetryAfter;
+                    }
                 }
                 catch (TaskCanceledException canceledException)
                 {

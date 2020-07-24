@@ -11,5 +11,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors
         PartitionSplit,
         TransientError,
         MaxItemCountTooLarge,
+        ReadSessionNotAvailable,
     }
 }
