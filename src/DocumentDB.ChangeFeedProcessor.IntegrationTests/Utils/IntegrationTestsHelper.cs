@@ -14,6 +14,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
 {
     internal class IntegrationTestsHelper
     {
+        // Used when tests are running in CI/CD pipeline
+        private const string GatewayEndpointEnvironmentName = "COSMOSDBEMULATOR_ENDPOINT";
+
         static readonly string Endpoint;
         static readonly string MasterKey;
         static readonly string DatabaseId;
@@ -26,7 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
                     .AddJsonFile("appsettings.json")
                     .Build();
 
-            Endpoint = config["IntegrationTests:endpoint"];
+            Endpoint = Environment.GetEnvironmentVariable(GatewayEndpointEnvironmentName) ?? config["IntegrationTests:endpoint"];
             MasterKey = config["IntegrationTests:masterKey"];
             DatabaseId = config["IntegrationTests:databaseId"];
             MonitoredOfferThroughput = config["IntegrationTests:monitoredOfferThroughput"];
