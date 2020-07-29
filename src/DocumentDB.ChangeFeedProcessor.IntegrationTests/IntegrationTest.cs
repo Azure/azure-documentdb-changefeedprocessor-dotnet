@@ -100,10 +100,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         protected static int leaseOfferThroughput;
         protected static readonly TimeSpan changeWaitTimeout = TimeSpan.FromSeconds(30);
 
-        /// <summary>
-        /// This dictionary has one entry per derived class.
-        /// </summary>
-        private static object testClassesSyncRoot = new object();
+        private static SemaphoreSlim initializationLock = new SemaphoreSlim(1);
 
         IntegrationTestFixture fixture;
 
@@ -144,25 +141,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
         public async Task TestInitializeAsync()
         {
-            if (this.ClassData.monitoredCollectionInfo == null)
+            await IntegrationTest.initializationLock.WaitAsync();
+
+            try
             {
-                try
+                if (this.ClassData.monitoredCollectionInfo == null)
                 {
-                    if (this.ClassData.monitoredCollectionInfo == null)
-                    {
-                        this.ClassData.leaseCollectionInfoTemplate = await TestClassInitializeAsync(this, $"data_{this.GetType().Name}");
-                    }
-                }
-                catch(Exception ex)
-                {
-                    Debug.Write(ex);
-                    throw;
+                    this.ClassData.leaseCollectionInfoTemplate = await TestClassInitializeAsync(this, $"data_{this.GetType().Name}");
                 }
             }
-
-            if (this.ClassData.leaseCollectionInfoTemplate == null)
+            catch (Exception ex)
             {
-                Debug.Assert(this.ClassData.leaseCollectionInfoTemplate != null, "Lease collection information missing.");
+                Debug.Write(ex);
+                throw;
+            }
+            finally
+            {
+                IntegrationTest.initializationLock.Release();
             }
 
             this.LeaseCollectionInfo = new DocumentCollectionInfo(this.ClassData.leaseCollectionInfoTemplate);
