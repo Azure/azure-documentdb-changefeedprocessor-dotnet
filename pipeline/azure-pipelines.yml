@@ -7,8 +7,6 @@ pr:
 
 strategy:
   matrix:
-    linux:
-      imageName: 'ubuntu-latest'
     windows:
       imageName: 'windows-latest'
 
