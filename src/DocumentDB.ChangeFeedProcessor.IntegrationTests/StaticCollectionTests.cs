@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils;
 using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.Linq;
 using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
@@ -67,7 +68,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             try
             {
                 Assert.True(partitionKeyRangeCount == openedCount, "Wrong openedCount");
-                Assert.True(documentCount == processedCount, "Wrong processedCount");
+                Assert.True(documentCount == processedCount, $"Wrong processedCount {documentCount} {processedCount}");
             }
             finally
             {
@@ -164,7 +165,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             try
             {
-                Assert.True(documentCount == processedCount, "Wrong processedCount");
+                Assert.True(documentCount == processedCount, $"Wrong processedCount {documentCount} {processedCount}");
             }
             finally
             {
@@ -214,7 +215,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             using (var client = new DocumentClient(this.ClassData.monitoredCollectionInfo.Uri, this.ClassData.monitoredCollectionInfo.MasterKey, this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
             {
                 var collectionUri = UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName);
-                await IntegrationTestsHelper.CreateDocumentsAsync(client, collectionUri, documentCount);
+
+                // Only if the collection is empty
+                if ((await client.CreateDocumentQuery(collectionUri, "SELECT * FROM c", new FeedOptions() { EnableCrossPartitionQuery = true }).AsDocumentQuery().ExecuteNextAsync()).Count == 0)
+                {
+                    await IntegrationTestsHelper.CreateDocumentsAsync(client, collectionUri, documentCount);
+                }
             }
         }
     }

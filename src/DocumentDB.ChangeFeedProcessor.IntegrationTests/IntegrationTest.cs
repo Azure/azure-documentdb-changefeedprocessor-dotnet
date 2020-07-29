@@ -100,8 +100,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         protected static int leaseOfferThroughput;
         protected static readonly TimeSpan changeWaitTimeout = TimeSpan.FromSeconds(30);
 
-        private static SemaphoreSlim initializationLock = new SemaphoreSlim(1);
-
         IntegrationTestFixture fixture;
 
         protected DocumentCollectionInfo LeaseCollectionInfo
@@ -141,24 +139,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
         public async Task TestInitializeAsync()
         {
-            await IntegrationTest.initializationLock.WaitAsync();
-
             try
             {
-                if (this.ClassData.monitoredCollectionInfo == null)
-                {
-                    this.ClassData.leaseCollectionInfoTemplate = await TestClassInitializeAsync(this, $"data_{this.GetType().Name}");
-                }
+                await TestClassInitializeAsync(this, $"data_{this.GetType().Name}");
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 Debug.Write(ex);
                 throw;
             }
-            finally
-            {
-                IntegrationTest.initializationLock.Release();
-            }
+
+            Debug.Assert(this.ClassData.monitoredCollectionInfo != null, "Monitored collection information missing.");
+            Debug.Assert(this.ClassData.leaseCollectionInfoTemplate != null, "Lease collection information missing.");
 
             this.LeaseCollectionInfo = new DocumentCollectionInfo(this.ClassData.leaseCollectionInfoTemplate);
             this.LeaseCollectionInfo.CollectionName = $"leases_{this.GetType().Name}_{Guid.NewGuid().ToString()}";
@@ -214,15 +206,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             return Task.CompletedTask;
         }
 
-        private static async Task<DocumentCollectionInfo> TestClassInitializeAsync(IntegrationTest test, string monitoredCollectionName)
+        private static async Task TestClassInitializeAsync(IntegrationTest test, string monitoredCollectionName)
         {
             Debug.Assert(test != null);
             Debug.Assert(monitoredCollectionName != null);
 
-            DocumentCollectionInfo leaseCollectionInfo;
             IntegrationTestsHelper.GetConfigurationSettings(
                 out test.ClassData.monitoredCollectionInfo,
-                out leaseCollectionInfo,
+                out test.ClassData.leaseCollectionInfoTemplate,
                 out monitoredOfferThroughput,
                 out leaseOfferThroughput);
 
@@ -250,9 +241,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 await IntegrationTestsHelper.CreateDocumentCollectionAsync(client, test.ClassData.monitoredCollectionInfo.DatabaseName, monitoredCollection, monitoredOfferThroughput);
             }
 
-            test.FinishTestClassInitializeAsync().Wait();
-
-            return leaseCollectionInfo;
+            await test.FinishTestClassInitializeAsync();
         }
 
         private static async Task TestClassCleanupAsync(IntegrationTest test)
