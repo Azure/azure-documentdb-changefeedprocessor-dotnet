@@ -19,9 +19,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring
         /// <inheritdoc />
         public Task InspectAsync(HealthMonitoringRecord record)
         {
-            if (record.Severity == HealthSeverity.Error)
+            if (record.Severity <= HealthSeverity.Error)
             {
-                Logger.ErrorException($"Unhealthiness detected in the operation {record.Operation} for {record.Lease}. ", record.Exception);
+                Logger.ErrorException($"Unhealthiness detected with severity {record.Severity} in the operation {record.Operation} for {record.Lease}.", record.Exception);
             }
 
             return Task.FromResult(true);

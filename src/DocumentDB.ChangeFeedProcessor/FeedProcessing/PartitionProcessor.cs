@@ -13,6 +13,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Exceptions;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.Client;
 
     internal class PartitionProcessor : IPartitionProcessor
@@ -25,22 +26,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
         private readonly IChangeFeedObserver observer;
         private readonly ChangeFeedOptions options;
 
-        public PartitionProcessor(IChangeFeedObserver observer, IChangeFeedDocumentClient documentClient, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
+        public PartitionProcessor(IChangeFeedObserver observer, IChangeFeedDocumentQuery<Document> query, ChangeFeedOptions options, ProcessorSettings settings, IPartitionCheckpointer checkpointer)
         {
             this.observer = observer;
             this.settings = settings;
             this.checkpointer = checkpointer;
-            this.options = new ChangeFeedOptions
-            {
-                MaxItemCount = settings.MaxItemCount,
-                PartitionKeyRangeId = settings.PartitionKeyRangeId,
-                SessionToken = settings.SessionToken,
-                StartFromBeginning = settings.StartFromBeginning,
-                RequestContinuation = settings.StartContinuation,
-                StartTime = settings.StartTime,
-            };
-
-            this.query = documentClient.CreateDocumentChangeFeedQuery(settings.CollectionSelfLink, this.options);
+            this.options = options;
+            this.query = query;
         }
 
         public async Task RunAsync(CancellationToken cancellationToken)
@@ -57,6 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     {
                         IFeedResponse<Document> response = await this.query.ExecuteNextAsync<Document>(cancellationToken).ConfigureAwait(false);
                         lastContinuation = response.ResponseContinuation;
+
                         if (response.Count > 0)
                         {
                             await this.DispatchChanges(response, cancellationToken).ConfigureAwait(false);
@@ -77,13 +70,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     {
                         case DocDbError.PartitionNotFound:
                             throw new PartitionNotFoundException("Partition not found.", lastContinuation);
+
+                        case DocDbError.ReadSessionNotAvailable:
+                            throw new ReadSessionNotAvailableException("Read session not availalbe.", lastContinuation);
+
                         case DocDbError.PartitionSplit:
                             throw new PartitionSplitException("Partition split.", lastContinuation);
+
                         case DocDbError.Undefined:
                             throw;
+
                         case DocDbError.TransientError:
                             // Retry on transient (429) errors
                             break;
+
                         case DocDbError.MaxItemCountTooLarge:
                             if (!this.options.MaxItemCount.HasValue)
                             {
@@ -98,6 +98,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                             this.options.MaxItemCount /= 2;
                             this.logger.WarnFormat("Reducing maxItemCount, new value: {0}.", this.options.MaxItemCount);
                             break;
+
                         default:
                             this.logger.Fatal($"Unrecognized DocDbError enum value {docDbError}");
                             Debug.Fail($"Unrecognized DocDbError enum value {docDbError}");
@@ -105,7 +106,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing
                     }
 
                     if (clientException.RetryAfter != TimeSpan.Zero)
+                    {
                         delay = clientException.RetryAfter;
+                    }
                 }
                 catch (TaskCanceledException canceledException)
                 {

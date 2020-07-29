@@ -13,8 +13,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.DocDBErrors
         {
             SubStatusCode subStatusCode = clientException.GetSubStatusCode();
 
-            if (clientException.StatusCode == HttpStatusCode.NotFound && subStatusCode != SubStatusCode.ReadSessionNotAvailable)
-                return DocDbError.PartitionNotFound;
+            if (clientException.StatusCode == HttpStatusCode.NotFound)
+            {
+                return subStatusCode == SubStatusCode.ReadSessionNotAvailable ? DocDbError.ReadSessionNotAvailable : DocDbError.PartitionNotFound;
+            }
 
             if (clientException.StatusCode == HttpStatusCode.Gone && (subStatusCode == SubStatusCode.PartitionKeyRangeGone || subStatusCode == SubStatusCode.Splitting))
                 return DocDbError.PartitionSplit;

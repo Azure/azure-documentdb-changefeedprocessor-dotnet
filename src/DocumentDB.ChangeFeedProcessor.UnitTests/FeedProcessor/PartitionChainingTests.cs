@@ -21,7 +21,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
         private readonly ProcessorSettings processorSettings;
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly PartitionProcessor partitionProcessor;
-        private readonly IChangeFeedDocumentClient docClient;
         private readonly IChangeFeedDocumentQuery<Document> documentQuery;
         private readonly IFeedResponse<Document> feedResponse1, feedResponse2;
         private readonly IChangeFeedObserver observer;
@@ -77,14 +76,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.FeedProcessor
                 .Returns(Task.FromResult(feedResponse1))
                 .Returns(Task.FromResult(feedResponse2));
 
-            docClient = Mock.Of<IChangeFeedDocumentClient>();
-            Mock.Get(docClient)
-                .Setup(ex => ex.CreateDocumentChangeFeedQuery(processorSettings.CollectionSelfLink, It.IsAny<ChangeFeedOptions>()))
-                .Returns(documentQuery);
+            var options = new ChangeFeedOptions();
 
             observer = Mock.Of<IChangeFeedObserver>();
             var checkPointer = new Mock<IPartitionCheckpointer>();
-            partitionProcessor = new PartitionProcessor(observer, docClient, processorSettings, checkPointer.Object);
+            partitionProcessor = new PartitionProcessor(observer, documentQuery, options, processorSettings, checkPointer.Object);
 
             var i = 0;
             Mock.Get(observer)

@@ -5,6 +5,7 @@
     using Microsoft.Azure.Documents.ChangeFeedProcessor.DataAccess;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.FeedProcessing;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement;
+    using Microsoft.Azure.Documents.ChangeFeedProcessor.Monitoring;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
     using Moq;
@@ -50,8 +51,9 @@
                 .Setup(l => l.ContinuationToken)
                 .Returns(leaseContinuationToken);
 
-            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, leaseCheckpointer, this.collectionSelfLink);
-            var processor = sut.Create(lease, this.observer);
+            var healthMonitor = Mock.Of<IHealthMonitor>();
+            PartitionProcessorFactory sut = new PartitionProcessorFactory(this.docClient, hostOptions, this.collectionSelfLink, healthMonitor);
+            var processor = sut.Create(lease, leaseCheckpointer, this.observer);
 
             Mock.Get(this.docClient)
                 .Verify(d => d.CreateDocumentChangeFeedQuery(

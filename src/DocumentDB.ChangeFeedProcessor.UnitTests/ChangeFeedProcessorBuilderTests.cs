@@ -304,6 +304,43 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             Assert.Equal(typeof(LeaseLostException), exception.GetType());
         }
 
+        [Fact]
+        public async Task BuildThrowsWhenBothPartitionProcessorFactoriesSpecified()
+        {
+            builder
+                .WithFeedDocumentClient(CreateMockDocumentClient())
+                .WithLeaseDocumentClient(CreateMockDocumentClient())
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>())
+                .WithPartitionProcessorFactory(Mock.Of<IPartitionProcessorFactory>())
+                .WithCheckpointPartitionProcessorFactory(Mock.Of<ICheckpointPartitionProcessorFactory>());
+
+            await Assert.ThrowsAsync<ArgumentException>(async () => await builder.BuildAsync());
+        }
+
+        [Fact]
+        public async Task BuildWhenPartitionProcessorFactoriesSpecified()
+        {
+            builder
+                .WithFeedDocumentClient(CreateMockDocumentClient())
+                .WithLeaseDocumentClient(CreateMockDocumentClient())
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>())
+                .WithPartitionProcessorFactory(Mock.Of<IPartitionProcessorFactory>());
+
+            await builder.BuildAsync();
+        }
+
+        [Fact]
+        public async Task BuildWhenCheckpointPartitionProcessorFactoriesSpecified()
+        {
+            builder
+                .WithFeedDocumentClient(CreateMockDocumentClient())
+                .WithLeaseDocumentClient(CreateMockDocumentClient())
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>())
+                .WithCheckpointPartitionProcessorFactory(Mock.Of<ICheckpointPartitionProcessorFactory>());
+
+            await builder.BuildAsync();
+        }
+
         private void SetupBuilderForPartitionedLeaseCollection(string partitionKey)
         {
             var partitionedCollection = MockHelpers.CreateCollection(
