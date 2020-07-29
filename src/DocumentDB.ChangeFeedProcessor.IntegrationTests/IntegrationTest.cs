@@ -91,7 +91,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     /// </remarks>
     [Trait("Category", "Integration")]
     [Collection("Integration tests")]
-    public class IntegrationTest: IDisposable
+    public class IntegrationTest: IAsyncLifetime
     {
         private const string leaseCollectionInfoPropertyName = "leaseCollectionInfo";
         protected static int monitoredOfferThroughput;
@@ -131,11 +131,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     isPartitionedCollection,
                     isPartitionedLeaseCollection);
             }
-
-            TestInitializeAsync().Wait();
         }
 
-        public async Task TestInitializeAsync()
+        public async Task InitializeAsync()
         {
             try
             {
@@ -169,12 +167,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             }
         }
 
-        public void Dispose()
-        {
-            TestCleanupAsync().Wait();
-        }
-
-        public async Task TestCleanupAsync()
+        public async Task DisposeAsync()
         {
             Debug.Assert(this.LeaseCollectionInfo != null);
             using (var client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))

@@ -80,7 +80,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
             var database = new Database { Id = databaseId };
             database = await client.CreateDatabaseIfNotExistsAsync(database);
 
-            await client.CreateDocumentCollectionAsync(database.SelfLink, collection, new RequestOptions { OfferThroughput = offerThroughput });
+            int retryCount = 3;
+            while (retryCount-- > 0)
+            {
+                try
+                {
+                    await client.CreateDocumentCollectionAsync(database.SelfLink, collection, new RequestOptions { OfferThroughput = offerThroughput });
+                    break;
+                }
+                catch (DocumentClientException)
+                {
+                    // Public emulator might have transient
+                }
+            }
         }
 
         internal static async Task CreateDocumentsAsync(DocumentClient client, Uri collectionUri, int count)
