@@ -160,6 +160,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 }
             }
 
+            if (this.ClassData.leaseCollectionInfoTemplate == null)
+            {
+                Debug.Assert(this.ClassData.leaseCollectionInfoTemplate != null, "Lease collection information missing.");
+            }
+
             this.LeaseCollectionInfo = new DocumentCollectionInfo(this.ClassData.leaseCollectionInfoTemplate);
             this.LeaseCollectionInfo.CollectionName = $"leases_{this.GetType().Name}_{Guid.NewGuid().ToString()}";
 
