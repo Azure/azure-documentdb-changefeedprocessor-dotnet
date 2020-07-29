@@ -216,11 +216,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             {
                 var collectionUri = UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName);
 
-                // Only if the collection is empty
-                if ((await client.CreateDocumentQuery(collectionUri, "SELECT * FROM c", new FeedOptions() { EnableCrossPartitionQuery = true }).AsDocumentQuery().ExecuteNextAsync()).Count == 0)
-                {
-                    await IntegrationTestsHelper.CreateDocumentsAsync(client, collectionUri, documentCount);
-                }
+                await IntegrationTestsHelper.CreateDocumentsAsync(client, collectionUri, documentCount);
             }
         }
     }

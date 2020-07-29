@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
@@ -24,7 +23,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         internal readonly int testCount;
         internal readonly bool isPartitionedMonitoredCollection;
         internal readonly bool isPartitionedLeaseCollection;
-        internal volatile int executedTestCount;
         internal DocumentCollectionInfo monitoredCollectionInfo;
         internal DocumentCollectionInfo leaseCollectionInfoTemplate;
 
@@ -184,11 +182,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 await client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(this.LeaseCollectionInfo.DatabaseName, this.LeaseCollectionInfo.CollectionName));
             }
 
-            var executedTestCount = Interlocked.Increment(ref this.ClassData.executedTestCount);
-            if (this.ClassData.executedTestCount == this.ClassData.testCount)
-            {
-                await TestClassCleanupAsync(this);
-            }
+            await TestClassCleanupAsync(this);
         }
 
         /// <summary>
