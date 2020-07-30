@@ -86,15 +86,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             private set;
         }
 
-        protected readonly bool IsPartitionedCollection;
+        protected readonly bool IsPartitionedMonitoredCollection;
 
         protected readonly bool IsPartitionedLeaseCollection;
 
         public IntegrationTest(
-            bool isPartitionedCollection = true,
+            bool isPartitionedMonitoredCollection = true,
             bool isPartitionedLeaseCollection = false)
         {
-            this.IsPartitionedCollection = isPartitionedCollection;
+            this.IsPartitionedMonitoredCollection = isPartitionedMonitoredCollection;
             this.IsPartitionedLeaseCollection = isPartitionedLeaseCollection;
         }
 
@@ -158,7 +158,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 Id = this.MonitoredCollectionInfo.CollectionName,
             };
 
-            if (this.IsPartitionedCollection)
+            if (this.IsPartitionedMonitoredCollection)
             {
                 monitoredCollection.PartitionKey = new PartitionKeyDefinition { Paths = { "/id" } };
             }
@@ -174,19 +174,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             {
                 await IntegrationTestsHelper.CreateDocumentCollectionAsync(client, this.MonitoredCollectionInfo.DatabaseName, monitoredCollection, monitoredOfferThroughput);
             }
-        }
-
-        private static int GetTestCount(Type testType)
-        {
-            Debug.Assert(testType != null);
-
-            int testMethodCount = 0;
-            foreach (var method in testType.GetMethods())
-            {
-                if (method.GetCustomAttribute(typeof(FactAttribute)) != null) testMethodCount++;
-            }
-
-            return testMethodCount;
         }
     }
 }
