@@ -137,11 +137,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         {
             try
             {
-                await TestClassInitializeAsync(this, $"data_{this.GetType().Name}");
+                await IntegrationTest.CreateMonitoredCollection(this, $"data_{this.GetType().Name}");
             }
             catch(Exception ex)
             {
-                Debug.Write(ex);
+                Debug.WriteLine(ex);
                 throw;
             }
 
@@ -173,27 +173,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             using (var client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))
             {
                 await client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(this.LeaseCollectionInfo.DatabaseName, this.LeaseCollectionInfo.CollectionName));
+                await client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName));
             }
-
-            await TestClassCleanupAsync(this);
         }
 
-        /// <summary>
-        /// Recreates the test collection
-        /// </summary>
-        /// <returns></returns>
-        public async Task ResetTestCollection()
-        {
-            await IntegrationTest.TestClassCleanupAsync(this);
-            await IntegrationTest.TestClassInitializeAsync(this, $"data_{this.GetType().Name}");
-        }
-
-        protected virtual Task FinishTestClassInitializeAsync()
-        {
-            return Task.CompletedTask;
-        }
-
-        private static async Task TestClassInitializeAsync(IntegrationTest test, string monitoredCollectionName)
+        private static async Task CreateMonitoredCollection(IntegrationTest test, string monitoredCollectionName)
         {
             Debug.Assert(test != null);
             Debug.Assert(monitoredCollectionName != null);
@@ -226,19 +210,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             using (var client = new DocumentClient(test.ClassData.monitoredCollectionInfo.Uri, test.ClassData.monitoredCollectionInfo.MasterKey, test.ClassData.monitoredCollectionInfo.ConnectionPolicy))
             {
                 await IntegrationTestsHelper.CreateDocumentCollectionAsync(client, test.ClassData.monitoredCollectionInfo.DatabaseName, monitoredCollection, monitoredOfferThroughput);
-            }
-
-            await test.FinishTestClassInitializeAsync();
-        }
-
-        private static async Task TestClassCleanupAsync(IntegrationTest test)
-        {
-            Debug.Assert(test != null);
-
-            using (var client = new DocumentClient(test.ClassData.monitoredCollectionInfo.Uri, test.ClassData.monitoredCollectionInfo.MasterKey, test.ClassData.monitoredCollectionInfo.ConnectionPolicy))
-            {
-                await client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(
-                    test.ClassData.monitoredCollectionInfo.DatabaseName, test.ClassData.monitoredCollectionInfo.CollectionName));
             }
         }
 

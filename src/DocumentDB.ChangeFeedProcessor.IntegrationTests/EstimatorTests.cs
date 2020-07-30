@@ -25,8 +25,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task CountPendingDocuments()
         {
-            // Cleanup the test collection to avoid other tests' documents causing issues with StartFromBeginning
-            await this.ResetTestCollection();
             int documentCount = 1;
             int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
             int openedCount = 0, processedCount = 0;
@@ -132,8 +130,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task WhenNoLeasesExistReturn1()
         {
-            // Cleanup the test collection to avoid other tests' documents causing issues with StartFromBeginning
-            await this.ResetTestCollection();
             var hostName = Guid.NewGuid().ToString();
 
             var host = new ChangeFeedEventHost(
@@ -155,8 +151,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task WhenLeasesHaveContinuationTokenNullReturn0()
         {
-            // Cleanup the test collection to avoid other tests' documents causing issues with StartFromBeginning
-            await this.ResetTestCollection();
             int documentCount = 1;
             int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
             int openedCount = 0, processedCount = 0;
@@ -205,8 +199,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task WhenLeasesHaveContinuationTokenNullStartFromBeginning()
         {
-            // Cleanup the test collection to avoid other tests' documents causing issues with StartFromBeginning
-            await this.ResetTestCollection();
             int documentCount = 1;
             int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
             int openedCount = 0, processedCount = 0;

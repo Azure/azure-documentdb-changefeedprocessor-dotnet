@@ -38,6 +38,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task CountDocumentsInCollection_NormalCase()
         {
+            await this.InitializeDocumentsAsync();
             int partitionKeyRangeCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
             int openedCount = 0, closedCount = 0, processedCount = 0;
             var allDocsProcessed = new ManualResetEvent(false);
@@ -81,6 +82,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task CountDocumentsInCollection_ProcessChangesThrows()
         {
+            await this.InitializeDocumentsAsync();
             int processedCount = 0;
             var allDocsProcessed = new ManualResetEvent(false);
             bool isFirstChangeNotification = false; // Make sure there was at least one throw.
@@ -128,6 +130,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task CountDocumentsInCollection_TwoHosts()
         {
+            await this.InitializeDocumentsAsync();
             int partitionKeyRangeCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
             Assert.True(partitionKeyRangeCount > 1, "Prerequisite failed: expected monitored collection with at least 2 partitions.");
 
@@ -210,7 +213,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             Assert.True(partitionKeyRangeCount == closedCount, "Wrong closedCount");
         }
 
-        protected override async Task FinishTestClassInitializeAsync()
+        private async Task InitializeDocumentsAsync()
         {
             using (var client = new DocumentClient(this.ClassData.monitoredCollectionInfo.Uri, this.ClassData.monitoredCollectionInfo.MasterKey, this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
             {
