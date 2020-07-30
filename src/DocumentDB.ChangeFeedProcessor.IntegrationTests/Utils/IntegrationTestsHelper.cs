@@ -91,6 +91,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
                 catch (DocumentClientException)
                 {
                     // Public emulator might have transient
+                    if (retryCount == 0)
+                    {
+                        throw;
+                    }
                 }
             }
         }
