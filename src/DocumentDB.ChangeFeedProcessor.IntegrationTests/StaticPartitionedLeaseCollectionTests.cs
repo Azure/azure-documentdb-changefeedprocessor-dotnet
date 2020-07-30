@@ -10,8 +10,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     [Collection("Integration tests")]
     public class StaticPartitionedLeaseCollectionTests : StaticCollectionTests
     {
-        public StaticPartitionedLeaseCollectionTests(IntegrationTestFixture fixture) :
-            base(fixture, typeof(StaticPartitionedLeaseCollectionTests), true)
+        public StaticPartitionedLeaseCollectionTests() :
+            base(true)
         {
         }
     }

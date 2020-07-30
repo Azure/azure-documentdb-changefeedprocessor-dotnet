@@ -25,14 +25,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     {
         const int documentCount = 513;
 
-        public DynamicCollectionTests(IntegrationTestFixture fixture) : base(fixture, typeof(DynamicCollectionTests))
-        {
-        }
-
         [Fact]
         public async Task CountAddedDocuments()
         {
-            int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
+            int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.MonitoredCollectionInfo);
             int openedCount = 0, processedCount = 0;
             var allObserversStarted = new ManualResetEvent(false);
             var allDocsProcessed = new ManualResetEvent(false);
@@ -54,7 +50,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             var host = new ChangeFeedEventHost(
                 Guid.NewGuid().ToString(),
-                this.ClassData.monitoredCollectionInfo,
+                this.MonitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = false },
                 new ChangeFeedHostOptions());
@@ -63,11 +59,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             var isStartOk = allObserversStarted.WaitOne(IntegrationTest.changeWaitTimeout + IntegrationTest.changeWaitTimeout);
             Assert.True(isStartOk, "Timed out waiting for observres to start");
 
-            using (var client = new DocumentClient(this.ClassData.monitoredCollectionInfo.Uri, this.ClassData.monitoredCollectionInfo.MasterKey, this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
+            using (var client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
             {
                 await IntegrationTestsHelper.CreateDocumentsAsync(
                     client,
-                    UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName),
+                    UriFactory.CreateDocumentCollectionUri(this.MonitoredCollectionInfo.DatabaseName, this.MonitoredCollectionInfo.CollectionName),
                     documentCount);
             }
 
@@ -86,8 +82,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task TestStartTime()
         {
-            var collectionUri = UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName);
-            using (var client = new DocumentClient(this.ClassData.monitoredCollectionInfo.Uri, this.ClassData.monitoredCollectionInfo.MasterKey, this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
+            var collectionUri = UriFactory.CreateDocumentCollectionUri(this.MonitoredCollectionInfo.DatabaseName, this.MonitoredCollectionInfo.CollectionName);
+            using (var client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
             {
                 await client.CreateDocumentAsync(collectionUri, JsonConvert.DeserializeObject("{\"id\": \"doc1\"}"));
 
@@ -99,7 +95,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
                 await client.CreateDocumentAsync(collectionUri, JsonConvert.DeserializeObject("{\"id\": \"doc2\"}"));
 
-                int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
+                int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.MonitoredCollectionInfo);
                 var allDocsProcessed = new ManualResetEvent(false);
 
                 var processedDocs = new List<Document>();
@@ -118,7 +114,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
                 var host = new ChangeFeedEventHost(
                     Guid.NewGuid().ToString(),
-                    this.ClassData.monitoredCollectionInfo,
+                    this.MonitoredCollectionInfo,
                     this.LeaseCollectionInfo,
                     new ChangeFeedOptions { StartTime = timeInBeweeen },
                     new ChangeFeedHostOptions());
@@ -143,15 +139,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         public async Task TestReducePageSizeScenario()
         {
             // Use different colleciton: we need 1-partition collection to make sure all docs get to same partition.
-            var databaseUri = UriFactory.CreateDatabaseUri(this.ClassData.monitoredCollectionInfo.DatabaseName);
+            var databaseUri = UriFactory.CreateDatabaseUri(this.MonitoredCollectionInfo.DatabaseName);
 
-            DocumentCollectionInfo monitoredCollectionInfo = new DocumentCollectionInfo(this.ClassData.monitoredCollectionInfo);
-            monitoredCollectionInfo.CollectionName = this.ClassData.monitoredCollectionInfo.CollectionName + "_" + Guid.NewGuid().ToString();
+            DocumentCollectionInfo monitoredCollectionInfo = new DocumentCollectionInfo(this.MonitoredCollectionInfo);
+            monitoredCollectionInfo.CollectionName = this.MonitoredCollectionInfo.CollectionName + "_" + Guid.NewGuid().ToString();
 
-            var collectionUri = UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, monitoredCollectionInfo.CollectionName);
+            var collectionUri = UriFactory.CreateDocumentCollectionUri(this.MonitoredCollectionInfo.DatabaseName, monitoredCollectionInfo.CollectionName);
             var monitoredCollection = new DocumentCollection { Id = monitoredCollectionInfo.CollectionName };
 
-            using (var client = new DocumentClient(this.ClassData.monitoredCollectionInfo.Uri, this.ClassData.monitoredCollectionInfo.MasterKey, this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
+            using (var client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
             {
                 await client.CreateDocumentCollectionAsync(databaseUri, monitoredCollection, new RequestOptions { OfferThroughput = 10000 });
 
@@ -169,7 +165,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                         );}"
                     };
 
-                    var sprocUri = UriFactory.CreateStoredProcedureUri(this.ClassData.monitoredCollectionInfo.DatabaseName, monitoredCollection.Id, sproc.Id);
+                    var sprocUri = UriFactory.CreateStoredProcedureUri(this.MonitoredCollectionInfo.DatabaseName, monitoredCollection.Id, sproc.Id);
                     await client.CreateStoredProcedureAsync(collectionUri, sproc);
                     await client.ExecuteStoredProcedureAsync<object>(sprocUri, 0);
 

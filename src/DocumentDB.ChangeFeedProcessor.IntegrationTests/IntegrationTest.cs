@@ -3,8 +3,6 @@
 //----------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
@@ -16,24 +14,6 @@ using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 {
-    public class TestClassData
-    {
-        internal readonly SemaphoreSlim classInitializeSyncRoot = new SemaphoreSlim(1, 1);
-        internal readonly object testContextSyncRoot = new object();
-        internal readonly int testCount;
-        internal readonly bool isPartitionedMonitoredCollection;
-        internal readonly bool isPartitionedLeaseCollection;
-        internal DocumentCollectionInfo monitoredCollectionInfo;
-        internal DocumentCollectionInfo leaseCollectionInfoTemplate;
-
-        internal TestClassData(int testCount, bool isPartitionedMonitoredCollection, bool isPartitionedLeaseCollection)
-        {
-            this.testCount = testCount;
-            this.isPartitionedMonitoredCollection = isPartitionedMonitoredCollection;
-            this.isPartitionedLeaseCollection = isPartitionedLeaseCollection;
-        }
-    }
-
     /// <summary>
     /// Fixture is shared among all instances. https://xunit.github.io/docs/shared-context.html#collection-fixture
     /// </summary>
@@ -44,8 +24,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             System.Net.ServicePointManager.DefaultConnectionLimit = 1000;  // Default is 2.
             ThreadPool.SetMinThreads(1000, 1000);   // 32
             ThreadPool.SetMaxThreads(5000, 5000);   // 32
-            Properties = new ConcurrentDictionary<string, object>();
-            testClasses = new ConcurrentDictionary<string, TestClassData>();
         }
 
         public void Dispose()
@@ -66,9 +44,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 await client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(databaseName));
             }
         }
-
-        public IDictionary<string, object> Properties { get; private set; }
-        public IDictionary<string, TestClassData> testClasses { get; private set; }
     }
 
     [CollectionDefinition("Integration tests")]
@@ -93,7 +68,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     [Collection("Integration tests")]
     public class IntegrationTest: IAsyncLifetime
     {
-        private const string leaseCollectionInfoPropertyName = "leaseCollectionInfo";
         protected static int monitoredOfferThroughput;
         protected static int leaseOfferThroughput;
         protected static readonly TimeSpan changeWaitTimeout = TimeSpan.FromSeconds(30);
@@ -102,42 +76,33 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
         protected DocumentCollectionInfo LeaseCollectionInfo
         {
-            get { return (DocumentCollectionInfo)this.fixture.Properties[leaseCollectionInfoPropertyName]; }
-            set
-            {
-                lock (this.ClassData.testContextSyncRoot)
-                {
-                    this.fixture.Properties[leaseCollectionInfoPropertyName] = value;
-                }
-            }
+            get;
+            private set;
         }
 
-        public TestClassData ClassData
+        protected DocumentCollectionInfo MonitoredCollectionInfo
         {
-            get { return this.fixture.testClasses[this.GetType().Name]; }
+            get;
+            private set;
         }
-        
+
+        protected readonly bool IsPartitionedCollection;
+
+        protected readonly bool IsPartitionedLeaseCollection;
+
         public IntegrationTest(
-            IntegrationTestFixture fixture,
-            Type testClassType,
             bool isPartitionedCollection = true,
             bool isPartitionedLeaseCollection = false)
         {
-            this.fixture = fixture;
-            if (!this.fixture.testClasses.ContainsKey(testClassType.Name))
-            {
-                this.fixture.testClasses[testClassType.Name] = new TestClassData(
-                    GetTestCount(testClassType),
-                    isPartitionedCollection,
-                    isPartitionedLeaseCollection);
-            }
+            this.IsPartitionedCollection = isPartitionedCollection;
+            this.IsPartitionedLeaseCollection = isPartitionedLeaseCollection;
         }
 
         public async Task InitializeAsync()
         {
             try
             {
-                await IntegrationTest.CreateMonitoredCollection(this, $"data_{this.GetType().Name}");
+                await this.CreateMonitoredCollectionAsync($"data_{this.GetType().Name}");
             }
             catch(Exception ex)
             {
@@ -145,10 +110,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 throw;
             }
 
-            Debug.Assert(this.ClassData.monitoredCollectionInfo != null, "Monitored collection information missing.");
-            Debug.Assert(this.ClassData.leaseCollectionInfoTemplate != null, "Lease collection information missing.");
-
-            this.LeaseCollectionInfo = new DocumentCollectionInfo(this.ClassData.leaseCollectionInfoTemplate);
             this.LeaseCollectionInfo.CollectionName = $"leases_{this.GetType().Name}_{Guid.NewGuid().ToString()}";
 
             var leaseCollection = new DocumentCollection
@@ -156,7 +117,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 Id = this.LeaseCollectionInfo.CollectionName,
             };
 
-            if (this.ClassData.isPartitionedLeaseCollection)
+            if (this.IsPartitionedLeaseCollection)
             {
                 leaseCollection.PartitionKey = new PartitionKeyDefinition { Paths = { "/id" } };
             }
@@ -173,29 +134,31 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             using (var client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))
             {
                 await client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(this.LeaseCollectionInfo.DatabaseName, this.LeaseCollectionInfo.CollectionName));
-                await client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName));
+                await client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(this.MonitoredCollectionInfo.DatabaseName, this.MonitoredCollectionInfo.CollectionName));
             }
         }
 
-        private static async Task CreateMonitoredCollection(IntegrationTest test, string monitoredCollectionName)
+        private async Task CreateMonitoredCollectionAsync(string monitoredCollectionName)
         {
-            Debug.Assert(test != null);
             Debug.Assert(monitoredCollectionName != null);
 
             IntegrationTestsHelper.GetConfigurationSettings(
-                out test.ClassData.monitoredCollectionInfo,
-                out test.ClassData.leaseCollectionInfoTemplate,
+                out DocumentCollectionInfo baseMonitoredCollectionInfo,
+                out DocumentCollectionInfo baseLeaseCollectionInfo,
                 out monitoredOfferThroughput,
                 out leaseOfferThroughput);
 
-            test.ClassData.monitoredCollectionInfo.CollectionName = monitoredCollectionName;
+            this.MonitoredCollectionInfo = baseMonitoredCollectionInfo;
+            this.LeaseCollectionInfo = baseLeaseCollectionInfo;
+
+            this.MonitoredCollectionInfo.CollectionName = monitoredCollectionName;
 
             var monitoredCollection = new DocumentCollection
             {
-                Id = test.ClassData.monitoredCollectionInfo.CollectionName,
+                Id = this.MonitoredCollectionInfo.CollectionName,
             };
 
-            if (test.ClassData.isPartitionedMonitoredCollection)
+            if (this.IsPartitionedCollection)
             {
                 monitoredCollection.PartitionKey = new PartitionKeyDefinition { Paths = { "/id" } };
             }
@@ -207,9 +170,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 }
             }
 
-            using (var client = new DocumentClient(test.ClassData.monitoredCollectionInfo.Uri, test.ClassData.monitoredCollectionInfo.MasterKey, test.ClassData.monitoredCollectionInfo.ConnectionPolicy))
+            using (var client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
             {
-                await IntegrationTestsHelper.CreateDocumentCollectionAsync(client, test.ClassData.monitoredCollectionInfo.DatabaseName, monitoredCollection, monitoredOfferThroughput);
+                await IntegrationTestsHelper.CreateDocumentCollectionAsync(client, this.MonitoredCollectionInfo.DatabaseName, monitoredCollection, monitoredOfferThroughput);
             }
         }
 
