@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils;
 using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.Linq;
 using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
@@ -27,17 +28,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         const int documentCount = 1519;
 
         public StaticCollectionTests(
-            IntegrationTestFixture fixture,
-            Type testClassType,
             bool isPartitionedLeaseCollection) : 
-            base(fixture, testClassType, isPartitionedLeaseCollection: isPartitionedLeaseCollection)
+            base(isPartitionedLeaseCollection: isPartitionedLeaseCollection)
         {
         }
 
         [Fact]
         public async Task CountDocumentsInCollection_NormalCase()
         {
-            int partitionKeyRangeCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
+            await this.InitializeDocumentsAsync();
+            int partitionKeyRangeCount = await IntegrationTestsHelper.GetPartitionCount(this.MonitoredCollectionInfo);
             int openedCount = 0, closedCount = 0, processedCount = 0;
             var allDocsProcessed = new ManualResetEvent(false);
 
@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             var host = new ChangeFeedEventHost(
                 Guid.NewGuid().ToString(),
-                this.ClassData.monitoredCollectionInfo,
+                this.MonitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = true },
                 new ChangeFeedHostOptions());
@@ -67,7 +67,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             try
             {
                 Assert.True(partitionKeyRangeCount == openedCount, "Wrong openedCount");
-                Assert.True(documentCount == processedCount, "Wrong processedCount");
+                Assert.True(documentCount == processedCount, $"Wrong processedCount {documentCount} {processedCount}");
             }
             finally
             {
@@ -80,6 +80,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task CountDocumentsInCollection_ProcessChangesThrows()
         {
+            await this.InitializeDocumentsAsync();
             int processedCount = 0;
             var allDocsProcessed = new ManualResetEvent(false);
             bool isFirstChangeNotification = false; // Make sure there was at least one throw.
@@ -106,7 +107,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             var host = new ChangeFeedEventHost(
                 Guid.NewGuid().ToString(),
-                this.ClassData.monitoredCollectionInfo,
+                this.MonitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = true },
                 new ChangeFeedHostOptions());
@@ -127,7 +128,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task CountDocumentsInCollection_TwoHosts()
         {
-            int partitionKeyRangeCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
+            await this.InitializeDocumentsAsync();
+            int partitionKeyRangeCount = await IntegrationTestsHelper.GetPartitionCount(this.MonitoredCollectionInfo);
             Assert.True(partitionKeyRangeCount > 1, "Prerequisite failed: expected monitored collection with at least 2 partitions.");
 
             int processedCount = 0;
@@ -146,7 +148,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             var host1 = new ChangeFeedEventHost(
                 Guid.NewGuid().ToString(),
-                this.ClassData.monitoredCollectionInfo,
+                this.MonitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = true },
                 new ChangeFeedHostOptions { MaxPartitionCount = partitionKeyRangeCount / 2 });
@@ -154,7 +156,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             var host2 = new ChangeFeedEventHost(
                 Guid.NewGuid().ToString(),
-                this.ClassData.monitoredCollectionInfo,
+                this.MonitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = true },
                 new ChangeFeedHostOptions { MaxPartitionCount = partitionKeyRangeCount - partitionKeyRangeCount / 2 });
@@ -164,7 +166,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             try
             {
-                Assert.True(documentCount == processedCount, "Wrong processedCount");
+                Assert.True(documentCount == processedCount, $"Wrong processedCount {documentCount} {processedCount}");
             }
             finally
             {
@@ -176,7 +178,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task StopAtFullSpeed()
         {
-            int partitionKeyRangeCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
+            int partitionKeyRangeCount = await IntegrationTestsHelper.GetPartitionCount(this.MonitoredCollectionInfo);
             int openedCount = 0, closedCount = 0, processedCount = 0;
             var quarterDocsProcessed = new ManualResetEvent(false);
 
@@ -195,7 +197,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             var host = new ChangeFeedEventHost(
                 Guid.NewGuid().ToString(),
-                this.ClassData.monitoredCollectionInfo,
+                this.MonitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = true, MaxItemCount = 2 },
                 new ChangeFeedHostOptions());
@@ -209,11 +211,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             Assert.True(partitionKeyRangeCount == closedCount, "Wrong closedCount");
         }
 
-        protected override async Task FinishTestClassInitializeAsync()
+        private async Task InitializeDocumentsAsync()
         {
-            using (var client = new DocumentClient(this.ClassData.monitoredCollectionInfo.Uri, this.ClassData.monitoredCollectionInfo.MasterKey, this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
+            using (var client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
             {
-                var collectionUri = UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName);
+                var collectionUri = UriFactory.CreateDocumentCollectionUri(this.MonitoredCollectionInfo.DatabaseName, this.MonitoredCollectionInfo.CollectionName);
+
                 await IntegrationTestsHelper.CreateDocumentsAsync(client, collectionUri, documentCount);
             }
         }

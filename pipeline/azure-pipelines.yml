@@ -1,0 +1,29 @@
+trigger: none
+pr:
+  branches:
+    include:
+    - master
+    - releases/*
+
+strategy:
+  matrix:
+    windows:
+      imageName: 'windows-latest'
+
+pool:
+  vmImage: $(imageName)
+
+steps:
+- task: DotNetCoreCLI@2
+  displayName: Build
+  inputs:
+    command: build
+    projects: '**/*.csproj'
+    arguments: '--configuration Release'
+- script: dotnet test ./src/DocumentDB.ChangeFeedProcessor.UnitTests/DocumentDB.ChangeFeedProcessor.UnitTests.csproj --logger trx
+  displayName: 'Running tests'
+- task: PublishTestResults@2
+  condition: succeededOrFailed()
+  inputs:
+    testRunner: VSTest
+    testResultsFiles: '**/*.trx'

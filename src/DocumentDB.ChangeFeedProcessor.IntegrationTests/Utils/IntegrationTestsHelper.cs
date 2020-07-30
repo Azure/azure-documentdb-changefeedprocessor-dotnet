@@ -14,6 +14,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
 {
     internal class IntegrationTestsHelper
     {
+        // Used when tests are running in CI/CD pipeline
+        private const string GatewayEndpointEnvironmentName = "COSMOSDBEMULATOR_ENDPOINT";
+
         static readonly string Endpoint;
         static readonly string MasterKey;
         static readonly string DatabaseId;
@@ -26,7 +29,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
                     .AddJsonFile("appsettings.json")
                     .Build();
 
-            Endpoint = config["IntegrationTests:endpoint"];
+            Endpoint = Environment.GetEnvironmentVariable(GatewayEndpointEnvironmentName) ?? config["IntegrationTests:endpoint"];
             MasterKey = config["IntegrationTests:masterKey"];
             DatabaseId = config["IntegrationTests:databaseId"];
             MonitoredOfferThroughput = config["IntegrationTests:monitoredOfferThroughput"];
@@ -77,7 +80,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
             var database = new Database { Id = databaseId };
             database = await client.CreateDatabaseIfNotExistsAsync(database);
 
-            await client.CreateDocumentCollectionAsync(database.SelfLink, collection, new RequestOptions { OfferThroughput = offerThroughput });
+            int retryCount = 3;
+            while (retryCount-- > 0)
+            {
+                try
+                {
+                    await client.CreateDocumentCollectionAsync(database.SelfLink, collection, new RequestOptions { OfferThroughput = offerThroughput });
+                    break;
+                }
+                catch (DocumentClientException)
+                {
+                    // Public emulator might have transient
+                    if (retryCount == 0)
+                    {
+                        throw;
+                    }
+                }
+            }
         }
 
         internal static async Task CreateDocumentsAsync(DocumentClient client, Uri collectionUri, int count)

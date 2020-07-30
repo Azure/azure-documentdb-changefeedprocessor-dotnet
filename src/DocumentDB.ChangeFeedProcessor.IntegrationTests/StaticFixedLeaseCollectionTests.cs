@@ -10,8 +10,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     [Collection("Integration tests")]
     public class StaticFixedLeaseCollectionTests : StaticCollectionTests
     {
-        public StaticFixedLeaseCollectionTests(IntegrationTestFixture fixture) :
-            base(fixture, typeof(StaticFixedLeaseCollectionTests), false)
+        public StaticFixedLeaseCollectionTests() :
+            base(false)
         {
         }
     }

@@ -18,17 +18,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     [Collection("Integration tests")]
     public class EstimatorTests : IntegrationTest
     {
-        public EstimatorTests(IntegrationTestFixture fixture) : base(fixture, typeof(EstimatorTests), false)
+        public EstimatorTests() : base(false)
         {
         }
 
         [Fact]
         public async Task CountPendingDocuments()
         {
-            // Cleanup the test collection to avoid other tests' documents causing issues with StartFromBeginning
-            await this.ResetTestCollection();
             int documentCount = 1;
-            int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
+            int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.MonitoredCollectionInfo);
             int openedCount = 0, processedCount = 0;
             var allObserversStarted = new ManualResetEvent(false);
             var allDocsProcessed = new ManualResetEvent(false);
@@ -52,7 +50,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             var host = new ChangeFeedEventHost(
                 hostName,
-                this.ClassData.monitoredCollectionInfo,
+                this.MonitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = false },
                 new ChangeFeedHostOptions());
@@ -64,11 +62,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             long estimation = await host.GetEstimatedRemainingWork();
             Assert.Equal(0, estimation);
 
-            using (var client = new DocumentClient(this.ClassData.monitoredCollectionInfo.Uri, this.ClassData.monitoredCollectionInfo.MasterKey, this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
+            using (var client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
             {
                 await IntegrationTestsHelper.CreateDocumentsAsync(
                     client,
-                    UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName),
+                    UriFactory.CreateDocumentCollectionUri(this.MonitoredCollectionInfo.DatabaseName, this.MonitoredCollectionInfo.CollectionName),
                     1);
 
                 var isStartOk = allObserversStarted.WaitOne(IntegrationTest.changeWaitTimeout + IntegrationTest.changeWaitTimeout);
@@ -84,7 +82,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
                 await IntegrationTestsHelper.CreateDocumentsAsync(
                     client,
-                    UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName),
+                    UriFactory.CreateDocumentCollectionUri(this.MonitoredCollectionInfo.DatabaseName, this.MonitoredCollectionInfo.CollectionName),
                     1);
 
                 estimation = await host.GetEstimatedRemainingWork();
@@ -92,7 +90,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
                 await IntegrationTestsHelper.CreateDocumentsAsync(
                     client,
-                    UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName),
+                    UriFactory.CreateDocumentCollectionUri(this.MonitoredCollectionInfo.DatabaseName, this.MonitoredCollectionInfo.CollectionName),
                     10);
 
                 estimation = await host.GetEstimatedRemainingWork();
@@ -101,7 +99,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 // Create a new host to process pending changes
                 var newHost = new ChangeFeedEventHost(
                     hostName,
-                    this.ClassData.monitoredCollectionInfo,
+                    this.MonitoredCollectionInfo,
                     this.LeaseCollectionInfo,
                     new ChangeFeedOptions { StartFromBeginning = false },
                     new ChangeFeedHostOptions());
@@ -132,13 +130,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task WhenNoLeasesExistReturn1()
         {
-            // Cleanup the test collection to avoid other tests' documents causing issues with StartFromBeginning
-            await this.ResetTestCollection();
             var hostName = Guid.NewGuid().ToString();
 
             var host = new ChangeFeedEventHost(
                 hostName,
-                this.ClassData.monitoredCollectionInfo,
+                this.MonitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = false },
                 new ChangeFeedHostOptions());
@@ -155,10 +151,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task WhenLeasesHaveContinuationTokenNullReturn0()
         {
-            // Cleanup the test collection to avoid other tests' documents causing issues with StartFromBeginning
-            await this.ResetTestCollection();
             int documentCount = 1;
-            int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
+            int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.MonitoredCollectionInfo);
             int openedCount = 0, processedCount = 0;
             var allObserversStarted = new ManualResetEvent(false);
             var allDocsProcessed = new ManualResetEvent(false);
@@ -183,7 +177,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             // We create a host to initialize the leases with ContinuationToken null
             var host = new ChangeFeedEventHost(
                 hostName,
-                this.ClassData.monitoredCollectionInfo,
+                this.MonitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = false },
                 new ChangeFeedHostOptions());
@@ -205,10 +199,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task WhenLeasesHaveContinuationTokenNullStartFromBeginning()
         {
-            // Cleanup the test collection to avoid other tests' documents causing issues with StartFromBeginning
-            await this.ResetTestCollection();
             int documentCount = 1;
-            int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.ClassData.monitoredCollectionInfo);
+            int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.MonitoredCollectionInfo);
             int openedCount = 0, processedCount = 0;
             var allObserversStarted = new ManualResetEvent(false);
             var allDocsProcessed = new ManualResetEvent(false);
@@ -233,7 +225,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             // We create a host to initialize the leases with ContinuationToken null
             var host = new ChangeFeedEventHost(
                 hostName,
-                this.ClassData.monitoredCollectionInfo,
+                this.MonitoredCollectionInfo,
                 this.LeaseCollectionInfo,
                 new ChangeFeedOptions { StartFromBeginning = false },
                 new ChangeFeedHostOptions());
@@ -244,14 +236,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             await host.UnregisterObserversAsync();
 
             using (var client = new DocumentClient(
-                this.ClassData.monitoredCollectionInfo.Uri,
-                this.ClassData.monitoredCollectionInfo.MasterKey,
-                this.ClassData.monitoredCollectionInfo.ConnectionPolicy))
+                this.MonitoredCollectionInfo.Uri,
+                this.MonitoredCollectionInfo.MasterKey,
+                this.MonitoredCollectionInfo.ConnectionPolicy))
             {
                 // Insert documents
                 await IntegrationTestsHelper.CreateDocumentsAsync(
                     client,
-                    UriFactory.CreateDocumentCollectionUri(this.ClassData.monitoredCollectionInfo.DatabaseName, this.ClassData.monitoredCollectionInfo.CollectionName),
+                    UriFactory.CreateDocumentCollectionUri(this.MonitoredCollectionInfo.DatabaseName, this.MonitoredCollectionInfo.CollectionName),
                     10);
 
                 // Since the leases have ContinuationToken null state, the estimator will use StartFromBeginning and pick-up the changes that happened from the start
