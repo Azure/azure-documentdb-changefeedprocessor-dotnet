@@ -96,7 +96,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     .BuildAsync();
 
             await changeFeedProcessorBuilder.StartAsync();
-            await Task.Delay(5000);
+            await Task.Delay(10000);
 
             // Inserting some documents
             using (DocumentClient client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
@@ -110,7 +110,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             }
 
             // Waiting on all notifications to finish
-            await Task.Delay(5000);
+            await Task.Delay(10000);
             await changeFeedProcessorBuilder.StopAsync();
 
             // At this point we have leases for V2, so we will simulate V3 by manually adding LeaseToken and removing PartitionId
@@ -147,7 +147,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     .WithLeaseCollection(this.LeaseCollectionInfo)
                     .BuildAsync();
             await changeFeedProcessorBuilder.StartAsync();
-            await Task.Delay(5000);
+            await Task.Delay(10000);
 
             // Now all leases are V2 leases, create the rest of the documents
             using (DocumentClient client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
@@ -161,7 +161,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             }
 
             // Waiting on all notifications to finish, should be using LeaseToken from the V3 lease
-            await Task.Delay(5000);
+            await Task.Delay(10000);
             await changeFeedProcessorBuilder.StopAsync();
 
             // Verify we processed all items (including when using the V3 leases)
