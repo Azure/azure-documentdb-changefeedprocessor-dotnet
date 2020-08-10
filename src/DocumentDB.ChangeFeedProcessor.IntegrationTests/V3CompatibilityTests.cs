@@ -24,6 +24,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         {
         }
 
+        /// <summary>
+        /// Default V2 schema has PartitionId, not LeaseToken.
+        /// </summary>
         [Fact]
         public async Task Schema_DefaultsToNoLeaseToken()
         {
@@ -140,16 +143,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 }
             }
 
+            // Now all leases are V3 leases, start another processor that should migrate to V2 schema and maintain LeaseToken for compatibility
+
             changeFeedProcessorBuilder = await new ChangeFeedProcessorBuilder()
                     .WithObserverFactory(observerFactory)
                     .WithHostName("smoke_test")
                     .WithFeedCollection(this.MonitoredCollectionInfo)
                     .WithLeaseCollection(this.LeaseCollectionInfo)
                     .BuildAsync();
+
             await changeFeedProcessorBuilder.StartAsync();
             await Task.Delay(10000);
-
-            // Now all leases are V2 leases, create the rest of the documents
+            
+            // Create the rest of the documents
             using (DocumentClient client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
             {
                 Uri collectionUri = UriFactory.CreateDocumentCollectionUri(this.MonitoredCollectionInfo.DatabaseName, this.MonitoredCollectionInfo.CollectionName);
@@ -160,7 +166,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 }
             }
 
-            // Waiting on all notifications to finish, should be using LeaseToken from the V3 lease
+            // Waiting on all notifications to finish
             await Task.Delay(10000);
             await changeFeedProcessorBuilder.StopAsync();
 
