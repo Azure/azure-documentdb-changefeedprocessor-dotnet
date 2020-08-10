@@ -16,6 +16,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     {
         private static readonly DateTime UnixStartTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
+        // Used to detect if the user is migrating from a V3 CFP schema
+        private bool isMigratingFromV3 = false;
+
         public DocumentServiceLease()
         {
         }
@@ -71,6 +74,27 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 
         [JsonProperty("_ts")]
         private long TS { get; set; }
+
+        [JsonProperty("LeaseToken", NullValueHandling = NullValueHandling.Ignore)]
+        private string LeaseToken
+        {
+            get
+            {
+                if (this.isMigratingFromV3)
+                {
+                    // If the user migrated the lease from V3 schema, we maintain the LeaseToken property for forward compatibility
+                    return this.PartitionId;
+                }
+
+                return null;
+            }
+
+            set
+            {
+                this.PartitionId = value;
+                this.isMigratingFromV3 = true;
+            }
+        }
 
         public static DocumentServiceLease FromDocument(Document document)
         {
