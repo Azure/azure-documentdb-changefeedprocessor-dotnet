@@ -7,6 +7,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reflection.Metadata.Ecma335;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils;
@@ -31,6 +32,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         public async Task Schema_DefaultsToNoLeaseToken()
         {
             TestObserverFactory observerFactory = new TestObserverFactory(
+                openProcessor: null,
                 (FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs) =>
                 {
                     return Task.CompletedTask;
@@ -82,11 +84,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task Schema_OnV2MigrationMaintainLeaseToken()
         {
-            List<int> expectedIds = Enumerable.Range(0, 20).ToList();
+            const int batchSize = 10;
+            int partitionCount = await IntegrationTestsHelper.GetPartitionCount(this.MonitoredCollectionInfo);
+            int openedCount = 0;
+            ManualResetEvent allObserversStarted = new ManualResetEvent(false);
+            List<int> expectedIds = Enumerable.Range(0, batchSize * 2).ToList();
             ManualResetEvent firstSetOfResultsProcessed = new ManualResetEvent(false);
             ManualResetEvent secondSetOfResultsProcessed = new ManualResetEvent(false);
             List<int> receivedIds = new List<int>();
             TestObserverFactory observerFactory = new TestObserverFactory(
+                context =>
+                {
+                    int newCount = Interlocked.Increment(ref openedCount);
+                    if (newCount == partitionCount) allObserversStarted.Set();
+                    return Task.CompletedTask;
+                },
                 (FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs) =>
                 {
                     foreach (Document doc in docs)
@@ -94,12 +106,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                         receivedIds.Add(int.Parse(doc.Id));
                     }
 
-                    if (receivedIds.Count == 10)
+                    if (receivedIds.Count == batchSize)
                     {
                         firstSetOfResultsProcessed.Set();
                     }
 
-                    if (receivedIds.Count == 20)
+                    if (receivedIds.Count == batchSize * 2)
                     {
                         secondSetOfResultsProcessed.Set();
                     }
@@ -160,7 +172,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             }
 
             // Now all leases are V3 leases, start another processor that should migrate to V2 schema and maintain LeaseToken for compatibility
-
+            openedCount = 0;
+            allObserversStarted.Reset();
             changeFeedProcessorBuilder = await new ChangeFeedProcessorBuilder()
                     .WithObserverFactory(observerFactory)
                     .WithHostName("smoke_test")
@@ -169,7 +182,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     .BuildAsync();
 
             await changeFeedProcessorBuilder.StartAsync();
-            
+
+            Assert.True(allObserversStarted.WaitOne(IntegrationTest.changeWaitTimeout + IntegrationTest.changeWaitTimeout), "Timed out waiting for observres to start");
             // Create the rest of the documents
             using (DocumentClient client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
             {
@@ -249,17 +263,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     return;
                 }
 
-                await Task.Delay(30, cancellationToken);
+                await Task.Delay(100, cancellationToken);
             }
         }
 
         class TestObserverFactory : FeedProcessing.IChangeFeedObserverFactory, FeedProcessing.IChangeFeedObserver
         {
             private readonly Func<FeedProcessing.IChangeFeedObserverContext, IReadOnlyList<Document>, Task> changeProcessor;
+            private readonly Func<FeedProcessing.IChangeFeedObserverContext, Task> openProcessor;
 
-            public TestObserverFactory(Func<FeedProcessing.IChangeFeedObserverContext, IReadOnlyList<Document>, Task> changeProcessor)
+            public TestObserverFactory(
+                Func<FeedProcessing.IChangeFeedObserverContext, Task> openProcessor,
+                Func<FeedProcessing.IChangeFeedObserverContext, IReadOnlyList<Document>, Task> changeProcessor)
             {
                 this.changeProcessor = changeProcessor;
+                this.openProcessor = openProcessor;
             }
 
             public FeedProcessing.IChangeFeedObserver CreateObserver()
@@ -267,7 +285,15 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 return this;
             }
 
-            public Task OpenAsync(FeedProcessing.IChangeFeedObserverContext context) => Task.CompletedTask;
+            public Task OpenAsync(FeedProcessing.IChangeFeedObserverContext context)
+            {
+                if (this.openProcessor != null)
+                {
+                    return this.openProcessor(context);
+                }
+
+                return Task.CompletedTask;
+            }
 
             public Task CloseAsync(FeedProcessing.IChangeFeedObserverContext context, FeedProcessing.ChangeFeedObserverCloseReason reason) => Task.CompletedTask;
 
