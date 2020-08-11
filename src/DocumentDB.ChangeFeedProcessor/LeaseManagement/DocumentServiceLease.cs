@@ -75,11 +75,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         [JsonProperty("LeaseToken", NullValueHandling = NullValueHandling.Ignore)]
         private string LeaseToken
         {
-            get
-            {
-                return null;
-            }
-
             set
             {
                 this.PartitionId = value;
