@@ -179,21 +179,20 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             {
                 Uri collectionUri = UriFactory.CreateDocumentCollectionUri(this.LeaseCollectionInfo.DatabaseName, this.LeaseCollectionInfo.CollectionName);
 
-                IDocumentQuery<dynamic> query = client.CreateDocumentQuery<dynamic>(collectionUri, "SELECT * FROM c").AsDocumentQuery();
+                IDocumentQuery<JObject> query = client.CreateDocumentQuery<JObject>(collectionUri, "SELECT * FROM c").AsDocumentQuery();
                 while (query.HasMoreResults)
                 {
-                    foreach (dynamic lease in await query.ExecuteNextAsync())
+                    foreach (JObject lease in await query.ExecuteNextAsync())
                     {
-                        string leaseId = lease.id;
+                        string leaseId = lease.Value<string>("id");
                         if (leaseId.Contains(".info") || leaseId.Contains(".lock"))
                         {
                             // These are the store initialization marks
                             continue;
                         }
 
-                        Assert.NotNull(lease.LeaseToken);
-                        Assert.NotNull(lease.PartitionId);
-                        Assert.Equal(lease.LeaseToken, lease.PartitionId);
+                        Assert.NotNull(lease.Value<string>("PartitionId"));
+                        Assert.Null(lease.Value<string>("LeaseToken"));
                     }
                 }
             }
