@@ -216,31 +216,36 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         {
             bool infoExists = false;
             bool lockExists = false;
-            using (DocumentClient client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))
+            while (true)
             {
-                Uri collectionUri = UriFactory.CreateDocumentCollectionUri(this.LeaseCollectionInfo.DatabaseName, this.LeaseCollectionInfo.CollectionName);
-
-                IDocumentQuery<JObject> query = client.CreateDocumentQuery<JObject>(collectionUri, "SELECT * FROM c").AsDocumentQuery();
-                while (query.HasMoreResults)
+                infoExists = false;
+                lockExists = false;
+                using (DocumentClient client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))
                 {
-                    foreach (JObject lease in await query.ExecuteNextAsync())
+                    Uri collectionUri = UriFactory.CreateDocumentCollectionUri(this.LeaseCollectionInfo.DatabaseName, this.LeaseCollectionInfo.CollectionName);
+
+                    IDocumentQuery<JObject> query = client.CreateDocumentQuery<JObject>(collectionUri, "SELECT * FROM c").AsDocumentQuery();
+                    while (query.HasMoreResults)
                     {
-                        string leaseId = lease.Value<string>("id");
-                        if (leaseId.Contains(".info"))
+                        foreach (JObject lease in await query.ExecuteNextAsync())
                         {
-                            infoExists = true;
-                        }
+                            string leaseId = lease.Value<string>("id");
+                            if (leaseId.Contains(".info"))
+                            {
+                                infoExists = true;
+                            }
 
-                        if (leaseId.Contains(".lock"))
-                        {
-                            lockExists = true;
-                        }
-
-                        if (infoExists && !lockExists)
-                        {
-                            return;
+                            if (leaseId.Contains(".lock"))
+                            {
+                                lockExists = true;
+                            }
                         }
                     }
+                }
+
+                if (infoExists && !lockExists)
+                {
+                    return;
                 }
             }
         }
