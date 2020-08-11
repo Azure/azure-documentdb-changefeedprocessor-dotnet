@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     .BuildAsync();
 
             await changeFeedProcessorBuilder.StartAsync();
-            await this.WaitUntilLeaseStoreIsInitializedAsync();
+            await this.WaitUntilLeaseStoreIsInitializedAsync(new CancellationTokenSource(5000).Token);
             await changeFeedProcessorBuilder.StopAsync();
 
             // Verify that no leases have LeaseToken (V3 contract)
@@ -115,7 +115,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     .BuildAsync();
 
             await changeFeedProcessorBuilder.StartAsync();
-            await this.WaitUntilLeaseStoreIsInitializedAsync();
+            await this.WaitUntilLeaseStoreIsInitializedAsync(new CancellationTokenSource(5000).Token);
 
             // Inserting some documents
             using (DocumentClient client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
@@ -212,7 +212,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             }
         }
 
-        private async Task WaitUntilLeaseStoreIsInitializedAsync()
+        private async Task WaitUntilLeaseStoreIsInitializedAsync(CancellationToken cancellationToken)
         {
             bool infoExists = false;
             bool lockExists = false;
@@ -220,11 +220,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             {
                 infoExists = false;
                 lockExists = false;
+                cancellationToken.ThrowIfCancellationRequested();
                 using (DocumentClient client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))
                 {
                     Uri collectionUri = UriFactory.CreateDocumentCollectionUri(this.LeaseCollectionInfo.DatabaseName, this.LeaseCollectionInfo.CollectionName);
 
-                    IDocumentQuery<JObject> query = client.CreateDocumentQuery<JObject>(collectionUri, "SELECT * FROM c").AsDocumentQuery();
+                    IDocumentQuery<JObject> query = client.CreateDocumentQuery<JObject>(collectionUri, "SELECT * FROM c WHERE CONTAINS(c.id, \".info\") OR CONTAINS(c.id, \".lock\")").AsDocumentQuery();
                     while (query.HasMoreResults)
                     {
                         foreach (JObject lease in await query.ExecuteNextAsync())
@@ -247,6 +248,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 {
                     return;
                 }
+
+                await Task.Delay(30, cancellationToken);
             }
         }
 
