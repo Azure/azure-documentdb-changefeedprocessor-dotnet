@@ -44,10 +44,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     .BuildAsync();
 
             await changeFeedProcessorBuilder.StartAsync();
-            await Task.Delay(5000);
+            await this.WaitUntilLeaseStoreIsInitializedAsync();
             await changeFeedProcessorBuilder.StopAsync();
 
             // Verify that no leases have LeaseToken (V3 contract)
+            int leasesProcessed = 0;
             using (DocumentClient client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))
             {
                 Uri collectionUri = UriFactory.CreateDocumentCollectionUri(this.LeaseCollectionInfo.DatabaseName, this.LeaseCollectionInfo.CollectionName);
@@ -58,7 +59,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     foreach (JObject lease in await query.ExecuteNextAsync())
                     {
                         string leaseId = lease.Value<string>("id");
-                        if (leaseId.Contains(".info") || leaseId.Contains(".lock"))
+                        if (leaseId.Contains(".info"))
                         {
                             // These are the store initialization marks
                             continue;
@@ -66,9 +67,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
                         Assert.NotNull(lease.Value<string>("PartitionId"));
                         Assert.Null(lease.Value<string>("LeaseToken"));
+                        leasesProcessed++;
                     }
                 }
             }
+
+            Assert.True(leasesProcessed > 0);
         }
 
         /// <summary>
@@ -79,6 +83,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         public async Task Schema_OnV2MigrationMaintainLeaseToken()
         {
             List<int> expectedIds = Enumerable.Range(0, 20).ToList();
+            ManualResetEvent firstSetOfResultsProcessed = new ManualResetEvent(false);
+            ManualResetEvent secondSetOfResultsProcessed = new ManualResetEvent(false);
             List<int> receivedIds = new List<int>();
             TestObserverFactory observerFactory = new TestObserverFactory(
                 (FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs) =>
@@ -86,6 +92,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     foreach (Document doc in docs)
                     {
                         receivedIds.Add(int.Parse(doc.Id));
+                    }
+
+                    if (receivedIds.Count == 10)
+                    {
+                        firstSetOfResultsProcessed.Set();
+                    }
+
+                    if (receivedIds.Count == 20)
+                    {
+                        secondSetOfResultsProcessed.Set();
                     }
 
                     return Task.CompletedTask;
@@ -99,7 +115,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     .BuildAsync();
 
             await changeFeedProcessorBuilder.StartAsync();
-            await Task.Delay(10000);
+            await this.WaitUntilLeaseStoreIsInitializedAsync();
 
             // Inserting some documents
             using (DocumentClient client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
@@ -112,8 +128,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 }
             }
 
-            // Waiting on all notifications to finish
-            await Task.Delay(10000);
+            Assert.True(firstSetOfResultsProcessed.WaitOne(IntegrationTest.changeWaitTimeout), "Timed out waiting for first set of items to be received.");
+
             await changeFeedProcessorBuilder.StopAsync();
 
             // At this point we have leases for V2, so we will simulate V3 by manually adding LeaseToken and removing PartitionId
@@ -127,7 +143,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     foreach (JObject lease in await query.ExecuteNextAsync())
                     {
                         string leaseId = lease.Value<string>("id");
-                        if (leaseId.Contains(".info") || leaseId.Contains(".lock"))
+                        if (leaseId.Contains(".info"))
                         {
                             // These are the store initialization marks
                             continue;
@@ -153,7 +169,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     .BuildAsync();
 
             await changeFeedProcessorBuilder.StartAsync();
-            await Task.Delay(10000);
             
             // Create the rest of the documents
             using (DocumentClient client = new DocumentClient(this.MonitoredCollectionInfo.Uri, this.MonitoredCollectionInfo.MasterKey, this.MonitoredCollectionInfo.ConnectionPolicy))
@@ -166,8 +181,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                 }
             }
 
-            // Waiting on all notifications to finish
-            await Task.Delay(10000);
+            Assert.True(secondSetOfResultsProcessed.WaitOne(IntegrationTest.changeWaitTimeout), "Timed out waiting for second set of items to be received.");
             await changeFeedProcessorBuilder.StopAsync();
 
             // Verify we processed all items (including when using the V3 leases)
@@ -185,7 +199,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                     foreach (JObject lease in await query.ExecuteNextAsync())
                     {
                         string leaseId = lease.Value<string>("id");
-                        if (leaseId.Contains(".info") || leaseId.Contains(".lock"))
+                        if (leaseId.Contains(".info"))
                         {
                             // These are the store initialization marks
                             continue;
@@ -193,6 +207,39 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
                         Assert.NotNull(lease.Value<string>("PartitionId"));
                         Assert.Null(lease.Value<string>("LeaseToken"));
+                    }
+                }
+            }
+        }
+
+        private async Task WaitUntilLeaseStoreIsInitializedAsync()
+        {
+            bool infoExists = false;
+            bool lockExists = false;
+            using (DocumentClient client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))
+            {
+                Uri collectionUri = UriFactory.CreateDocumentCollectionUri(this.LeaseCollectionInfo.DatabaseName, this.LeaseCollectionInfo.CollectionName);
+
+                IDocumentQuery<JObject> query = client.CreateDocumentQuery<JObject>(collectionUri, "SELECT * FROM c").AsDocumentQuery();
+                while (query.HasMoreResults)
+                {
+                    foreach (JObject lease in await query.ExecuteNextAsync())
+                    {
+                        string leaseId = lease.Value<string>("id");
+                        if (leaseId.Contains(".info"))
+                        {
+                            infoExists = true;
+                        }
+
+                        if (leaseId.Contains(".lock"))
+                        {
+                            lockExists = true;
+                        }
+
+                        if (infoExists && !lockExists)
+                        {
+                            return;
+                        }
                     }
                 }
             }
