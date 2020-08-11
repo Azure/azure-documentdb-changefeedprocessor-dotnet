@@ -72,6 +72,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         [JsonProperty("_ts")]
         private long TS { get; set; }
 
+        // Used for migration scenarios from V3, in case the user migrates to V3 and later rollbacks to V2.
         [JsonProperty("LeaseToken", NullValueHandling = NullValueHandling.Ignore)]
         private string LeaseToken
         {
