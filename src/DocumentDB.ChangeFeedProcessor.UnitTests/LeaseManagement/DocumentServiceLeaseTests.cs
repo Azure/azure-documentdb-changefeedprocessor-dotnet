@@ -55,6 +55,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             Assert.Equal(timestamp, lease.Timestamp);
             Assert.Equal(value, lease.Properties[key]);
             Assert.Equal(etag, lease.ConcurrencyToken);
+            Assert.Equal(id, lease.GremlinCompatId);
         }
 
         [Fact]
@@ -80,6 +81,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             var lease = (DocumentServiceLease)formatter.Deserialize(stream2);
 
             Assert.Equal(originalLease.Id, lease.Id);
+            Assert.Equal(originalLease.Id, lease.GremlinCompatId);
             Assert.Equal(originalLease.ETag, lease.ETag);
             Assert.Equal(originalLease.PartitionId, lease.PartitionId);
             Assert.Equal(originalLease.Owner, lease.Owner);
@@ -102,6 +104,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             var lease = (DocumentServiceLease)formatter.Deserialize(stream2);
 
             Assert.Null(lease.Id);
+            Assert.Null(lease.GremlinCompatId);
             Assert.Null(lease.ETag);
             Assert.Null(lease.PartitionId);
             Assert.Null(lease.Owner);
