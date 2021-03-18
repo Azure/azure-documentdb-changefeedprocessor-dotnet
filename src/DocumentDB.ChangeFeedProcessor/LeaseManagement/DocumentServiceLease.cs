@@ -35,6 +35,23 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         [JsonProperty("id")]
         public string Id { get; set; }
 
+        /// <summary>
+        /// Gets or sets property to be used as partition key path for lease collections created in GremlinAccounts
+        /// </summary>
+        [JsonProperty("gremlincompatid")]
+        public string GremlinCompatId
+        {
+            get
+            {
+                return this.Id;
+            }
+
+            // since this is a clone of Id, dont set it here instead of rely of Id field set
+            set
+            {
+            }
+        }
+
         [JsonProperty("_etag")]
         public string ETag { get; set; }
 

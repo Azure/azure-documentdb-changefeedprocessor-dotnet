@@ -474,9 +474,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     collection.PartitionKey.Paths != null &&
                     collection.PartitionKey.Paths.Count > 0;
                 if (isPartitioned && isPartitionKeyByIdRequiredIfPartitioned &&
-                    (collection.PartitionKey.Paths.Count != 1 || collection.PartitionKey.Paths[0] != "/id"))
+                    (collection.PartitionKey.Paths.Count != 1 || !(collection.PartitionKey.Paths[0].Equals("/id", StringComparison.OrdinalIgnoreCase) ||
+                                                                   collection.PartitionKey.Paths[0].Equals("/gremlincompatid", StringComparison.OrdinalIgnoreCase))))
                 {
-                    throw new ArgumentException("The lease collection, if partitioned, must have partition key equal to id.");
+                    throw new ArgumentException("The lease collection, if partitioned, must have partition key equal to id or gremlincompatid.");
                 }
 
                 var requestOptionsFactory = isPartitioned ?
