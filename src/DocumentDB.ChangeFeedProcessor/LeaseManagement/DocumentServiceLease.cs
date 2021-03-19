@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     internal class DocumentServiceLease : ILease, ILeaseAcquireReasonProvider
     {
         internal const string IdPropertyName = "id";
-        internal const string GremlinCompatIdPropertyName = "gremlincompatid";
+        internal const string LeaseIdPropertyName = "leaseid";
 
         private static readonly DateTime UnixStartTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
@@ -39,19 +39,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         public string Id { get; set; }
 
         /// <summary>
-        /// Gets or sets property to be used as partition key path for lease collections created in GremlinAccounts
+        /// Gets property to be used as partition key path for lease collections.
+        /// This is clone of existing Id property to maintain backward compat.
+        /// This property name is compatible to both GremlinAccounts and SqlAccounts
         /// </summary>
-        [JsonProperty(GremlinCompatIdPropertyName)]
-        public string GremlinCompatId
+        [JsonProperty(LeaseIdPropertyName)]
+        public string LeaseId
         {
             get
             {
                 return this.Id;
-            }
-
-            // since this is a clone of Id, dont set it here instead of rely of Id field set
-            set
-            {
             }
         }
 

@@ -310,7 +310,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             var leaseCollection = MockHelpers.CreateCollection(
                 "collectionId",
                 "collectionRid",
-                new PartitionKeyDefinition { Paths = { "/gremlincompatid" } },
+                new PartitionKeyDefinition { Paths = { "/leaseid" } },
                 collectionLink);
 
             var lease = Mock.Of<ILease>();
