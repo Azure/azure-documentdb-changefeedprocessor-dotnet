@@ -49,6 +49,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string markerDocId = this.GetStoreMarkerName();
             var containerDocument = new Document { Id = markerDocId };
+
+            // set gremlin id in case collection is partitioned in a gremlin account.
+            containerDocument.SetPropertyValue(DocumentServiceLease.GremlinCompatIdPropertyName, markerDocId);
+
             await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
         }
 
@@ -56,6 +60,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string lockId = this.GetStoreLockName();
             var containerDocument = new Document { Id = lockId, TimeToLive = (int)lockTime.TotalSeconds };
+
+            // set gremlin id in case collection is partitioned in a gremlin account.
+            containerDocument.SetPropertyValue(DocumentServiceLease.GremlinCompatIdPropertyName, lockId);
             var document = await this.client.TryCreateDocumentAsync(
                 this.leaseCollectionLink,
                 containerDocument).ConfigureAwait(false);
