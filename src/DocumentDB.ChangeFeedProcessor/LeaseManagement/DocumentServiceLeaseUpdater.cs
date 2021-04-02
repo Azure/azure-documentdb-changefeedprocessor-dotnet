@@ -13,17 +13,21 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
+    using Newtonsoft.Json.Linq;
 
     internal class DocumentServiceLeaseUpdater : IDocumentServiceLeaseUpdater
     {
         private const int RetryCountOnConflict = 5;
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private readonly IChangeFeedDocumentClient client;
+        private readonly string partitionKeyPropertyName;
 
-        public DocumentServiceLeaseUpdater(IChangeFeedDocumentClient client)
+        public DocumentServiceLeaseUpdater(IChangeFeedDocumentClient client, string partitionKeyPropertyName)
         {
             if (client == null) throw new ArgumentNullException(nameof(client));
+            if (partitionKeyPropertyName == null) throw new ArgumentNullException(nameof(partitionKeyPropertyName));
             this.client = client;
+            this.partitionKeyPropertyName = partitionKeyPropertyName;
         }
 
         // Note: requestOptions are only used for read and not for update.
@@ -83,7 +87,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             try
             {
-                IResourceResponse<Document> response = await this.client.ReplaceDocumentAsync(leaseUri, lease, this.CreateIfMatchOptions(lease)).ConfigureAwait(false);
+                var leaseDoc = DocumentServiceLease.StampWithCustomPartitionKeyProperty(lease, this.partitionKeyPropertyName);
+                IResourceResponse<Document> response = await this.client.ReplaceDocumentAsync(leaseUri, leaseDoc, this.CreateIfMatchOptions(lease)).ConfigureAwait(false);
                 return response.Resource;
             }
             catch (DocumentClientException ex) when (ex.StatusCode == HttpStatusCode.PreconditionFailed)

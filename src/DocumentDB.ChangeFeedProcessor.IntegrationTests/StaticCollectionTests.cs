@@ -33,12 +33,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         {
         }
 
-        public StaticCollectionTests(
-            bool isPartitionedLeaseCollection, bool isGremlinAccount) :
-            base(isPartitionedLeaseCollection: isPartitionedLeaseCollection,isGremlinAccount: isGremlinAccount)
-        {
-        }
-
         [Fact]
         public async Task CountDocumentsInCollection_NormalCase()
         {

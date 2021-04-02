@@ -43,6 +43,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             return this;
         }
 
+        public DocumentServiceLeaseStoreManagerBuilder WithLeaseCollectionPartitionKeyPropertyName(string leaseCollectionPartitionKeyPropertyName)
+        {
+            if (leaseCollectionPartitionKeyPropertyName == null) throw new ArgumentNullException(nameof(leaseCollectionPartitionKeyPropertyName));
+
+            this.settings.LeaseCollectionPartitionKeyPropertyName = leaseCollectionPartitionKeyPropertyName;
+            return this;
+        }
+
         public DocumentServiceLeaseStoreManagerBuilder WithLeaseCollectionLink(string leaseCollectionLink)
         {
             if (leaseCollectionLink == null) throw new ArgumentNullException(nameof(leaseCollectionLink));

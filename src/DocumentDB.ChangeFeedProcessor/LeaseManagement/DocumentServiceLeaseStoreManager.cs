@@ -16,6 +16,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     using Microsoft.Azure.Documents.ChangeFeedProcessor.Utils;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.Documents.Linq;
+    using Newtonsoft.Json.Linq;
 
     /// <summary>
     /// Lease manager that is using Azure Document Service as lease storage.
@@ -38,7 +39,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             DocumentServiceLeaseStoreManagerSettings settings,
             IChangeFeedDocumentClient leaseDocumentClient,
             IRequestOptionsFactory requestOptionsFactory)
-            : this(settings, leaseDocumentClient, requestOptionsFactory, new DocumentServiceLeaseUpdater(leaseDocumentClient))
+            : this(settings, leaseDocumentClient, requestOptionsFactory, new DocumentServiceLeaseUpdater(leaseDocumentClient, settings?.LeaseCollectionPartitionKeyPropertyName))
         {
         }
 
@@ -72,6 +73,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 this.settings.LeaseCollectionInfo,
                 this.settings.ContainerNamePrefix,
                 this.settings.LeaseCollectionLink,
+                this.settings.LeaseCollectionPartitionKeyPropertyName,
                 this.requestOptionsFactory);
         }
 
@@ -107,9 +109,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 ContinuationToken = continuationToken,
             };
 
+            var leaseDoc = DocumentServiceLease.StampWithCustomPartitionKeyProperty(documentServiceLease, this.settings.LeaseCollectionPartitionKeyPropertyName);
+
             bool created = await this.client.TryCreateDocumentAsync(
                 this.settings.LeaseCollectionLink,
-                documentServiceLease).ConfigureAwait(false) != null;
+                leaseDoc).ConfigureAwait(false) != null;
             if (created)
             {
                 Logger.InfoFormat("Created lease for partition {0}.", partitionId);

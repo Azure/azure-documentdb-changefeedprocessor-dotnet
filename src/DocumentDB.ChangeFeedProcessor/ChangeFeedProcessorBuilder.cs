@@ -119,6 +119,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         private FeedProcessing.IChangeFeedObserverFactory observerFactory;
         private string databaseResourceId;
         private string collectionResourceId;
+        private string leaseCollectionPartitionKeyPropertyName = DocumentServiceLease.IdPropertyName;
         private DocumentCollectionInfo leaseCollectionLocation;
         private IChangeFeedDocumentClient leaseDocumentClient;
         private IParitionLoadBalancingStrategy loadBalancingStrategy;
@@ -251,6 +252,18 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         /// <summary>
+        /// Sets the Lease collection PartitionKeyName to use when creating leases.
+        /// </summary>
+        /// <param name="customPartitionKeyName">custome partition key name.</param>
+        /// <returns>The instance of <see cref="ChangeFeedProcessorBuilder"/> to use.</returns>
+        public ChangeFeedProcessorBuilder WithLeaseCollectionPartitionKeyName(string customPartitionKeyName)
+        {
+            if (string.IsNullOrWhiteSpace(customPartitionKeyName)) throw new ArgumentNullException(nameof(customPartitionKeyName));
+            this.leaseCollectionPartitionKeyPropertyName = customPartitionKeyName;
+            return this;
+        }
+
+        /// <summary>
         /// Sets the <see cref="DocumentCollectionInfo"/> of the collection to use for leases.
         /// </summary>
         /// <param name="leaseCollectionLocation">The instance of a <see cref="DocumentCollectionInfo"/> to use.</param>
@@ -374,7 +387,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
-            ILeaseStoreManager leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
+            ILeaseStoreManager leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation).ConfigureAwait(false);
             IPartitionManager partitionManager = this.BuildPartitionManager(leaseStoreManager);
             return new ChangeFeedProcessor(partitionManager);
         }
@@ -397,7 +410,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
-            var leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
+            var leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation).ConfigureAwait(false);
 
             IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(
                 leaseStoreManager,
@@ -461,8 +474,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         private async Task<ILeaseStoreManager> GetLeaseStoreManagerAsync(
-            DocumentCollectionInfo collectionInfo,
-            bool isPartitionKeyByIdRequiredIfPartitioned)
+            DocumentCollectionInfo collectionInfo)
         {
             if (this.LeaseStoreManager == null)
             {
@@ -473,11 +485,11 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     collection.PartitionKey != null &&
                     collection.PartitionKey.Paths != null &&
                     collection.PartitionKey.Paths.Count > 0;
-                if (isPartitioned && isPartitionKeyByIdRequiredIfPartitioned &&
-                    (collection.PartitionKey.Paths.Count != 1 || !(collection.PartitionKey.Paths[0].Equals($"/{DocumentServiceLease.IdPropertyName}", StringComparison.OrdinalIgnoreCase) ||
-                                                                   collection.PartitionKey.Paths[0].Equals($"/{DocumentServiceLease.LeaseIdPropertyName}", StringComparison.OrdinalIgnoreCase))))
+                if (isPartitioned &&
+                    (collection.PartitionKey.Paths.Count != 1 || !(collection.PartitionKey.Paths[0].Equals($"/{this.leaseCollectionPartitionKeyPropertyName}", StringComparison.OrdinalIgnoreCase) ||
+                    collection.PartitionKey.Paths[0].Equals($"/leaseid", StringComparison.OrdinalIgnoreCase))))
                 {
-                    throw new ArgumentException($"The lease collection, if partitioned, must have partition key equal to {DocumentServiceLease.IdPropertyName} or {DocumentServiceLease.LeaseIdPropertyName}.");
+                    throw new ArgumentException($"The lease collection, if partitioned, must have partition key equal to {this.leaseCollectionPartitionKeyPropertyName}.");
                 }
 
                 var requestOptionsFactory = isPartitioned ?
@@ -490,6 +502,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     .WithLeaseCollection(this.leaseCollectionLocation)
                     .WithLeaseCollectionLink(collection.SelfLink)
                     .WithRequestOptionsFactory(requestOptionsFactory)
+                    .WithLeaseCollectionPartitionKeyPropertyName(this.leaseCollectionPartitionKeyPropertyName)
                     .WithHostName(this.HostName);
 
                 leaseStoreManagerBuilder = leaseStoreManagerBuilder.WithLeaseDocumentClient(leaseDocumentClient);

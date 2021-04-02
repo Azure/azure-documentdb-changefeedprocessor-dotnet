@@ -10,13 +10,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
 
     [Serializable]
     internal class DocumentServiceLease : ILease, ILeaseAcquireReasonProvider
     {
         internal const string IdPropertyName = "id";
-        internal const string LeaseIdPropertyName = "leaseid";
-
         private static readonly DateTime UnixStartTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
         public DocumentServiceLease()
@@ -37,20 +36,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 
         [JsonProperty(IdPropertyName)]
         public string Id { get; set; }
-
-        /// <summary>
-        /// Gets property to be used as partition key path for lease collections.
-        /// This is clone of existing Id property to maintain backward compat.
-        /// This property name is compatible to both GremlinAccounts and SqlAccounts
-        /// </summary>
-        [JsonProperty(LeaseIdPropertyName)]
-        public string LeaseId
-        {
-            get
-            {
-                return this.Id;
-            }
-        }
 
         [JsonProperty("_etag")]
         public string ETag { get; set; }
@@ -105,6 +90,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 throw new ArgumentNullException(nameof(document));
             string json = JsonConvert.SerializeObject(document);
             return JsonConvert.DeserializeObject<DocumentServiceLease>(json);
+        }
+
+        public static object StampWithCustomPartitionKeyProperty(ILease lease, string customPartitionKeyPropertyName)
+        {
+            object leaseDoc = lease;
+            if (!customPartitionKeyPropertyName.Equals(DocumentServiceLease.IdPropertyName))
+            {
+                var leaseJDoc = JObject.FromObject(lease);
+                leaseJDoc.Add(customPartitionKeyPropertyName, lease.Id);
+                leaseDoc = leaseJDoc;
+            }
+
+            return leaseDoc;
         }
 
         public override string ToString()

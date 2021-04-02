@@ -17,6 +17,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         private readonly DocumentCollectionInfo leaseStoreCollectionInfo;
         private readonly string containerNamePrefix;
         private readonly string leaseCollectionLink;
+        private readonly string leaseCollectionPartitionKeyName;
         private readonly IRequestOptionsFactory requestOptionsFactory;
         private string lockETag;
 
@@ -25,6 +26,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             DocumentCollectionInfo leaseCollectionInfo,
             string containerNamePrefix,
             string leaseCollectionLink,
+            string leaseCollectionPartitionKeyName,
             IRequestOptionsFactory requestOptionsFactory)
         {
             this.client = client;
@@ -32,6 +34,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             this.containerNamePrefix = containerNamePrefix;
             this.leaseCollectionLink = leaseCollectionLink;
             this.requestOptionsFactory = requestOptionsFactory;
+            this.leaseCollectionPartitionKeyName = leaseCollectionPartitionKeyName;
         }
 
         public async Task<bool> IsInitializedAsync()
@@ -49,7 +52,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string markerDocId = this.GetStoreMarkerName();
             var containerDocument = new Document { Id = markerDocId };
-            containerDocument.SetPropertyValue(DocumentServiceLease.LeaseIdPropertyName, markerDocId);
+            containerDocument = this.StampWithPartitionKeyName(containerDocument);
 
             await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
         }
@@ -58,7 +61,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string lockId = this.GetStoreLockName();
             var containerDocument = new Document { Id = lockId, TimeToLive = (int)lockTime.TotalSeconds };
-            containerDocument.SetPropertyValue(DocumentServiceLease.LeaseIdPropertyName, lockId);
+            containerDocument = this.StampWithPartitionKeyName(containerDocument);
 
             var document = await this.client.TryCreateDocumentAsync(
                 this.leaseCollectionLink,
@@ -104,6 +107,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         private string GetStoreLockName()
         {
             return this.containerNamePrefix + ".lock";
+        }
+
+        private Document StampWithPartitionKeyName(Document containerDocument)
+        {
+            if (!this.leaseCollectionPartitionKeyName.Equals(DocumentServiceLease.IdPropertyName))
+            {
+                containerDocument.SetPropertyValue(this.leaseCollectionPartitionKeyName, containerDocument.Id);
+            }
+
+            return containerDocument;
         }
     }
 }
