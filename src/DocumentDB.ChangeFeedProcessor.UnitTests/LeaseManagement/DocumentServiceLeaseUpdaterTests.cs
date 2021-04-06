@@ -13,6 +13,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Moq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagement
@@ -52,6 +53,34 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                     default(CancellationToken)))
                 .ReturnsAsync(CreateLeaseResponse(eTag2));
             var updater = new DocumentServiceLeaseUpdater(client);
+
+            var newLease = await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease, true);
+
+            Assert.Equal(eTag2, newLease.ConcurrencyToken);
+        }
+
+        [Fact]
+        public async Task UpdateLeaseAsync_ShouldStamp_OnCustomPk()
+        {
+            ILease oldLease = new DocumentServiceLease()
+            {
+                Id = "DummyId"
+            };
+            ILease updatedLease = new DocumentServiceLease()
+            {
+                Id = "DummyId",
+                ETag = eTag1
+            };
+
+            var client = Mock.Of<IChangeFeedDocumentClient>();
+            Mock.Get(client)
+                .Setup(c => c.ReplaceDocumentAsync(
+                    documentUri,
+                   It.Is<JObject>(d =>((string)d["customPk"]).Equals(oldLease.Id, StringComparison.OrdinalIgnoreCase)),
+                    It.Is<RequestOptions>(options => options.AccessCondition.Type == AccessConditionType.IfMatch && options.AccessCondition.Condition == eTag1),
+                    default(CancellationToken)))
+                .ReturnsAsync(CreateLeaseResponse(eTag2));
+            var updater = new DocumentServiceLeaseUpdater(client, "customPk");
 
             var newLease = await updater.UpdateLeaseAsync(oldLease, documentUri, null, serverLease => updatedLease, true);
 

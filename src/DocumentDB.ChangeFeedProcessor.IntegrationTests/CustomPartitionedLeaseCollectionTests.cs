@@ -7,14 +7,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     using Xunit;
 
     /// <summary>
-    /// To truly test this class, run emulator with /EnableGremlinEndpoint
+    /// Test ChangeFeed with Custom Partition key lease collections
     /// </summary>
     [Trait("Category", "Integration")]
     [Collection("Integration tests")]
-    public class GremlinPartitionedLeaseCollectionTests : StaticCollectionTests
+    public class CustomPartitionedLeaseCollectionTests:IntegrationTest
     {
-        public GremlinPartitionedLeaseCollectionTests() :
-            base(true,true)
+        public CustomPartitionedLeaseCollectionTests():base(isPartitionedMonitoredCollection:true, isPartitionedLeaseCollection:true,leaseCollectionPartitionKey:"leaseId")
         {
         }
     }

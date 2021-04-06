@@ -169,6 +169,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
 
         [Fact]
+        public async Task BuildWhenLeaseCollectionPartitionedByCustomPk()
+        {
+            SetupBuilderForPartitionedLeaseCollection("/leaseId");
+            this.builder.WithLeaseCollectionPartitionKeyName("leaseId");
+            await this.builder.BuildAsync();
+        }
+
+        [Fact]
         public async Task BuildThrowsWhenNoneOfLeaseCollectionInfoOrLeaseStoreManagerSpecified()
         {
             var builder = new ChangeFeedProcessorBuilder()
@@ -305,7 +313,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
 
         [Fact]
-        public async Task BuildPassesPartitionKey_WhenLeaseCollectionIsPartitionedByGremlinCompatId()
+        public async Task BuildPassesPartitionKey_WhenLeaseCollectionIsPartitionedByCustomPk()
         {
             var leaseCollection = MockHelpers.CreateCollection(
                 "collectionId",
@@ -339,6 +347,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             this.builder
                 .WithFeedDocumentClient(this.CreateMockDocumentClient())
                 .WithLeaseDocumentClient(leaseClient)
+                .WithLeaseCollectionPartitionKeyName("leaseid")
                 .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>());
             await this.builder.BuildAsync();
 
@@ -358,6 +367,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 
             await Assert.ThrowsAsync<ArgumentException>(async () => await builder.BuildAsync());
         }
+
+        [Fact]
+        public void WithLeaseCollectionCustomPkThrowsOnEmpty()
+        {
+            Assert.Throws<ArgumentNullException>(()=>builder.WithLeaseCollectionPartitionKeyName(""));                
+        }
+
 
         [Fact]
         public async Task BuildWhenPartitionProcessorFactoriesSpecified()

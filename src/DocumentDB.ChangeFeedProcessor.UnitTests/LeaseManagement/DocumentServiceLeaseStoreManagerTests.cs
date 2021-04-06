@@ -15,6 +15,7 @@ using Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.Documents.Linq;
 using Moq;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagement
@@ -196,6 +197,37 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
                     d.PartitionId == partitionId &&
                     d.ContinuationToken == null &&
                     d.Id == leaseId
+                ), null, false, default(CancellationToken)))
+                .ReturnsAsync(new ResourceResponse<Document>(new Document()))
+                .Verifiable();
+
+            var lease = await leaseStoreManager.CreateLeaseIfNotExistAsync(partitionId, null);
+
+            Mock.Get(documentClient).VerifyAll();
+            Assert.Equal(partitionId, lease.PartitionId);
+            Assert.Null(lease.ContinuationToken);
+            Assert.Null(lease.Owner);
+            Assert.Equal(leaseId, lease.Id);
+        }
+
+        [Fact]
+        public async Task CreateLeaseIfNotExistAsync_StampsLease_OnCustomPk()
+        {
+            var documentClient = Mock.Of<IChangeFeedDocumentClient>();
+            var leaseStoreMgrBuilder = new DocumentServiceLeaseStoreManagerBuilder();
+            leaseStoreMgrBuilder
+                .WithLeaseCollection(collectionInfo)
+                .WithHostName(owner)
+                .WithLeaseDocumentClient(documentClient)
+                 .WithLeaseCollectionLink(collectionLink)
+                .WithLeaseCollectionPartitionKeyPropertyName("customPk")
+                .WithLeasePrefix(storeNamePrefix)
+                .WithRequestOptionsFactory(Mock.Of<IRequestOptionsFactory>());
+
+            var leaseStoreManager = await leaseStoreMgrBuilder.BuildAsync();
+            Mock.Get(documentClient)
+                .Setup(c => c.CreateDocumentAsync(collectionLink, It.Is<JObject>(d =>
+                    ((string)d["customPk"]).Equals(leaseId, StringComparison.OrdinalIgnoreCase)
                 ), null, false, default(CancellationToken)))
                 .ReturnsAsync(new ResourceResponse<Document>(new Document()))
                 .Verifiable();

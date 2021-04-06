@@ -22,6 +22,22 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         private string lockETag;
 
         public DocumentServiceLeaseStore(
+           IChangeFeedDocumentClient client,
+           DocumentCollectionInfo leaseCollectionInfo,
+           string containerNamePrefix,
+           string leaseCollectionLink,
+           IRequestOptionsFactory requestOptionsFactory)
+            : this(
+                client,
+                leaseCollectionInfo,
+                containerNamePrefix,
+                leaseCollectionLink,
+                DocumentServiceLease.IdPropertyName,
+                requestOptionsFactory)
+        {
+        }
+
+        public DocumentServiceLeaseStore(
             IChangeFeedDocumentClient client,
             DocumentCollectionInfo leaseCollectionInfo,
             string containerNamePrefix,
@@ -111,7 +127,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 
         private Document StampWithPartitionKeyName(Document containerDocument)
         {
-            if (!this.leaseCollectionPartitionKeyName.Equals(DocumentServiceLease.IdPropertyName))
+            if (!this.leaseCollectionPartitionKeyName.Equals(DocumentServiceLease.IdPropertyName, StringComparison.OrdinalIgnoreCase))
             {
                 containerDocument.SetPropertyValue(this.leaseCollectionPartitionKeyName, containerDocument.Id);
             }

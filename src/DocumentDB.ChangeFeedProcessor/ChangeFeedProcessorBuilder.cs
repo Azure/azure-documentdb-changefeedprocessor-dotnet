@@ -486,8 +486,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     collection.PartitionKey.Paths != null &&
                     collection.PartitionKey.Paths.Count > 0;
                 if (isPartitioned &&
-                    (collection.PartitionKey.Paths.Count != 1 || !(collection.PartitionKey.Paths[0].Equals($"/{this.leaseCollectionPartitionKeyPropertyName}", StringComparison.OrdinalIgnoreCase) ||
-                    collection.PartitionKey.Paths[0].Equals($"/leaseid", StringComparison.OrdinalIgnoreCase))))
+                    (collection.PartitionKey.Paths.Count != 1 || !collection.PartitionKey.Paths[0].Equals($"/{this.leaseCollectionPartitionKeyPropertyName}", StringComparison.OrdinalIgnoreCase)))
                 {
                     throw new ArgumentException($"The lease collection, if partitioned, must have partition key equal to {this.leaseCollectionPartitionKeyPropertyName}.");
                 }

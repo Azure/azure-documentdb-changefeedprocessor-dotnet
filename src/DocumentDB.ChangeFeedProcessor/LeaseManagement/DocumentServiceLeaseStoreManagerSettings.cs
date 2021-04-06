@@ -12,7 +12,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 
         internal string LeaseCollectionLink { get; set; }
 
-        internal string LeaseCollectionPartitionKeyPropertyName { get; set; }
+        internal string LeaseCollectionPartitionKeyPropertyName { get; set; } = DocumentServiceLease.IdPropertyName;
 
         internal string HostName { get; set; }
     }

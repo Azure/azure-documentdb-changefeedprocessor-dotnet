@@ -95,7 +95,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         public static object StampWithCustomPartitionKeyProperty(ILease lease, string customPartitionKeyPropertyName)
         {
             object leaseDoc = lease;
-            if (!customPartitionKeyPropertyName.Equals(DocumentServiceLease.IdPropertyName))
+            if (!customPartitionKeyPropertyName.Equals(DocumentServiceLease.IdPropertyName, StringComparison.OrdinalIgnoreCase))
             {
                 var leaseJDoc = JObject.FromObject(lease);
                 leaseJDoc.Add(customPartitionKeyPropertyName, lease.Id);

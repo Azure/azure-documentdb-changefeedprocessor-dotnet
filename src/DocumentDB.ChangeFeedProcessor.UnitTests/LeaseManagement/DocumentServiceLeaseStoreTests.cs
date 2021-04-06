@@ -78,6 +78,27 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         }
 
         [Fact]
+        public async Task AcquireInitializationLockAsync_ShouldStamp_IfCustomPkSet()
+        {
+            var client = Mock.Of<IChangeFeedDocumentClient>();
+            Mock.Get(client)
+                .Setup(c => c.CreateDocumentAsync(leaseCollectionLink, It.IsAny<object>(), null, false, default(CancellationToken)))
+                .ReturnsAsync(new ResourceResponse<Document>(new Document()));
+
+            var leaseStore = new DocumentServiceLeaseStore(client, collectionInfo, containerNamePrefix, leaseCollectionLink, "leaseId", Mock.Of<IRequestOptionsFactory>());
+            bool isLocked = await leaseStore.AcquireInitializationLockAsync(lockTime);
+            Assert.True(isLocked);
+
+            Mock.Get(client)
+                .Verify(c =>
+                        c.CreateDocumentAsync(leaseCollectionLink, It.Is<Document>(d => d.GetPropertyValue<string>("leaseId") == "prefix.lock"),
+                        null,
+                        false,
+                        default(CancellationToken)),
+                    Times.Once);
+        }
+
+        [Fact]
         public async Task AcquireInitializationLockAsync_ShouldReturnFalse_IfLockConflicts()
         {
             var client = Mock.Of<IChangeFeedDocumentClient>();
@@ -224,6 +245,26 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             Mock.Get(client)
                 .Verify(c =>
                         c.CreateDocumentAsync(leaseCollectionLink, It.Is<Document>(d => d.Id == storeMarker),
+                        null,
+                        false,
+                        default(CancellationToken)),
+                    Times.Once);
+        }
+
+        [Fact]
+        public async Task MarkInitializedAsync_ShouldStamp_IfCustomPk()
+        {
+            var client = Mock.Of<IChangeFeedDocumentClient>();
+            Mock.Get(client)
+                .Setup(c => c.CreateDocumentAsync(leaseCollectionLink, It.IsAny<object>(), null, false, default(CancellationToken)))
+                .ReturnsAsync(new ResourceResponse<Document>(new Document()));
+
+            var leaseStore = new DocumentServiceLeaseStore(client, collectionInfo, containerNamePrefix, leaseCollectionLink, "leaseId", Mock.Of<IRequestOptionsFactory>());
+            await leaseStore.MarkInitializedAsync();
+
+            Mock.Get(client)
+                .Verify(c =>
+                        c.CreateDocumentAsync(leaseCollectionLink, It.Is<Document>(d => d.GetPropertyValue<string>("leaseId") == storeMarker),
                         null,
                         false,
                         default(CancellationToken)),

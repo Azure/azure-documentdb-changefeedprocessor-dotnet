@@ -22,6 +22,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         private readonly IChangeFeedDocumentClient client;
         private readonly string partitionKeyPropertyName;
 
+        public DocumentServiceLeaseUpdater(IChangeFeedDocumentClient client)
+            : this(
+                  client,
+                  DocumentServiceLease.IdPropertyName)
+        {
+        }
+
         public DocumentServiceLeaseUpdater(IChangeFeedDocumentClient client, string partitionKeyPropertyName)
         {
             if (client == null) throw new ArgumentNullException(nameof(client));
