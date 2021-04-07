@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         [Fact]
         public async Task Schema_DefaultsToNoLeaseToken()
         {
-            TestObserverFactory observerFactory = new TestObserverFactory(
+            V2TestObserverFactory observerFactory = new V2TestObserverFactory(
                 openProcessor: null,
                 (FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs) =>
                 {
@@ -92,7 +92,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
             ManualResetEvent firstSetOfResultsProcessed = new ManualResetEvent(false);
             ManualResetEvent secondSetOfResultsProcessed = new ManualResetEvent(false);
             List<int> receivedIds = new List<int>();
-            TestObserverFactory observerFactory = new TestObserverFactory(
+            V2TestObserverFactory observerFactory = new V2TestObserverFactory(
                 context =>
                 {
                     int newCount = Interlocked.Increment(ref openedCount);
@@ -265,43 +265,43 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
                 await Task.Delay(100, cancellationToken);
             }
+        }       
+    }
+
+    public class V2TestObserverFactory : FeedProcessing.IChangeFeedObserverFactory, FeedProcessing.IChangeFeedObserver
+    {
+        private readonly Func<FeedProcessing.IChangeFeedObserverContext, IReadOnlyList<Document>, Task> changeProcessor;
+        private readonly Func<FeedProcessing.IChangeFeedObserverContext, Task> openProcessor;
+
+        public V2TestObserverFactory(
+            Func<FeedProcessing.IChangeFeedObserverContext, Task> openProcessor,
+            Func<FeedProcessing.IChangeFeedObserverContext, IReadOnlyList<Document>, Task> changeProcessor)
+        {
+            this.changeProcessor = changeProcessor;
+            this.openProcessor = openProcessor;
         }
 
-        class TestObserverFactory : FeedProcessing.IChangeFeedObserverFactory, FeedProcessing.IChangeFeedObserver
+        public FeedProcessing.IChangeFeedObserver CreateObserver()
         {
-            private readonly Func<FeedProcessing.IChangeFeedObserverContext, IReadOnlyList<Document>, Task> changeProcessor;
-            private readonly Func<FeedProcessing.IChangeFeedObserverContext, Task> openProcessor;
+            return this;
+        }
 
-            public TestObserverFactory(
-                Func<FeedProcessing.IChangeFeedObserverContext, Task> openProcessor,
-                Func<FeedProcessing.IChangeFeedObserverContext, IReadOnlyList<Document>, Task> changeProcessor)
+        public Task OpenAsync(FeedProcessing.IChangeFeedObserverContext context)
+        {
+            if (this.openProcessor != null)
             {
-                this.changeProcessor = changeProcessor;
-                this.openProcessor = openProcessor;
+                return this.openProcessor(context);
             }
 
-            public FeedProcessing.IChangeFeedObserver CreateObserver()
-            {
-                return this;
-            }
+            return Task.CompletedTask;
+        }
 
-            public Task OpenAsync(FeedProcessing.IChangeFeedObserverContext context)
-            {
-                if (this.openProcessor != null)
-                {
-                    return this.openProcessor(context);
-                }
+        public Task CloseAsync(FeedProcessing.IChangeFeedObserverContext context, FeedProcessing.ChangeFeedObserverCloseReason reason) => Task.CompletedTask;
 
-                return Task.CompletedTask;
-            }
-
-            public Task CloseAsync(FeedProcessing.IChangeFeedObserverContext context, FeedProcessing.ChangeFeedObserverCloseReason reason) => Task.CompletedTask;
-
-            public Task ProcessChangesAsync(FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
-            {
-                if (this.changeProcessor != null) return this.changeProcessor(context, docs);
-                else return Task.CompletedTask;
-            }
+        public Task ProcessChangesAsync(FeedProcessing.IChangeFeedObserverContext context, IReadOnlyList<Document> docs, CancellationToken cancellationToken)
+        {
+            if (this.changeProcessor != null) return this.changeProcessor(context, docs);
+            else return Task.CompletedTask;
         }
     }
 }
