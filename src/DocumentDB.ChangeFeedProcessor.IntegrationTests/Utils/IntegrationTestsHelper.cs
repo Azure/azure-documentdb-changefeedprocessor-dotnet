@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
 {
@@ -105,7 +106,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests.Utils
 
             var dummyCounts = Enumerable.Repeat(0, count);
             var emptyDocument = new object();
-
             await dummyCounts.ForEachAsync(
                 async dummyCounter => { await client.CreateDocumentAsync(collectionUri, emptyDocument); },
                 128);

@@ -21,7 +21,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     [Collection("Integration tests")]
     public class CustomPartitionedLeaseCollectionTests:IntegrationTest
     {
-        const int documentCount = 10;
+        const int documentCount = 500;
         public CustomPartitionedLeaseCollectionTests():base(isPartitionedMonitoredCollection:true, isPartitionedLeaseCollection:true,leaseCollectionPartitionKey:"leaseId")
         {
         }
@@ -54,6 +54,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                   .WithFeedCollection(this.MonitoredCollectionInfo)
                   .WithLeaseCollection(this.LeaseCollectionInfo)
                   .WithLeaseCollectionPartitionKeyName("leaseId")
+                  .WithProcessorOptions(new ChangeFeedProcessorOptions()
+                  {
+                      StartFromBeginning = true                      
+                  })
                   .BuildAsync();
             await host1.StartAsync();
             var host2 = await new ChangeFeedProcessorBuilder()
@@ -62,6 +66,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                   .WithFeedCollection(this.MonitoredCollectionInfo)
                   .WithLeaseCollection(this.LeaseCollectionInfo)
                   .WithLeaseCollectionPartitionKeyName("leaseId")
+                  .WithProcessorOptions(new ChangeFeedProcessorOptions()
+                   {
+                       StartFromBeginning = true
+                   })
                   .BuildAsync();
             await host2.StartAsync();
             await this.WaitUntilLeaseStoreIsInitializedAsync(new CancellationTokenSource(5000).Token);

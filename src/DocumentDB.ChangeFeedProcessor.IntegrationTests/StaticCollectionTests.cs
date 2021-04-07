@@ -25,7 +25,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     [Collection("Integration tests")]
     public abstract class StaticCollectionTests : IntegrationTest
     {
-        const int documentCount = 15;
+        const int documentCount = 1519;
 
         public StaticCollectionTests(
             bool isPartitionedLeaseCollection) : 
