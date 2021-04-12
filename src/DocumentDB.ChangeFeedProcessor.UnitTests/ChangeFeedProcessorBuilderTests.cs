@@ -155,13 +155,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
 
         [Fact]
-        public async Task BuildThrowsWhenLeaseCollectionPartitionedNotById()
-        {
-            SetupBuilderForPartitionedLeaseCollection("/not_id");
-            await Assert.ThrowsAsync<ArgumentException>(async () => await builder.BuildAsync() );
-        }
-
-        [Fact]
         public async Task BuildWhenLeaseCollectionPartitionedById()
         {
             SetupBuilderForPartitionedLeaseCollection("/id");
@@ -171,8 +164,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         [Fact]
         public async Task BuildWhenLeaseCollectionPartitionedByCustomPk()
         {
-            SetupBuilderForPartitionedLeaseCollection("/leaseId");
-            this.builder.WithLeaseCollectionPartitionKeyName("leaseId");
+            SetupBuilderForPartitionedLeaseCollection("/leaseId");            
             await this.builder.BuildAsync();
         }
 
@@ -199,13 +191,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                 .WithLeaseStoreManager(Mock.Of<ILeaseStoreManager>());
 
             await builder.BuildAsync();
-        }
-
-        [Fact]
-        public async Task BuildEstimatorThrowsWhenLeaseCollectionPartitionedNotById()
-        {
-            SetupBuilderForPartitionedLeaseCollection("/not_id");
-            await Assert.ThrowsAsync<ArgumentException>(async () => await builder.BuildEstimatorAsync());
         }
 
         [Fact]
@@ -346,8 +331,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 
             this.builder
                 .WithFeedDocumentClient(this.CreateMockDocumentClient())
-                .WithLeaseDocumentClient(leaseClient)
-                .WithLeaseCollectionPartitionKeyName("leaseid")
+                .WithLeaseDocumentClient(leaseClient)                
                 .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>());
             await this.builder.BuildAsync();
 
@@ -367,13 +351,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
 
             await Assert.ThrowsAsync<ArgumentException>(async () => await builder.BuildAsync());
         }
-
-        [Fact]
-        public void WithLeaseCollectionCustomPkThrowsOnEmpty()
-        {
-            Assert.Throws<ArgumentNullException>(()=>builder.WithLeaseCollectionPartitionKeyName(""));                
-        }
-
 
         [Fact]
         public async Task BuildWhenPartitionProcessorFactoriesSpecified()

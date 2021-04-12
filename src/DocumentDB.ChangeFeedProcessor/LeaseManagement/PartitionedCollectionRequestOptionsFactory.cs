@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     /// <summary>
     /// Used to create request options for partitioned lease collections, when partition key is defined as /id.
     /// </summary>
-    internal class PartitionedByIdCollectionRequestOptionsFactory : IRequestOptionsFactory
+    internal class PartitionedCollectionRequestOptionsFactory : IRequestOptionsFactory
     {
         public RequestOptions CreateRequestOptions(ILease lease) => new RequestOptions { PartitionKey = new PartitionKey(lease.Id) };
 

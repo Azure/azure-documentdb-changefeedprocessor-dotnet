@@ -52,8 +52,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                   .WithObserverFactory(observerFactory)
                   .WithHostName(Guid.NewGuid().ToString())
                   .WithFeedCollection(this.MonitoredCollectionInfo)
-                  .WithLeaseCollection(this.LeaseCollectionInfo)
-                  .WithLeaseCollectionPartitionKeyName("leaseId")
+                  .WithLeaseCollection(this.LeaseCollectionInfo)                  
                   .WithProcessorOptions(new ChangeFeedProcessorOptions()
                   {
                       StartFromBeginning = true                      
@@ -64,8 +63,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
                   .WithObserverFactory(observerFactory)
                   .WithHostName(Guid.NewGuid().ToString())
                   .WithFeedCollection(this.MonitoredCollectionInfo)
-                  .WithLeaseCollection(this.LeaseCollectionInfo)
-                  .WithLeaseCollectionPartitionKeyName("leaseId")
+                  .WithLeaseCollection(this.LeaseCollectionInfo)                  
                   .WithProcessorOptions(new ChangeFeedProcessorOptions()
                    {
                        StartFromBeginning = true
