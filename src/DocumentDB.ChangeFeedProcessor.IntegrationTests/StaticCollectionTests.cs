@@ -34,8 +34,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         }
 
         public StaticCollectionTests(
-            bool isPartitionedLeaseCollection, bool isGremlinAccount) :
-            base(isPartitionedLeaseCollection: isPartitionedLeaseCollection,isGremlinAccount: isGremlinAccount)
+            bool isPartitionedLeaseCollection, bool isPartitionedByLeasePk) :
+            base(isPartitionedLeaseCollection: isPartitionedLeaseCollection, isPartitionedByLeasePk: isPartitionedByLeasePk)
         {
         }
 

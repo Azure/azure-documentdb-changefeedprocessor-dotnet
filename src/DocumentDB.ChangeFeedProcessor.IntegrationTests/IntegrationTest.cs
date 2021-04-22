@@ -90,16 +90,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
         protected readonly bool IsPartitionedLeaseCollection;
 
-        protected readonly bool IsGremlinAccount;
+        protected readonly bool isPartitionedByLeasePk;
 
         public IntegrationTest(
             bool isPartitionedMonitoredCollection = true,
             bool isPartitionedLeaseCollection = false,
-            bool isGremlinAccount = false)
+            bool isPartitionedByLeasePk = false)
         {
             this.IsPartitionedMonitoredCollection = isPartitionedMonitoredCollection;
             this.IsPartitionedLeaseCollection = isPartitionedLeaseCollection;
-            this.IsGremlinAccount = isGremlinAccount;
+            this.isPartitionedByLeasePk = isPartitionedByLeasePk;
         }
 
         public async Task InitializeAsync()
@@ -123,7 +123,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             if (this.IsPartitionedLeaseCollection)
             {
-                leaseCollection.PartitionKey = this.IsGremlinAccount ? new PartitionKeyDefinition { Paths = { "/leaseid" } } : new PartitionKeyDefinition { Paths = { "/id" } };
+                leaseCollection.PartitionKey = this.isPartitionedByLeasePk ? new PartitionKeyDefinition { Paths = { "/leasepk" } } : new PartitionKeyDefinition { Paths = { "/id" } };
             }
 
             using (var client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))

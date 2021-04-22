@@ -305,18 +305,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
 
         [Fact]
-        public async Task BuildPassesPartitionKey_WhenLeaseCollectionIsPartitionedByGremlinCompatId()
+        public async Task BuildPassesPartitionKey_WhenLeaseCollectionIsPartitionedByLeasePk()
         {
             var leaseCollection = MockHelpers.CreateCollection(
                 "collectionId",
                 "collectionRid",
-                new PartitionKeyDefinition { Paths = { "/leaseid" } },
+                new PartitionKeyDefinition { Paths = { "/leasepk" } },
                 collectionLink);
 
-            var lease = Mock.Of<ILease>();
-            Mock.Get(lease)
-                .SetupGet(l => l.Id)
-                .Returns("leaseId");
+            var lease = new DocumentServiceLease()
+            {
+                LeasePartitionKey = "leasePk",
+                Id = "Id"
+            };
 
             var leaseClient = this.CreateMockDocumentClient(collection);
             Mock.Get(leaseClient)
@@ -331,7 +332,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
                     It.IsAny<CancellationToken>()))
                 .Callback((Uri uri, RequestOptions options, CancellationToken token) =>
                 {
-                    if (new PartitionKey(lease.Id).Equals(options.PartitionKey))
+                    if (new PartitionKey("leasePk").Equals(options.PartitionKey))
                         throw DocumentExceptionHelpers.CreateNotFoundException();   // Success code path: cause lease lost.
                     throw new Exception("Failure");
                 });
