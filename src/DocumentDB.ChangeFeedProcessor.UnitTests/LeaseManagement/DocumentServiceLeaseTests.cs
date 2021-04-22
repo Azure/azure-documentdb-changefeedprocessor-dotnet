@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             Assert.Equal(timestamp, lease.Timestamp);
             Assert.Equal(value, lease.Properties[key]);
             Assert.Equal(etag, lease.ConcurrencyToken);
-            Assert.Equal(id, lease.LeaseId);
+            Assert.Null(lease.LeasePartitionKey);
         }
 
         [Fact]
@@ -66,6 +66,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             DocumentServiceLease originalLease = new DocumentServiceLease
             {
                 Id = "id",
+                LeasePartitionKey="leasePk",
                 ETag = "etag",
                 PartitionId = "0",
                 Owner = "owner",
@@ -83,7 +84,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             var lease = (DocumentServiceLease)formatter.Deserialize(stream2);
 
             Assert.Equal(originalLease.Id, lease.Id);
-            Assert.Equal(originalLease.Id, lease.LeaseId);
+            Assert.Equal(originalLease.LeasePartitionKey, lease.LeasePartitionKey);
             Assert.Equal(originalLease.ETag, lease.ETag);
             Assert.Equal(originalLease.PartitionId, lease.PartitionId);
             Assert.Equal(originalLease.Owner, lease.Owner);
@@ -106,7 +107,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             var lease = (DocumentServiceLease)formatter.Deserialize(stream2);
 
             Assert.Null(lease.Id);
-            Assert.Null(lease.LeaseId);
+            Assert.Null(lease.LeasePartitionKey);
             Assert.Null(lease.ETag);
             Assert.Null(lease.PartitionId);
             Assert.Null(lease.Owner);
@@ -185,7 +186,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             var lease = JsonConvert.DeserializeObject<DocumentServiceLease>(serializedV1Lease);
 
             Assert.Equal(originalLease.Id, lease.Id);
-            Assert.Equal(originalLease.Id, lease.LeaseId);
+            Assert.Equal(null, lease.LeasePartitionKey);
             Assert.Equal(originalLease.ETag, lease.ETag);
             Assert.Equal(originalLease.PartitionId, lease.PartitionId);
             Assert.Equal(originalLease.Owner, lease.Owner);

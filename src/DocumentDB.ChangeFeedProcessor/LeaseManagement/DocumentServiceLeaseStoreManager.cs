@@ -34,6 +34,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         private readonly IDocumentServiceLeaseUpdater leaseUpdater;
         private readonly ILeaseStore leaseStore;
 
+        private bool isPartitionedByLeasePk = false;
+
         public DocumentServiceLeaseStoreManager(
             DocumentServiceLeaseStoreManagerSettings settings,
             IChangeFeedDocumentClient leaseDocumentClient,
@@ -73,6 +75,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 this.settings.ContainerNamePrefix,
                 this.settings.LeaseCollectionLink,
                 this.requestOptionsFactory);
+            this.isPartitionedByLeasePk = this.requestOptionsFactory is PartitionedByLeasePkCollectionRequestOptionsFactory;
         }
 
         public async Task<IReadOnlyList<ILease>> GetAllLeasesAsync()
@@ -106,6 +109,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 PartitionId = partitionId,
                 ContinuationToken = continuationToken,
             };
+
+            if (this.isPartitionedByLeasePk)
+                documentServiceLease.LeasePartitionKey = Guid.NewGuid().ToString();
 
             bool created = await this.client.TryCreateDocumentAsync(
                 this.settings.LeaseCollectionLink,

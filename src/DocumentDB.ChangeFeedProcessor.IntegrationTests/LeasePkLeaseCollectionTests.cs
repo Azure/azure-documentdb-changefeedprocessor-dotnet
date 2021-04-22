@@ -11,9 +11,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     /// </summary>
     [Trait("Category", "Integration")]
     [Collection("Integration tests")]
-    public class GremlinPartitionedLeaseCollectionTests : StaticCollectionTests
+    public class LeasePkLeaseCollectionTests : StaticCollectionTests
     {
-        public GremlinPartitionedLeaseCollectionTests() :
+        public LeasePkLeaseCollectionTests() :
             base(true,true)
         {
         }

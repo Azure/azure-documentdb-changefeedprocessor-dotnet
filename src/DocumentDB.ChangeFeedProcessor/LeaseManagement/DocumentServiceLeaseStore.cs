@@ -49,7 +49,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string markerDocId = this.GetStoreMarkerName();
             var containerDocument = new Document { Id = markerDocId };
-            containerDocument.SetPropertyValue(DocumentServiceLease.LeaseIdPropertyName, markerDocId);
+            containerDocument.SetPropertyValue(DocumentServiceLease.LeasePartitionKeyPropertyName, markerDocId);
 
             await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
         }
@@ -58,7 +58,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string lockId = this.GetStoreLockName();
             var containerDocument = new Document { Id = lockId, TimeToLive = (int)lockTime.TotalSeconds };
-            containerDocument.SetPropertyValue(DocumentServiceLease.LeaseIdPropertyName, lockId);
+            containerDocument.SetPropertyValue(DocumentServiceLease.LeasePartitionKeyPropertyName, lockId);
 
             var document = await this.client.TryCreateDocumentAsync(
                 this.leaseCollectionLink,

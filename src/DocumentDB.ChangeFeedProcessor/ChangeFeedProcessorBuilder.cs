@@ -374,7 +374,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
-            ILeaseStoreManager leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
+            ILeaseStoreManager leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation).ConfigureAwait(false);
             IPartitionManager partitionManager = this.BuildPartitionManager(leaseStoreManager);
             return new ChangeFeedProcessor(partitionManager);
         }
@@ -397,7 +397,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
             await this.InitializeCollectionPropertiesForBuildAsync().ConfigureAwait(false);
 
-            var leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation, true).ConfigureAwait(false);
+            var leaseStoreManager = await this.GetLeaseStoreManagerAsync(this.leaseCollectionLocation).ConfigureAwait(false);
 
             IRemainingWorkEstimator remainingWorkEstimator = new RemainingWorkEstimator(
                 leaseStoreManager,
@@ -461,8 +461,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
         }
 
         private async Task<ILeaseStoreManager> GetLeaseStoreManagerAsync(
-            DocumentCollectionInfo collectionInfo,
-            bool isPartitionKeyByIdRequiredIfPartitioned)
+            DocumentCollectionInfo collectionInfo)
         {
             if (this.LeaseStoreManager == null)
             {
@@ -473,16 +472,26 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     collection.PartitionKey != null &&
                     collection.PartitionKey.Paths != null &&
                     collection.PartitionKey.Paths.Count > 0;
-                if (isPartitioned && isPartitionKeyByIdRequiredIfPartitioned &&
+
+                if (isPartitioned &&
                     (collection.PartitionKey.Paths.Count != 1 || !(collection.PartitionKey.Paths[0].Equals($"/{DocumentServiceLease.IdPropertyName}", StringComparison.OrdinalIgnoreCase) ||
-                                                                   collection.PartitionKey.Paths[0].Equals($"/{DocumentServiceLease.LeaseIdPropertyName}", StringComparison.OrdinalIgnoreCase))))
+                                                                   collection.PartitionKey.Paths[0].Equals($"/{DocumentServiceLease.LeasePartitionKeyPropertyName}", StringComparison.OrdinalIgnoreCase))))
                 {
-                    throw new ArgumentException($"The lease collection, if partitioned, must have partition key equal to {DocumentServiceLease.IdPropertyName} or {DocumentServiceLease.LeaseIdPropertyName}.");
+                    throw new ArgumentException($"The lease collection, if partitioned, must have partition key equal to {DocumentServiceLease.IdPropertyName} or {DocumentServiceLease.LeasePartitionKeyPropertyName}.");
                 }
 
-                var requestOptionsFactory = isPartitioned ?
-                    (IRequestOptionsFactory)new PartitionedByIdCollectionRequestOptionsFactory() :
-                    (IRequestOptionsFactory)new SinglePartitionRequestOptionsFactory();
+                IRequestOptionsFactory requestOptionsFactory = null;
+                if (isPartitioned)
+                {
+                    // we allow only id or leasePk partitioning so check only flag
+                    requestOptionsFactory = collection.PartitionKey.Paths[0].Equals($"/{DocumentServiceLease.IdPropertyName}", StringComparison.OrdinalIgnoreCase) ?
+                                            (IRequestOptionsFactory)new PartitionedByIdCollectionRequestOptionsFactory() :
+                                            (IRequestOptionsFactory)new PartitionedByLeasePkCollectionRequestOptionsFactory();
+                }
+                else
+                {
+                    requestOptionsFactory = (IRequestOptionsFactory)new SinglePartitionRequestOptionsFactory();
+                }
 
                 string leasePrefix = this.GetLeasePrefix();
                 var leaseStoreManagerBuilder = new DocumentServiceLeaseStoreManagerBuilder()
