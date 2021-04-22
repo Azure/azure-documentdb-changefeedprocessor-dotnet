@@ -55,7 +55,6 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
             var containerDocument = new Document { Id = markerDocId };
             if (this.isPartitionedByLeasePk)
                 containerDocument.SetPropertyValue(DocumentServiceLease.LeasePartitionKeyPropertyName, markerDocId);
-
             await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
         }
 
