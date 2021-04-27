@@ -4,6 +4,7 @@
 
 namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
 {
+    using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.ChangeFeedProcessor.PartitionManagement;
     using Microsoft.Azure.Documents.Client;
 
@@ -15,5 +16,13 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         public FeedOptions CreateFeedOptions() => null;
 
         public RequestOptions CreateRequestOptions(ILease lease) => null;
+
+        public void AddPartitionKeyIfNeeded(ILease lease, string partitionKey)
+        {
+        }
+
+        public void AddPartitionKeyIfNeeded(Document doc, string partitionKey)
+        {
+        }
     }
 }
