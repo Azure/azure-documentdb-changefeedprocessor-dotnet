@@ -123,7 +123,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             if (this.IsPartitionedLeaseCollection)
             {
-                leaseCollection.PartitionKey = this.isPartitionedByLeasePk ? new PartitionKeyDefinition { Paths = { ChangeFeedProcessorBuilder.PartitionKeyPkPathName } } : new PartitionKeyDefinition { Paths = { ChangeFeedProcessorBuilder.IdPkPathName } };
+                leaseCollection.PartitionKey = this.isPartitionedByLeasePk ? 
+                                               new PartitionKeyDefinition { Paths = { ChangeFeedProcessorBuilder.PartitionKeyPkPathName } } : 
+                                               new PartitionKeyDefinition { Paths = { ChangeFeedProcessorBuilder.IdPkPathName } };
             }
 
             using (var client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))
