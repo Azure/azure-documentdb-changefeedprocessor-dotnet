@@ -477,7 +477,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
 
                 if (isPartitioned &&
                     (collection.PartitionKey.Paths.Count != 1 ||
-                    (collection.PartitionKey.Paths[0] != IdPkPathName && collection.PartitionKey.Paths[0] != PartitionKeyPkPathName)))
+                    !(collection.PartitionKey.Paths[0] == IdPkPathName || collection.PartitionKey.Paths[0] == PartitionKeyPkPathName)))
                 {
                     throw new ArgumentException($"The lease collection, if partitioned, must have partition key equal to {IdPkPathName} or {PartitionKeyPkPathName}.");
                 }
@@ -486,7 +486,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                 if (isPartitioned)
                 {
                     // we allow only id or leasePk partitioning so check only flag
-                    requestOptionsFactory = collection.PartitionKey.Paths[0] != PartitionKeyPkPathName ?
+                    requestOptionsFactory = collection.PartitionKey.Paths[0] == IdPkPathName ?
                                             (IRequestOptionsFactory)new PartitionedByIdCollectionRequestOptionsFactory() :
                                             (IRequestOptionsFactory)new PartitionedByPartitionKeyCollectionRequestOptionsFactory();
                 }
