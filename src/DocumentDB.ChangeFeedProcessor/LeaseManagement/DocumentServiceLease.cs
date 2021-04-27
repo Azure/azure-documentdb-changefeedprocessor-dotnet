@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
     internal class DocumentServiceLease : ILease, ILeaseAcquireReasonProvider
     {
         internal const string IdPropertyName = "id";
-        internal const string LeasePartitionKeyPropertyName = "leasepk";
+        internal const string LeasePartitionKeyPropertyName = "partitionKey";
 
         private static readonly DateTime UnixStartTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
@@ -43,8 +43,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         /// This is clone of existing Id property to maintain backward compat.
         /// This property name is compatible to both GremlinAccounts and SqlAccounts
         /// </summary>
-        [JsonProperty(LeasePartitionKeyPropertyName)]
-        public string LeasePartitionKey { get; set; }
+        [JsonProperty(LeasePartitionKeyPropertyName, NullValueHandling= NullValueHandling.Ignore)]
+        public string PartitionKey { get; set; }
 
         [JsonProperty("_etag")]
         public string ETag { get; set; }

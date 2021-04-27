@@ -310,12 +310,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
             var leaseCollection = MockHelpers.CreateCollection(
                 "collectionId",
                 "collectionRid",
-                new PartitionKeyDefinition { Paths = { "/leasepk" } },
+                new PartitionKeyDefinition { Paths = { "/partitionKey" } },
                 collectionLink);
 
             var lease = new DocumentServiceLease()
             {
-                LeasePartitionKey = "leasePk",
+                PartitionKey = "leasePk",
                 Id = "Id"
             };
 

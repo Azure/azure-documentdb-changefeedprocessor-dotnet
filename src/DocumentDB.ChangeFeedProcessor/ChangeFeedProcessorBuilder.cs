@@ -109,6 +109,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
     /// </example>
     public class ChangeFeedProcessorBuilder
     {
+        internal const string IdPkPathName = "/" + DocumentServiceLease.IdPropertyName;
+        internal const string PartitionKeyPkPathName = "/" + DocumentServiceLease.LeasePartitionKeyPropertyName;
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         private static readonly long DefaultUnhealthinessDuration = TimeSpan.FromMinutes(15).Ticks;
         private readonly TimeSpan sleepTime = TimeSpan.FromSeconds(15);
@@ -474,19 +476,19 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor
                     collection.PartitionKey.Paths.Count > 0;
 
                 if (isPartitioned &&
-                    (collection.PartitionKey.Paths.Count != 1 || !(collection.PartitionKey.Paths[0].Equals($"/{DocumentServiceLease.IdPropertyName}", StringComparison.OrdinalIgnoreCase) ||
-                                                                   collection.PartitionKey.Paths[0].Equals($"/{DocumentServiceLease.LeasePartitionKeyPropertyName}", StringComparison.OrdinalIgnoreCase))))
+                    (collection.PartitionKey.Paths.Count != 1 ||
+                    (collection.PartitionKey.Paths[0] != IdPkPathName && collection.PartitionKey.Paths[0] != PartitionKeyPkPathName)))
                 {
-                    throw new ArgumentException($"The lease collection, if partitioned, must have partition key equal to {DocumentServiceLease.IdPropertyName} or {DocumentServiceLease.LeasePartitionKeyPropertyName}.");
+                    throw new ArgumentException($"The lease collection, if partitioned, must have partition key equal to {IdPkPathName} or {PartitionKeyPkPathName}.");
                 }
 
                 IRequestOptionsFactory requestOptionsFactory = null;
                 if (isPartitioned)
                 {
                     // we allow only id or leasePk partitioning so check only flag
-                    requestOptionsFactory = collection.PartitionKey.Paths[0].Equals($"/{DocumentServiceLease.IdPropertyName}", StringComparison.OrdinalIgnoreCase) ?
+                    requestOptionsFactory = collection.PartitionKey.Paths[0] != PartitionKeyPkPathName ?
                                             (IRequestOptionsFactory)new PartitionedByIdCollectionRequestOptionsFactory() :
-                                            (IRequestOptionsFactory)new PartitionedByLeasePkCollectionRequestOptionsFactory();
+                                            (IRequestOptionsFactory)new PartitionedByPartitionKeyCollectionRequestOptionsFactory();
                 }
                 else
                 {

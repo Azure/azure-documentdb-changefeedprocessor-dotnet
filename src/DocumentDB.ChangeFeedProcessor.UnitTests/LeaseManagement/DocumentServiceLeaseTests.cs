@@ -57,7 +57,42 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             Assert.Equal(timestamp, lease.Timestamp);
             Assert.Equal(value, lease.Properties[key]);
             Assert.Equal(etag, lease.ConcurrencyToken);
-            Assert.Null(lease.LeasePartitionKey);
+            Assert.Null(lease.PartitionKey);
+        }
+
+        [Fact]
+        public void ValidateProperties_PartitionedByPk()
+        {
+            var id = "id";
+            var etag = "etag";
+            var partitionId = "0";
+            var owner = "owner";
+            var continuationToken = "continuation";
+            var timestamp = DateTime.Now - TimeSpan.FromSeconds(5);
+            var key = "key";
+            var value = "value";
+
+            DocumentServiceLease lease = new DocumentServiceLease
+            {
+                Id = id,
+                PartitionKey = id,
+                ETag = etag,
+                PartitionId = partitionId,
+                Owner = owner,
+                ContinuationToken = continuationToken,
+                Timestamp = timestamp,
+                Properties = new Dictionary<string, string> { { "key", "value" } },
+            };
+
+            Assert.Equal(id, lease.Id);
+            Assert.Equal(id, lease.PartitionKey);
+            Assert.Equal(etag, lease.ETag);
+            Assert.Equal(partitionId, lease.PartitionId);
+            Assert.Equal(owner, lease.Owner);
+            Assert.Equal(continuationToken, lease.ContinuationToken);
+            Assert.Equal(timestamp, lease.Timestamp);
+            Assert.Equal(value, lease.Properties[key]);
+            Assert.Equal(etag, lease.ConcurrencyToken);            
         }
 
         [Fact]
@@ -65,8 +100,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
         {
             DocumentServiceLease originalLease = new DocumentServiceLease
             {
-                Id = "id",
-                LeasePartitionKey="leasePk",
+                Id = "id",                
                 ETag = "etag",
                 PartitionId = "0",
                 Owner = "owner",
@@ -83,8 +117,40 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             formatter.Serialize(stream1, originalLease);
             var lease = (DocumentServiceLease)formatter.Deserialize(stream2);
 
+            Assert.Equal(originalLease.Id, lease.Id);            
+            Assert.Equal(originalLease.ETag, lease.ETag);
+            Assert.Equal(originalLease.PartitionId, lease.PartitionId);
+            Assert.Equal(originalLease.Owner, lease.Owner);
+            Assert.Equal(originalLease.ContinuationToken, lease.ContinuationToken);
+            Assert.Equal(originalLease.Timestamp, lease.Timestamp);
+            Assert.Equal(originalLease.Properties["key"], lease.Properties["key"]);
+        }
+
+        [Fact]
+        public void ValidateSerialization_AllFields_PartitionedByPk()
+        {
+            DocumentServiceLease originalLease = new DocumentServiceLease
+            {
+                Id = "id",
+                PartitionKey="pk",
+                ETag = "etag",
+                PartitionId = "0",
+                Owner = "owner",
+                ContinuationToken = "continuation",
+                Timestamp = DateTime.Now - TimeSpan.FromSeconds(5),
+                Properties = new Dictionary<string, string> { { "key", "value" } }
+            };
+
+            var buffer = new byte[4096];
+            var formatter = new BinaryFormatter();
+            var stream1 = new MemoryStream(buffer);
+            var stream2 = new MemoryStream(buffer);
+
+            formatter.Serialize(stream1, originalLease);
+            var lease = (DocumentServiceLease)formatter.Deserialize(stream2);
+
             Assert.Equal(originalLease.Id, lease.Id);
-            Assert.Equal(originalLease.LeasePartitionKey, lease.LeasePartitionKey);
+            Assert.Equal(originalLease.PartitionKey, lease.PartitionKey);
             Assert.Equal(originalLease.ETag, lease.ETag);
             Assert.Equal(originalLease.PartitionId, lease.PartitionId);
             Assert.Equal(originalLease.Owner, lease.Owner);
@@ -107,7 +173,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             var lease = (DocumentServiceLease)formatter.Deserialize(stream2);
 
             Assert.Null(lease.Id);
-            Assert.Null(lease.LeasePartitionKey);
+            Assert.Null(lease.PartitionKey);
             Assert.Null(lease.ETag);
             Assert.Null(lease.PartitionId);
             Assert.Null(lease.Owner);
@@ -116,6 +182,48 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             Assert.Empty(lease.Properties);
         }
 
+        [Fact]
+        public void ValidateJsonSerialization_PartitionKey_NotFilled()
+        {
+
+            DocumentServiceLease originalLease = new DocumentServiceLease
+            {
+                Id = "id",
+                ETag = "etag",
+                PartitionId = "0",
+                Owner = "owner",
+                ContinuationToken = "continuation",
+                Timestamp = DateTime.Now - TimeSpan.FromSeconds(5),
+                Properties = new Dictionary<string, string> { { "key", "value" } }
+            };
+
+            var serializedLease = JsonConvert.SerializeObject(originalLease);
+            Assert.DoesNotContain("partitionKey", serializedLease);
+            var lease = JsonConvert.DeserializeObject<DocumentServiceLease>(serializedLease);
+            Assert.Null(lease.PartitionKey);
+        }
+
+        [Fact]
+        public void ValidateJsonSerialization_PartitionKey_Filled()
+        {
+
+            DocumentServiceLease originalLease = new DocumentServiceLease
+            {
+                Id = "id",
+                PartitionKey = "pk",
+                ETag = "etag",
+                PartitionId = "0",
+                Owner = "owner",
+                ContinuationToken = "continuation",
+                Timestamp = DateTime.Now - TimeSpan.FromSeconds(5),
+                Properties = new Dictionary<string, string> { { "key", "value" } }
+            };
+
+            var serializedLease = JsonConvert.SerializeObject(originalLease);
+            Assert.Contains("partitionKey", serializedLease);
+            var lease = JsonConvert.DeserializeObject<DocumentServiceLease>(serializedLease);
+            Assert.Equal("pk", lease.PartitionKey);
+        }
 
         #region Compat_Tests
         // this class doesnt contain LeaseId property
@@ -186,7 +294,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             var lease = JsonConvert.DeserializeObject<DocumentServiceLease>(serializedV1Lease);
 
             Assert.Equal(originalLease.Id, lease.Id);
-            Assert.Equal(null, lease.LeasePartitionKey);
+            Assert.Null(lease.PartitionKey);
             Assert.Equal(originalLease.ETag, lease.ETag);
             Assert.Equal(originalLease.PartitionId, lease.PartitionId);
             Assert.Equal(originalLease.Owner, lease.Owner);
@@ -202,6 +310,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             DocumentServiceLease originalLease = new DocumentServiceLease
             {
                 Id = "id",
+                PartitionKey="pk",
                 ETag = "etag",
                 PartitionId = "0",
                 Owner = "owner",
@@ -220,7 +329,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.LeaseManagemen
             Assert.Equal(originalLease.ContinuationToken, lease.ContinuationToken);
             Assert.Equal(originalLease.Timestamp, lease.Timestamp);
             Assert.Equal(originalLease.Properties["key"], lease.Properties["key"]);
-        }
+        }       
         #endregion
 
     }
