@@ -14,7 +14,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
     public class LeasePkLeaseCollectionTests : StaticCollectionTests
     {
         public LeasePkLeaseCollectionTests() :
-            base(true,true)
+            base(true, true)
         {
         }
     }

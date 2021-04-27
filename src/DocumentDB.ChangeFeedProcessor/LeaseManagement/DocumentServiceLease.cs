@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         /// This is clone of existing Id property to maintain backward compat.
         /// This property name is compatible to both GremlinAccounts and SqlAccounts
         /// </summary>
-        [JsonProperty(LeasePartitionKeyPropertyName, NullValueHandling= NullValueHandling.Ignore)]
+        [JsonProperty(LeasePartitionKeyPropertyName, NullValueHandling = NullValueHandling.Ignore)]
         public string PartitionKey { get; set; }
 
         [JsonProperty("_etag")]
