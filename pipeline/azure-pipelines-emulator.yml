@@ -32,10 +32,17 @@ steps:
           }
         }
 - task: DotNetCoreCLI@2
+  displayName: Restore
+  inputs:
+    command: restore
+    projects: '**/*.csproj'
+    includeNuGetOrg: true
+- task: DotNetCoreCLI@2
   displayName: Build
   inputs:
     command: build
     projects: '**/*.csproj'
+    arguments: '--no-restore --configuration Release'
 - script: dotnet test ./src/DocumentDB.ChangeFeedProcessor.IntegrationTests/DocumentDB.ChangeFeedProcessor.IntegrationTests.csproj --logger trx
   displayName: 'Running tests'
 - task: PublishTestResults@2
