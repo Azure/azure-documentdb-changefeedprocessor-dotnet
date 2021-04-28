@@ -36,6 +36,7 @@ steps:
   inputs:
     command: build
     projects: '**/*.csproj'
+    arguments: '--configuration Release'
 - script: dotnet test ./src/DocumentDB.ChangeFeedProcessor.IntegrationTests/DocumentDB.ChangeFeedProcessor.IntegrationTests.csproj --logger trx
   displayName: 'Running tests'
 - task: PublishTestResults@2
