@@ -166,7 +166,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             if (this.IsPartitionedMonitoredCollection)
             {
-                monitoredCollection.PartitionKey = new PartitionKeyDefinition { Paths = { "/partitionId" } };
+                monitoredCollection.PartitionKey = this.isPartitionedByLeasePk ?
+                                                   new PartitionKeyDefinition { Paths = { ChangeFeedProcessorBuilder.PartitionKeyPkPathName } } :
+                                                   new PartitionKeyDefinition { Paths = { ChangeFeedProcessorBuilder.IdPkPathName } };
             }
             else
             {
