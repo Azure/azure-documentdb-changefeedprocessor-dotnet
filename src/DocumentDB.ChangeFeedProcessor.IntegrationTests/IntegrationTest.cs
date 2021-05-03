@@ -90,12 +90,16 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
         protected readonly bool IsPartitionedLeaseCollection;
 
+        protected readonly bool isPartitionedByLeasePk;
+
         public IntegrationTest(
             bool isPartitionedMonitoredCollection = true,
-            bool isPartitionedLeaseCollection = false)
+            bool isPartitionedLeaseCollection = false,
+            bool isPartitionedByLeasePk = false)
         {
             this.IsPartitionedMonitoredCollection = isPartitionedMonitoredCollection;
             this.IsPartitionedLeaseCollection = isPartitionedLeaseCollection;
+            this.isPartitionedByLeasePk = isPartitionedByLeasePk;
         }
 
         public async Task InitializeAsync()
@@ -119,7 +123,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             if (this.IsPartitionedLeaseCollection)
             {
-                leaseCollection.PartitionKey = new PartitionKeyDefinition { Paths = { "/id" } };
+                leaseCollection.PartitionKey = this.isPartitionedByLeasePk ? 
+                                               new PartitionKeyDefinition { Paths = { ChangeFeedProcessorBuilder.PartitionKeyPkPathName } } : 
+                                               new PartitionKeyDefinition { Paths = { ChangeFeedProcessorBuilder.IdPkPathName } };
             }
 
             using (var client = new DocumentClient(this.LeaseCollectionInfo.Uri, this.LeaseCollectionInfo.MasterKey, this.LeaseCollectionInfo.ConnectionPolicy))
@@ -160,7 +166,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
 
             if (this.IsPartitionedMonitoredCollection)
             {
-                monitoredCollection.PartitionKey = new PartitionKeyDefinition { Paths = { "/id" } };
+                monitoredCollection.PartitionKey = this.isPartitionedByLeasePk ?
+                                                   new PartitionKeyDefinition { Paths = { ChangeFeedProcessorBuilder.PartitionKeyPkPathName } } :
+                                                   new PartitionKeyDefinition { Paths = { ChangeFeedProcessorBuilder.IdPkPathName } };
             }
             else
             {

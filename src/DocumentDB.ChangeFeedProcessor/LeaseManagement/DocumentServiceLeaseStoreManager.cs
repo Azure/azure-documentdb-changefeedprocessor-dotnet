@@ -107,6 +107,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
                 ContinuationToken = continuationToken,
             };
 
+            this.requestOptionsFactory.AddPartitionKeyIfNeeded(documentServiceLease, Guid.NewGuid().ToString());
+
             bool created = await this.client.TryCreateDocumentAsync(
                 this.settings.LeaseCollectionLink,
                 documentServiceLease).ConfigureAwait(false) != null;

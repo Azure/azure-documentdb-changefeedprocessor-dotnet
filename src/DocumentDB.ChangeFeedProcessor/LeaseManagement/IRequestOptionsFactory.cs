@@ -15,5 +15,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         RequestOptions CreateRequestOptions(ILease lease);
 
         FeedOptions CreateFeedOptions();
+
+        void AddPartitionKeyIfNeeded(ILease lease, string partitionKey);
+
+        void AddPartitionKeyIfNeeded(Document doc, string partitionKey);
     }
 }

@@ -305,6 +305,49 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests
         }
 
         [Fact]
+        public async Task BuildPassesPartitionKey_WhenLeaseCollectionIsPartitionedByLeasePk()
+        {
+            var leaseCollection = MockHelpers.CreateCollection(
+                "collectionId",
+                "collectionRid",
+                new PartitionKeyDefinition { Paths = { "/partitionKey" } },
+                collectionLink);
+
+            var lease = new DocumentServiceLease()
+            {
+                PartitionKey = "leasePk",
+                Id = "Id"
+            };
+
+            var leaseClient = this.CreateMockDocumentClient(collection);
+            Mock.Get(leaseClient)
+                .Setup(c => c.ReadDocumentCollectionAsync(
+                    It.IsAny<Uri>(),
+                    It.IsAny<RequestOptions>()))
+                .ReturnsAsync(new ResourceResponse<DocumentCollection>(leaseCollection));
+            Mock.Get(leaseClient)
+                .Setup(c => c.ReadDocumentAsync(
+                    It.IsAny<Uri>(),
+                    It.IsAny<RequestOptions>(),
+                    It.IsAny<CancellationToken>()))
+                .Callback((Uri uri, RequestOptions options, CancellationToken token) =>
+                {
+                    if (new PartitionKey("leasePk").Equals(options.PartitionKey))
+                        throw DocumentExceptionHelpers.CreateNotFoundException();   // Success code path: cause lease lost.
+                    throw new Exception("Failure");
+                });
+
+            this.builder
+                .WithFeedDocumentClient(this.CreateMockDocumentClient())
+                .WithLeaseDocumentClient(leaseClient)
+                .WithObserverFactory(Mock.Of<IChangeFeedObserverFactory>());
+            await this.builder.BuildAsync();
+
+            Exception exception = await Record.ExceptionAsync(() => this.builder.LeaseStoreManager.ReleaseAsync(lease));
+            Assert.Equal(typeof(LeaseLostException), exception.GetType());
+        }
+
+        [Fact]
         public async Task BuildThrowsWhenBothPartitionProcessorFactoriesSpecified()
         {
             builder

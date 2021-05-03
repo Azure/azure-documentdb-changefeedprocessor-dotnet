@@ -38,8 +38,9 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string markerDocId = this.GetStoreMarkerName();
             Uri documentUri = UriFactory.CreateDocumentUri(this.leaseStoreCollectionInfo.DatabaseName, this.leaseStoreCollectionInfo.CollectionName, markerDocId);
-            var requestOptions = this.requestOptionsFactory.CreateRequestOptions(
-                DocumentServiceLease.FromDocument(new Document { Id = markerDocId }));
+            var documentServiceLease = DocumentServiceLease.FromDocument(new Document { Id = markerDocId });
+            this.requestOptionsFactory.AddPartitionKeyIfNeeded(documentServiceLease, markerDocId);
+            var requestOptions = this.requestOptionsFactory.CreateRequestOptions(documentServiceLease);
 
             Document document = await this.client.TryGetDocumentAsync(documentUri, requestOptions).ConfigureAwait(false);
             return document != null;
@@ -49,6 +50,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string markerDocId = this.GetStoreMarkerName();
             var containerDocument = new Document { Id = markerDocId };
+            this.requestOptionsFactory.AddPartitionKeyIfNeeded(containerDocument, markerDocId);
+
             await this.client.TryCreateDocumentAsync(this.leaseCollectionLink, containerDocument).ConfigureAwait(false);
         }
 
@@ -56,6 +59,8 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string lockId = this.GetStoreLockName();
             var containerDocument = new Document { Id = lockId, TimeToLive = (int)lockTime.TotalSeconds };
+            this.requestOptionsFactory.AddPartitionKeyIfNeeded(containerDocument, lockId);
+
             var document = await this.client.TryCreateDocumentAsync(
                 this.leaseCollectionLink,
                 containerDocument).ConfigureAwait(false);
@@ -73,9 +78,10 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.LeaseManagement
         {
             string lockId = this.GetStoreLockName();
             Uri documentUri = UriFactory.CreateDocumentUri(this.leaseStoreCollectionInfo.DatabaseName, this.leaseStoreCollectionInfo.CollectionName, lockId);
+            var documentServiceLease = DocumentServiceLease.FromDocument(new Document { Id = lockId });
+            this.requestOptionsFactory.AddPartitionKeyIfNeeded(documentServiceLease, lockId);
 
-            var requestOptions = this.requestOptionsFactory.CreateRequestOptions(
-                DocumentServiceLease.FromDocument(new Document { Id = lockId }));
+            var requestOptions = this.requestOptionsFactory.CreateRequestOptions(documentServiceLease);
             requestOptions = requestOptions ?? new RequestOptions();
             requestOptions.AccessCondition = new AccessCondition { Type = AccessConditionType.IfMatch, Condition = this.lockETag };
 

@@ -33,6 +33,12 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.IntegrationTests
         {
         }
 
+        public StaticCollectionTests(
+            bool isPartitionedLeaseCollection, bool isPartitionedByLeasePk) :
+            base(isPartitionedLeaseCollection: isPartitionedLeaseCollection, isPartitionedByLeasePk: isPartitionedByLeasePk)
+        {
+        }
+
         [Fact]
         public async Task CountDocumentsInCollection_NormalCase()
         {
