@@ -33,13 +33,25 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging
     /// </example>
     public class TraceLogProvider : ILogProvider
     {
-        private TraceLogProviderImplementation logProvider = new TraceLogProviderImplementation();
+        private static readonly string DefaultTraceSourceName = "ChangeFeedEventHost";
+        private TraceLogProviderImplementation logProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TraceLogProvider"/> class.
         /// </summary>
         public TraceLogProvider()
+            : this(new TraceSource(DefaultTraceSourceName))
         {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TraceLogProvider"/> class.
+        /// </summary>
+        /// <param name="traceSource">TraceSource instance that can be programatically initialied.</param>
+        public TraceLogProvider(TraceSource traceSource)
+        {
+            if (traceSource == null) throw new ArgumentNullException(nameof(traceSource));
+            this.logProvider = new TraceLogProviderImplementation(traceSource);
         }
 
         /// <summary>
@@ -76,9 +88,14 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging
 
         internal class TraceLogProviderImplementation : LogProviderBase
         {
-            private static readonly TraceSource TraceSource = new TraceSource("ChangeFeedEventHost");
             private static int traceId;
+            private readonly TraceSource traceSource;
             private string prefix;
+
+            public TraceLogProviderImplementation(TraceSource traceSource)
+            {
+                this.traceSource = traceSource;
+            }
 
             public override Logger GetLogger(string name)
             {
@@ -104,7 +121,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging
                 string logLine = exception == null ?
                         formattedMessage :
                         string.Concat(formattedMessage, Environment.NewLine, exception);
-                TraceSource.TraceEvent(traceEventType, Interlocked.Increment(ref traceId), logLine);
+                this.traceSource.TraceEvent(traceEventType, Interlocked.Increment(ref traceId), logLine);
                 return true;
             }
 
@@ -135,7 +152,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.Logging
                 if (!string.IsNullOrEmpty(this.prefix))
                 {
                     string logLine = $"Cannot open more than one nested log context. A context for '{this.prefix}' is already open. All trace calls for '{message}' will use '{this.prefix}'. Consider using different app domain.";
-                    TraceSource.TraceEvent(TraceEventType.Error, Interlocked.Increment(ref traceId), logLine);
+                    this.traceSource.TraceEvent(TraceEventType.Error, Interlocked.Increment(ref traceId), logLine);
                 }
                 else
                 {
