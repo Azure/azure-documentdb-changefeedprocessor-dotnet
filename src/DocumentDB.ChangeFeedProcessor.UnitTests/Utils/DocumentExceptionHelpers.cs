@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
         {
             object o = typeof(HttpResponseHeaders).GetConstructor(
                 BindingFlags.NonPublic | BindingFlags.Instance,
-                null, new Type[] { }, null).Invoke(null);
+                null, new Type[] { typeof(bool) }, null).Invoke(new object[] { false });
             return o as HttpResponseHeaders;
         }
     }
