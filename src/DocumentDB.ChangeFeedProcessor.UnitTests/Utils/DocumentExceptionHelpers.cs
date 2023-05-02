@@ -45,7 +45,7 @@ namespace Microsoft.Azure.Documents.ChangeFeedProcessor.UnitTests.Utils
             object ex = t.GetConstructor(
                 BindingFlags.Public | BindingFlags.Instance,
                 null, new[] { typeof(string), typeof(HttpResponseHeaders), typeof(Uri) }, null)
-                .Invoke(new object[] { message, httpResponseHeaders, null });
+                null, new Type[] { typeof(bool) }, null).Invoke(new object[] { false });
             return ex as Exception;
         }
 
