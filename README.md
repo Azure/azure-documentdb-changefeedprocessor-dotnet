@@ -183,7 +183,7 @@ using (tracelogProvider.OpenNestedContext(hostName))
   </system.diagnostics>
 ```
 
-- To configure tracing programmatically (supported in [v2.5.0](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/sdk-dotnet-change-feed-v2#2.5.0) and later versions), use the following code:
+- To configure tracing programmatically (supported in [v2.5.0](https://learn.microsoft.com/azure/cosmos-db/nosql/sdk-dotnet-change-feed-v2#2.5.0) and later versions), use the following code:
 ```csharp
 using System.Diagnostics;
 using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
