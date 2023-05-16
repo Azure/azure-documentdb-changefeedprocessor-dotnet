@@ -161,7 +161,10 @@ using (tracelogProvider.OpenNestedContext(hostName))
     // After this, create IChangeFeedProcessor instance and start/stop it.
 }
 ```
-2) Add the following <system.configuration> section in your app.config:
+2) Do one of the following:
+
+- To configure tracing using `app.config` file, add the following <system.configuration> section in your `app.config`:
+
 ```xml
   <system.diagnostics>
     <sharedListeners>
@@ -178,6 +181,31 @@ using (tracelogProvider.OpenNestedContext(hostName))
     </sources>
     <trace autoflush="true" useGlobalLock="false" />
   </system.diagnostics>
+```
+
+- To configure tracing programmatically (supported in [v2.5.0](https://learn.microsoft.com/azure/cosmos-db/nosql/sdk-dotnet-change-feed-v2#2.5.0) and later versions), use the following code:
+```csharp
+using System.Diagnostics;
+using Microsoft.Azure.Documents.ChangeFeedProcessor.Logging;
+
+using (var writer = new StreamWriter(@"C:\ChangeFeedProcessorTrace.log") { AutoFlush = true })
+{
+    // Create custom TraceSource.
+    var traceSource = new TraceSource("Change Feed Processor", SourceLevels.All);
+    traceSource.Listeners.Clear();
+    traceSource.Listeners.Add(new TextWriterTraceListener(writer));
+
+    // Create TraceLogProvider from TraceSource.
+    var tracelogProvider = new TraceLogProvider(traceSource);
+
+    // Continue using TraceLogProvider in the same way as code snippet above.
+    var hostName = "SampleHost";
+    using (tracelogProvider.OpenNestedContext(hostName))
+    {
+        LogProvider.SetCurrentLogProvider(tracelogProvider);
+        // After this, create IChangeFeedProcessor instance and start/stop it.
+    }
+}
 ```
 
 ## See also
